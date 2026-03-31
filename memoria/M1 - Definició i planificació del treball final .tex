@@ -1,0 +1,237 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[catalan]{babel}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{setspace}
+\usepackage{geometry}
+\geometry{margin=2.5cm}
+
+% Header on all pages except the first
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhf{}
+% Header content (left/right as you prefer)
+\fancyhead[L]{Ús de models de llenguatge per l'optimització de processos sanitaris}
+\fancyhead[R]{Xavier Maltas Tarridas}
+% Footer with page number
+\fancyfoot[C]{\thepage}
+% Remove header/footer on first page (title page)
+\fancypagestyle{plain}{%
+  \fancyhf{}%
+  \renewcommand{\headrulewidth}{0pt}%
+  \renewcommand{\footrulewidth}{0pt}%
+}
+
+\title{M1 - Definició i planificació del treball final}
+\author{Xavier Maltas Tarridas}
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\section*{Proposta de títol}
+Exploració de models de llenguatge per l'optimització de 
+processos en entorns sanitaris
+
+%\Paraules clau
+\section*{Paraules clau}
+Retrieval-Augmented Generation; Models de llenguatge; Sistemes sanitaris; Optimització de processos; Processos assistencials;
+
+
+%\Resum proposta
+\section*{Resum de la proposta}
+
+Aquest projecte proposa l'optimització de recursos sanitaris mitjançant intel·ligència artificial generativa, combinant models de llenguatge amb arquitectures de Generació Augmentada per Recuperació (RAG) per millorar l'eficiència dels processos assistencials en sistemes sanitaris públics. L'enfocament se centra en la generació assistida d'informes clínics i protocols, reduint la càrrega administrativa dels professionals sanitaris i millorant la qualitat de la documentació clínica. El sistema integrarà fonts de coneixement estructurat (ex. ontologies mèdiques) i no estructurats (protocols i guies clíniques), implementant estratègies de recuperació híbrida que garanteixin precisió i coherència semàntica. 
+
+L'objectiu principal del projecte és el de focalitzar-se en un o dos processos  assistencials, avaluant l'impacte en termes de precisió clínica, reducció de temps i eficiència computacionals. Els resultats contribuiran a l'adopció responsable d'IA generativa en salut pública, demostrant com la combinació RAG + models de llenguatge pot transformar l'operativa dels sistemes sanitaris. 
+
+
+
+
+%\Descripció proposta
+\section*{Descripció de la proposta i justificació de l'interès i la rellevància}
+
+Els sistemes sanitaris públics enfronten un repte estructural, la sobrecàrrega administrativa dels professionals sanitaris, que destinen una gran part del seu temps en tasques documentals repetitives, reduint l'atenció directa al pacient. L'optimització d'aquests processos passa per solucions d'intel·ligència artificial generativa que siguin eficients i alineades amb protocols clínics oficials. 
+
+La proposta combina \textbf{models de llenguatge} amb \textbf{Retrieval-Augmented Generation (RAG)} per crear un sistema de generació assistida d'informes clínics i protocols que compleixi tres requisits crítics dels sistemes sanitaris públics:
+
+\begin{enumerate}
+\item Eficiència computacional: Models optimitzats per infraestructures existents sense requerir GPU dedicades.
+\item Traçabilitat clínica: Cada resposta referenciada a protocols/guies oficials.
+\item Coherència semàntica: Integració coneixement estructurat (ontologies mèdiques) per evitar incoherències terminològiques.
+\end{enumerate}
+
+\textbf{Estratègia híbrida de coneixement}: El sistema recuperarà simultàniament:
+\begin{itemize}
+\item Fonts no estructurades: Protocols, guies clíniques, normativa SAS.
+\item Fonts estructurades: Ontologies mèdiques per relacions semàntiques.
+\end{itemize}
+
+L'interès acadèmic radica en validar l'eficàcia de RAG en domini sanitari altament regulat, on la precisió i traçabilitat són imperatius legals. La rellevància pràctica es materialitza en processos com informes d'alta i derivacions que representen milers d'hores anuals de feina manual redundant. Aquest enfocament demostra com l'IA generativa pot transformar l'operativitat administrativa sense comprometre la seguretat clínica, contribuint a una gestió més eficient dels recursos sanitaris públics.
+
+
+%\Motivació personal
+\section*{Explicació de la motivació personal}
+
+La meva motivació per aquest projecte es basa en tres dimensions que defineixen el meu compromís amb la Ciència de Dades i la IA:
+
+\textbf{1. Impacte social transformador}  
+
+L'optimització de processos sanitaris públics té un efecte multiplicador: alliberar professionals sanitaris de la burocràcia significa més temps per a pacients, menys saturació dels serveis i una atenció més humana i eficient. Contribuir a aquesta transformació social és el motor principal d'aquest projecte.
+
+\textbf{2. Reptes tècnics de frontera}  
+
+Integrar RAG amb models de llenguatge en domini sanitari presenta desafiaments complexos: recuperació semàntica precisa en textos mèdics, gestió de coneixement híbrida (estructurat/no estructurat), desplegament eficient i validació clínica rigorosa. Aquests reptes em desafien tècnicament al màxim.
+
+\textbf{3. Oportunitat d'aprendre IA avançada}  
+
+Aquest projecte em permet dominar tecnologies emergents (RAG, embeddings mèdics, pipelines híbrids) en un context real i crític. L'àmbit sanitari exigeix màxima precisió, obligant-me a assolir un nivell tècnic superior i aprendre contínuament sobre l'evolució de la IA generativa.
+
+Aquest treball representa l'oportunitat perfecta per generar impacte social mesurable mentre desenvolupo competències en IA aplicada a reptes reals.
+
+
+
+
+
+
+
+
+
+%\Definició dels objectius
+\section*{Definició dels objectius}
+
+\subsection*{Objectius principals}
+\begin{itemize}
+\item Desenvolupar un sistema RAG basat en models de llenguatge que optimitzi processos assistencials sanitaris mitjançant generació assistida d'informes clínics i protocols.
+\item Demostrar com la integració de coneixement estructurat i no estructurat millora la precisió, coherència semàntica i eficiència dels sistemes d'IA generativa en domini sanitari.
+\end{itemize}
+
+\subsection*{Objectius secundaris}
+\begin{itemize}
+\item Identificar i preparar fonts de coneixement rellevants per processos sanitaris (protocols, guies clíniques, ontologies mèdiques).
+\item Implementar estratègies de recuperació híbrida combinant cerca vectorial semàntica amb filtratge basat en coneixement estructurat.
+\item Dissenyar pipelines d'adaptació de models de llenguatge per generació de contingut clínic alineat amb estàndards oficials.
+\item Establir mètriques d'avaluació específica del domini sanitari (precisió clínica, adherència a protocols, eficiència computacional).
+\item Definir un conjunt de casos d'ús i escenaris de prova que reflecteixin consultes i tasques reals de professionals sanitaris, incloent-hi escenaris de suport a la codificació i a la generació d'informes.
+\item Avaluar l'impacte pràctic del sistema en processos concrets de la Junta d'Andalusia (informes d'alta, derivacions).
+\item Analitzar limitacions tècniques i requeriments per al desplegament en infraestructures sanitaris públiques.
+\end{itemize}
+
+
+
+%\Metodologia
+\section*{Descripció de la metodologia emprada en el desenvolupament del projecte}
+La metodologia del projecte combinarà revisió de literatura, disseny conceptual, desenvolupament de prototip tècnic i avaluació experimental.
+
+En primer lloc, revisió de l'estat de l'art sobre RAG en sanitat, aplicació d'ontologies biomèdiques en sistemes clínics i integració amb models de llenguatge. Aquesta fase de revisió ens permetrà identificar enfocaments, limitacions, bones pràctiques i recomanacions metodològiques rellevants.
+
+En segon lloc, definició del cas d'ús concret dins processos sanitaris de la Junta d'Andalusia (informes d'alta, derivacions) i selecció de fonts: protocols/guies clíniques (coneixement no estructurat) i ontologies mèdiques rellevants (coneixement estructurat). Es construirà un subgraf ontològic centrat en conceptes pertinents al cas d'ús.
+
+
+En tercer lloc, es dissenyarà i implementarà l'arquitectura RAG: 
+\begin{itemize}
+\item Selecció del model de llenguatge.
+\item Disseny del procés de representació i fragmentació (Chunking) semàntic de document i ontologies. 
+\item Construcció del magatzem vectorial amb metadades ontològiques 
+\item Definició d'estratègies recuperació híbrida: cerca vectorial + filtratge ontològic
+\item Desenvolupament d'una pipeline d'anotació semàntica: mapeig text$\to$codis ontològics
+\item Disseny de prompts/plantilles per guiar el model en la generació d'informes i respostes traçable incloent-hi cites a les fonts recuperades i referències als codis ontològics utilitzats.
+\end{itemize}
+
+Finalment, experiments comparatius (RAG textual vs RAG ontològic) amb mètriques de precisió clínica, coherència semàntica i eficiència computacional, analitzant fortaleses, limitacions i viabilitat de desplegament en infraestructures sanitaris públiques.
+
+
+%\Planificació
+\section*{Planificació o pla de recerca del projecte}
+Es proposa una planificació orientativa en 5 fases dividint les 14 setmanes efectives de treball: 
+
+\begin{itemize}
+    \item \textbf{Fase 1 (setmanes 1--3):}
+    Revisió exhaustiva de l'estat de l'art sobre RAG en sanitat, aplicació d'ontologies biomèdiques en sistemes clínics, integració amb models de llenguatge i bones pràctiques IA generativa en salut; identificació d'enfocaments, limitacions i tecnologies rellevants.
+    
+    
+    \item \textbf{Fase 2 (setmanes 4--6):} Definició cas d'ús concret (informes d'alta/derivacions); selecció i preparació corpus textual (protocols/guies SAS); identificació i construcció subgraf ontològic rellevant; definició de l'estratègia anotació semàntica.
+
+    \item \textbf{Fase 3 (setmanes 7--9):} Disseny i implementació de l'arquitectura RAG: preprocessament/chunking semàntic, magatzem vectorial amb metadades ontològiques, recuperació híbrida, pipeline anotació semàntica, disseny de prompts per generació clínica.
+      
+    \item \textbf{Fase 4 (setmanes 10--12):} Disseny de l'estratègia d'avaluació, definició de mètriques i escenaris de prova(precisió clínica, coherència semàntica, eficiència); execució d'experiments comparatius; recollida resultats quantitatius/qualitatius.
+    
+    \item \textbf{Fase 5 (setmanes 13--14):} Anàlisi dels resultats, discussió de les implicacions, limitacions i possibles extensions (per exemple, ampliació a altres processos o ontologies); redacció de la memòria final i preparació de la defensa.
+  
+\end{itemize}
+
+\textbf{Riscos identificats i mitigació:}
+\begin{itemize}
+\item \textit{Accés limitat protocols SAS} $\to$ Fonts públiques + contacte directe
+\item \textit{Complexitat integració ontologies} $\to$ Enfocament modular + iteratiu
+\item \textit{Rendiment models domini específic} $\to$ Múltiples alternatives + prompt engineering
+\end{itemize}
+
+Aquesta planificació és flexible i podrà ajustar-se en funció de la disponibilitat de dades, eines i recursos computacionals.
+
+
+
+%\ Bibliografia
+\section*{Bibliografia}
+\begin{thebibliography}{9}
+
+\bibitem{bioportal}
+Autors diversos.
+\newblock \emph{BioPortal: an open community resource for sharing, searching, and visualizing biomedical ontologies}.
+\newblock Article de referència sobre BioPortal com a infraestructura d'ontologies biomèdiques.
+
+\bibitem{ontologies_ai_health}
+Autors diversos.
+\newblock \emph{Utilization of Ontology to Develop Artificial Intelligence Systems in Healthcare}.
+\newblock Revisió sobre l'ús d'ontologies biomèdiques (com SNOMED CT, MESH i MEDDRA) en el desenvolupament de sistemes d'IA en salut.
+
+\bibitem{rag_health}
+Autors diversos.
+\newblock \emph{Retrieval augmented generation for large language models in healthcare}.
+\newblock Revisió sistemàtica sobre mètodes RAG, conjunts de dades i tècniques d'avaluació en el domini mèdic.
+
+\bibitem{ontologyrag}
+Autors diversos.
+\newblock \emph{OntologyRAG: Better and Faster Biomedical Code Mapping with Retrieval-Augmented Generation}.
+\newblock Treball sobre l'ús de grafs d'ontologia i RAG per millorar el mapatge de codis biomèdics i el raonament semàntic.
+
+\bibitem{llm_ontology_harmonization}
+Autors diversos.
+\newblock \emph{Ontology- and LLM-based Data Harmonization for Federated Learning in Healthcare}.
+\newblock Estudi sobre harmonització de dades en salut utilitzant ontologies i models de llenguatge.
+
+\bibitem{rag_datos1}
+Ministeri d'Hisenda - Datos.gob.es.
+\newblock \emph{RAG (Retrieval-Augmented Generation): la llave que abre la puerta de la precisión de los modelos de IA}.
+\newblock \url{https://datos.gob.es/es/blog/rag-retrieval-augmented-generation-la-llave-que-abre-la-puerta-de-la-precision-los-modelos-del}. Consultat: 1 març 2026.
+
+\bibitem{rag_datos2}
+Ministeri d'Hisenda - Datos.gob.es.
+\newblock \emph{SLM, LLM, RAG y Fine-tuning: pilares de la IA generativa moderna}.
+\newblock \url{https://datos.gob.es/es/blog/slm-llm-rag-y-fine-tuning-pilares-de-la-ia-generativa-moderna}. Consultat: 1 març 2026.
+
+\bibitem{rag_databricks}
+Databricks.
+\newblock \emph{What is Retrieval-Augmented Generation (RAG)?}.
+\newblock \url{https://www.databricks.com/glossary/retrieval-augmented-generation-rag}. Consultat: 1 març 2026.
+
+\bibitem{rag_google}
+Google Cloud.
+\newblock \emph{Retrieval-Augmented Generation (RAG)}.
+\newblock \url{https://cloud.google.com/use-cases/retrieval-augmented-generation?hl=es}. Consultat: 1 març 2026.
+
+\end{thebibliography}
+
+\vspace{0.5cm}
+
+\noindent\textbf{Plataformes d'Intel·ligència Artificial i eines de recerca utilitzades:}
+\begin{itemize}
+\item \textbf{Perplexity AI}: cerca acadèmica avançada i sistematització de resultats
+\item \textbf{ChatGPT}: suport en ideació conceptual i refinament tècnic
+\item \textbf{Google / Google AI Mode}: cerques inicials i validació d'enfocaments
+\item \textbf{Research Rabbit}: descobriment de papers relacionats i xarxes bibliomètriques
+\end{itemize}
+
+
+\end{document}
