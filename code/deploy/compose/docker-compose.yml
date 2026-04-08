@@ -1,0 +1,56 @@
+version: '3.8'
+name: healthcare-rag
+services:
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: healthcare-rag-qdrant
+    ports:
+      - "6333:6333" # API
+      - "6334:6334" # gRPC
+    volumes:
+      - ../../data/qdrant_storage:/qdrant/storage
+    environment:
+      - QDRANT__SERVICE__HTTP_PORT=6333
+      - QDRANT__SERVICE__GRPC_PORT=6334
+    restart: unless-stopped
+    networks:
+      - healthcare-rag-network
+    # healthcheck temporalment desactivat per problemes amb OrbStack
+    # healthcheck:
+    #   test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:6333/health" ]
+    #   interval: 10s
+    #   timeout: 5s
+    #   retries: 5
+    #   start_period: 30s
+
+  api:
+    build:
+      context: ../..
+      dockerfile: deploy/docker/Dockerfile
+    container_name: healthcare-rag-api
+    ports:
+      - "8000:8000"
+    environment:
+      - APP_ENV=production
+      - QDRANT_HOST=qdrant
+      - QDRANT_PORT=6333
+      - OLLAMA_BASE_URL=http://host.docker.internal:11434
+      - EMBEDDING_DEVICE=cpu
+    volumes:
+      - ../../data:/app/data
+      - ../../config:/app/config
+    depends_on:
+      - qdrant
+    restart: unless-stopped
+    networks:
+      - healthcare-rag-network
+    # healthcheck temporalment desactivat
+    # healthcheck:
+    #   test: ["CMD", "curl", "-f", "http://localhost:8000/health/live"]
+    #   interval: 30s
+    #   timeout: 10s
+    #   retries: 3
+
+networks:
+  healthcare-rag-network:
+    driver: bridge
