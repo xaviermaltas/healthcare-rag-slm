@@ -1,0 +1,92 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    // --- Tests d'integracio ---
+    {
+      "name": "🧪 Integration: Embeddings",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "/Users/xaviermaltastarridas/Desktop/myRepos/healthcare-rag-slm/code/src/test/integration/api/test_embeddings.py",
+      "python": "/Users/xaviermaltastarridas/Desktop/myRepos/healthcare-rag-slm/code/healthcare-rag-env/bin/python3",
+      "console": "integratedTerminal",
+      "cwd": "/Users/xaviermaltastarridas/Desktop/myRepos/healthcare-rag-slm/code",
+      "justMyCode": false,
+      "envFile": "/Users/xaviermaltastarridas/Desktop/myRepos/healthcare-rag-slm/code/.env"
+    },
+    // --- Tests unitaris ---
+    {
+      "name": "🧪 Unit: Core Components",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "/Users/xaviermaltastarridas/Desktop/myRepos/healthcare-rag-slm/code/src/test/unit/core/test_core_components.py",
+      "python": "/Users/xaviermaltastarridas/Desktop/myRepos/healthcare-rag-slm/code/healthcare-rag-env/bin/python3",
+      "console": "integratedTerminal",
+      "cwd": "/Users/xaviermaltastarridas/Desktop/myRepos/healthcare-rag-slm/code",
+      "justMyCode": false,
+      "envFile": "/Users/xaviermaltastarridas/Desktop/myRepos/healthcare-rag-slm/code/.env"
+    },
+    // --- Pytest ---
+    {
+      "name": "🧪 Pytest: All Tests",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "/Users/xaviermaltastarridas/Desktop/myRepos/healthcare-rag-slm/code/healthcare-rag-env/bin/pytest",
+      "args": ["src/test/", "-v"],
+      "console": "integratedTerminal",
+      "cwd": "/Users/xaviermaltastarridas/Desktop/myRepos/healthcare-rag-slm/code",
+      "justMyCode": false,
+      "envFile": "/Users/xaviermaltastarridas/Desktop/myRepos/healthcare-rag-slm/code/.env"
+    },
+    {
+      "name": "🧪 Pytest: Unit Tests Only",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "/Users/xaviermaltastarridas/Desktop/myRepos/healthcare-rag-slm/code/healthcare-rag-env/bin/pytest",
+      "args": ["src/test/unit/", "-v"],
+      "console": "integratedTerminal",
+      "cwd": "/Users/xaviermaltastarridas/Desktop/myRepos/healthcare-rag-slm/code",
+      "justMyCode": false,
+      "envFile": "/Users/xaviermaltastarridas/Desktop/myRepos/healthcare-rag-slm/code/.env"
+    },
+    {
+      "name": "🧪 Pytest: Integration Tests Only",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "/Users/xaviermaltastarridas/Desktop/myRepos/healthcare-rag-slm/code/healthcare-rag-env/bin/pytest",
+      "args": ["src/test/integration/", "-v"],
+      "console": "integratedTerminal",
+      "cwd": "/Users/xaviermaltastarridas/Desktop/myRepos/healthcare-rag-slm/code",
+      "justMyCode": false,
+      "envFile": "/Users/xaviermaltastarridas/Desktop/myRepos/healthcare-rag-slm/code/.env"
+    },
+    // --- API ---
+    {
+      "name": "🚀 Run API (local, sense Docker)",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "/Users/xaviermaltastarridas/Desktop/myRepos/healthcare-rag-slm/code/healthcare-rag-env/bin/uvicorn",
+      "args": [
+        "src.main.main:app",
+        "--host", "0.0.0.0",
+        "--port", "8000",
+        "--reload"
+      ],
+      "console": "integratedTerminal",
+      "cwd": "/Users/xaviermaltastarridas/Desktop/myRepos/healthcare-rag-slm/code",
+      "justMyCode": false,
+      "envFile": "/Users/xaviermaltastarridas/Desktop/myRepos/healthcare-rag-slm/code/.env"
+    },
+    // --- Fitxer actiu ---
+    {
+      "name": "▶️ Run Current File",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${file}",
+      "python": "/Users/xaviermaltastarridas/Desktop/myRepos/healthcare-rag-slm/code/healthcare-rag-env/bin/python3",
+      "console": "integratedTerminal",
+      "cwd": "/Users/xaviermaltastarridas/Desktop/myRepos/healthcare-rag-slm/code",
+      "justMyCode": false,
+      "envFile": "/Users/xaviermaltastarridas/Desktop/myRepos/healthcare-rag-slm/code/.env"
+    }
+  ]
+}

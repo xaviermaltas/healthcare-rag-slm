@@ -8,8 +8,8 @@ import asyncio
 import sys
 import os
 
-# Afegir el directori arrel al PYTHONPATH
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+# Afegir el directori arrel del projecte al PYTHONPATH (src/test/unit/core → 4 nivells amunt)
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..', '..')))
 
 from src.main.core.ingestion.connectors.bioporter import BioPortalConnector
 from src.main.core.ingestion.connectors.medlineplus import MedlinePlusConnector

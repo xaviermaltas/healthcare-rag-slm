@@ -10,7 +10,7 @@ import asyncio
 import logging
 from datetime import datetime
 
-from src.main.api.dependencies import get_ollama_client, get_qdrant_client
+from src.main.api.dependencies import get_ollama_client, get_qdrant_client, get_embeddings_model
 from src.main.infrastructure.llm.ollama_client import OllamaClient
 from src.main.infrastructure.vector_db.qdrant_client import HealthcareQdrantClient
 # from src.main.infrastructure.embeddings.bge_m3 import BGEM3Embeddings  # Temporarily disabled
@@ -50,9 +50,9 @@ class QueryResponse(BaseModel):
 @router.post("/", response_model=QueryResponse)
 async def query_rag(
     request: QueryRequest,
-    background_tasks: BackgroundTasks,
     ollama_client: OllamaClient = Depends(get_ollama_client),
-    qdrant_client: HealthcareQdrantClient = Depends(get_qdrant_client)
+    qdrant_client: HealthcareQdrantClient = Depends(get_qdrant_client),
+    embeddings_model = Depends(get_embeddings_model)
 ):
     """Main RAG query endpoint"""
     
@@ -64,9 +64,12 @@ async def query_rag(
         entities = medical_ner.extract_entities(request.query)
         entity_summary = medical_ner.get_entity_summary(entities)
         
-        # Step 2: Embeddings temporarily disabled - using empty results
-        logger.warning("Embeddings disabled - returning empty retrieval results")
-        retrieved_docs = []
+        # Step 2: Generate query embeddings and retrieve documents
+        query_embedding = await embeddings_model.encode([request.query])
+        retrieved_docs = await qdrant_client.search(
+            query_vector=query_embedding[0],
+            limit=request.top_k
+        )
         
         if not retrieved_docs:
             logger.warning("No relevant documents found")
@@ -217,13 +220,17 @@ async def retrieve_documents(
     query: str,
     top_k: int = 10,
     score_threshold: float = 0.0,
-    qdrant_client: HealthcareQdrantClient = Depends(get_qdrant_client)
+    qdrant_client: HealthcareQdrantClient = Depends(get_qdrant_client),
+    embeddings_model = Depends(get_embeddings_model)
 ):
     """Retrieve relevant documents without generation"""
     try:
-        # Embeddings temporarily disabled
-        logger.warning("Embeddings disabled - returning empty retrieval results")
-        documents = []
+        # Generate query embeddings and retrieve documents
+        query_embedding = await embeddings_model.encode([query])
+        documents = await qdrant_client.search(
+            query_vector=query_embedding[0],
+            limit=top_k
+        )
         
         return {
             "query": query,

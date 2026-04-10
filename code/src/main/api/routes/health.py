@@ -8,10 +8,10 @@ from typing import Dict, Any
 import asyncio
 import logging
 
-from src.main.api.dependencies import get_ollama_client, get_qdrant_client
+from src.main.api.dependencies import get_ollama_client, get_qdrant_client, get_embeddings_model
 from src.main.infrastructure.llm.ollama_client import OllamaClient
 from src.main.infrastructure.vector_db.qdrant_client import HealthcareQdrantClient
-# from src.main.infrastructure.embeddings.bge_m3 import BGEM3Embeddings  # Temporarily disabled
+from src.main.infrastructure.embeddings.bge_m3 import BGEM3Embeddings
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -63,12 +63,6 @@ async def health_check(
         }
         health_status["status"] = "degraded"
     
-    # Embeddings temporarily disabled
-    health_status["components"]["embeddings"] = {
-        "status": "disabled",
-        "message": "Embeddings temporarily disabled for compatibility"
-    }
-    
     # Determine overall status
     component_statuses = [comp.get("status") for comp in health_status["components"].values()]
     if "error" in component_statuses:
@@ -118,12 +112,19 @@ async def qdrant_health(qdrant_client: HealthcareQdrantClient = Depends(get_qdra
 
 
 @router.get("/embeddings")
-async def embeddings_health():
+async def embeddings_health(embeddings_model: BGEM3Embeddings = Depends(get_embeddings_model)):
     """Detailed embeddings model health check"""
-    return {
-        "status": "disabled",
-        "message": "Embeddings temporarily disabled for compatibility"
-    }
+    try:
+        is_healthy = await embeddings_model.health_check()
+        return {
+            "status": "healthy" if is_healthy else "unhealthy",
+            "model": embeddings_model.model_name,
+            "device": embeddings_model.device,
+            "batch_size": embeddings_model.batch_size
+        }
+    except Exception as e:
+        logger.error(f"Embeddings health check failed: {e}")
+        raise HTTPException(status_code=503, detail=f"Embeddings health check failed: {str(e)}")
 
 
 @router.get("/ready")

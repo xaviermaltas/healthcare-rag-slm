@@ -59,13 +59,13 @@ class HealthcareQdrantClient:
                 size=self.vector_size,
                 distance=Distance.COSINE
             ),
-            optimizers_config=models.OptimizersConfig(
+            optimizers_config=models.OptimizersConfigDiff(
                 default_segment_number=2,
                 max_segment_size=20000,
                 memmap_threshold=20000,
                 indexing_threshold=20000
             ),
-            hnsw_config=models.HnswConfig(
+            hnsw_config=models.HnswConfigDiff(
                 m=16,
                 ef_construct=100,
                 full_scan_threshold=10000,

@@ -11,7 +11,7 @@ import logging
 from config.settings import get_settings
 from src.main.infrastructure.llm.ollama_client import OllamaClient
 from src.main.infrastructure.vector_db.qdrant_client import HealthcareQdrantClient
-# from src.main.infrastructure.embeddings.bge_m3 import BGEM3Embeddings  # Temporalment desactivat
+from src.main.infrastructure.embeddings.bge_m3 import BGEM3Embeddings
 
 logger = logging.getLogger(__name__)
 settings = get_settings()
@@ -19,7 +19,7 @@ settings = get_settings()
 # Global instances
 _ollama_client: Optional[OllamaClient] = None
 _qdrant_client: Optional[HealthcareQdrantClient] = None
-# _embeddings_model: Optional[BGEM3Embeddings] = None  # Temporalment desactivat
+_embeddings_model: Optional[BGEM3Embeddings] = None
 
 
 async def get_ollama_client() -> OllamaClient:
@@ -59,29 +59,23 @@ async def get_qdrant_client() -> HealthcareQdrantClient:
     return _qdrant_client
 
 
-# Temporalment desactivat per evitar dependències de torch
-# @lru_cache()
-# async def get_embeddings_model() -> BGEM3Embeddings:
-#     """Get or create embeddings model instance"""
-#     global _embeddings_model
-#     
-#     if _embeddings_model is None:
-#         _embeddings_model = BGEM3Embeddings(
-#             model_name=settings.EMBEDDING_MODEL,
-#             device=settings.EMBEDDING_DEVICE,
-#             batch_size=settings.EMBEDDING_BATCH_SIZE,
-#             cache_dir=settings.EMBEDDINGS_CACHE_DIR
-#         )
-#         
-#         # Initialize model
-#         if not await _embeddings_model.initialize():
-#             logger.warning("Failed to initialize embeddings model")
-#     
-#     return _embeddings_model
-
-async def get_embeddings_model():
-    """Placeholder - embeddings temporalment desactivats"""
-    raise NotImplementedError("Embeddings temporalment desactivats per compatibilitat")
+async def get_embeddings_model() -> BGEM3Embeddings:
+    """Get or create embeddings model instance"""
+    global _embeddings_model
+    
+    if _embeddings_model is None:
+        _embeddings_model = BGEM3Embeddings(
+            model_name=settings.EMBEDDING_MODEL,
+            device=settings.EMBEDDING_DEVICE,
+            batch_size=settings.EMBEDDING_BATCH_SIZE,
+            cache_dir=settings.EMBEDDINGS_CACHE_DIR
+        )
+        
+        # Initialize model
+        if not await _embeddings_model.initialize():
+            logger.warning("Failed to initialize embeddings model")
+    
+    return _embeddings_model
 
 
 async def cleanup_dependencies():

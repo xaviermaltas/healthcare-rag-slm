@@ -7,6 +7,16 @@ set -e
 
 echo "🏥 Healthcare RAG System Setup"
 echo "=============================="
+echo ""
+echo "Prerequisits necessaris:"
+echo "  ✔ macOS amb Homebrew (https://brew.sh)"
+echo "  ✔ Docker o OrbStack en execució (https://orbstack.dev)"
+echo "  ✔ Python 3.11+ instal·lat"
+echo ""
+echo "Aquest script crearà l'entorn virtual 'healthcare-rag-env'."
+echo "Un cop instal·lat, SEMPRE usa aquest intèrpret Python:"
+echo "  ./healthcare-rag-env/bin/python3"
+echo ""
 
 # Colors for output
 RED='\033[0;31m'
@@ -32,25 +42,19 @@ print_error() {
     echo -e "${RED}[ERROR]${NC} $1"
 }
 
-# Check if running on macOS
-if [[ "$OSTYPE" != "darwin"* ]]; then
-    print_error "This script is designed for macOS. Please adapt for your OS."
-    exit 1
-fi
-
-# Check if Homebrew is installed
-if ! command -v brew &> /dev/null; then
-    print_error "Homebrew is required but not installed. Please install it first."
-    exit 1
-fi
-
 print_status "Checking system requirements..."
 
 # Check if Ollama is installed
 if ! command -v ollama &> /dev/null; then
-    print_status "Installing Ollama..."
-    brew install ollama
-    print_success "Ollama installed"
+    print_warning "Ollama not found. Install it from https://ollama.com/download"
+    if [[ "$OSTYPE" == "darwin"* ]] && command -v brew &> /dev/null; then
+        print_status "Installing Ollama via Homebrew..."
+        brew install ollama
+        print_success "Ollama installed"
+    else
+        print_error "Please install Ollama manually and re-run this script."
+        exit 1
+    fi
 else
     print_success "Ollama already installed"
 fi
@@ -63,21 +67,22 @@ fi
 
 print_success "Docker/OrbStack is running"
 
-# Check Python version
-PYTHON_VERSION=$(python3 --version 2>&1 | cut -d' ' -f2 | cut -d'.' -f1,2)
-REQUIRED_VERSION="3.11"
-
+# Check Python version (3.11+)
 if ! python3 -c "import sys; exit(0 if sys.version_info >= (3, 11) else 1)" 2>/dev/null; then
-    print_status "Installing Python 3.11..."
-    brew install python@3.11
-    print_success "Python 3.11 installed"
+    print_error "Python 3.11+ is required. Current: $(python3 --version 2>&1)"
+    print_error "Install from https://www.python.org/downloads/ or via Homebrew: brew install python@3.12"
+    exit 1
 else
-    print_success "Python 3.11+ is available"
+    print_success "Python $(python3 --version 2>&1 | cut -d' ' -f2) available"
 fi
 
 # Start Ollama service
 print_status "Starting Ollama service..."
-brew services start ollama
+if [[ "$OSTYPE" == "darwin"* ]] && command -v brew &> /dev/null; then
+    brew services start ollama
+else
+    ollama serve &>/dev/null &
+fi
 sleep 3
 
 # Download required models
@@ -97,14 +102,27 @@ else
 fi
 
 # Create Python virtual environment
-print_status "Creating Python virtual environment..."
-python3.11 -m venv venv
-source venv/bin/activate
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+VENV_NAME="healthcare-rag-env"
+
+print_status "Creating Python virtual environment ($VENV_NAME)..."
+python3 -m venv "$PROJECT_ROOT/$VENV_NAME"
+source "$PROJECT_ROOT/$VENV_NAME/bin/activate"
 
 # Install Python dependencies
 print_status "Installing Python dependencies..."
-pip install --upgrade pip
-pip install -r requirements.txt
+python3 -m pip install --upgrade pip
+python3 -m pip install -r "$PROJECT_ROOT/requirements.txt"
+
+# Set up .env if not present
+if [ ! -f "$PROJECT_ROOT/.env" ]; then
+    print_status "Creating .env from .env.example..."
+    cp "$PROJECT_ROOT/.env.example" "$PROJECT_ROOT/.env"
+    print_warning "Review and edit .env with your API keys before running the system"
+else
+    print_success ".env already exists"
+fi
 
 print_success "Python dependencies installed"
 
@@ -116,8 +134,9 @@ mkdir -p config/ontologies
 print_success "Data directories created"
 
 # Start Qdrant with Docker
+COMPOSE_FILE="$PROJECT_ROOT/deploy/compose/docker-compose.yml"
 print_status "Starting Qdrant vector database..."
-docker-compose up -d qdrant
+docker compose -f "$COMPOSE_FILE" up -d qdrant
 
 # Wait for Qdrant to be ready
 print_status "Waiting for Qdrant to be ready..."
@@ -135,7 +154,7 @@ done
 
 # Build and start API service
 print_status "Building and starting API service..."
-docker-compose up -d api
+docker compose -f "$COMPOSE_FILE" up -d api
 
 # Wait for API to be ready
 print_status "Waiting for API to be ready..."
@@ -153,19 +172,27 @@ done
 
 # Run system verification
 print_status "Running system verification..."
-python3 scripts/verify_setup.py
+python3 "$PROJECT_ROOT/scripts/verify_setup.py"
 
 print_success "Healthcare RAG System setup completed successfully!"
 echo ""
-echo "🌐 Services available at:"
+echo "🌐 Serveis disponibles:"
 echo "  - Ollama: http://localhost:11434"
 echo "  - Qdrant: http://localhost:6333"
-echo "  - API: http://localhost:8000"
-echo "  - API Docs: http://localhost:8000/docs"
+echo "  - API:    http://localhost:8000"
+echo "  - Docs:   http://localhost:8000/docs"
 echo ""
-echo "🧪 Test the system:"
-echo "  curl -X POST \"http://localhost:8000/query/\" \\"
-echo "       -H \"Content-Type: application/json\" \\"
-echo "       -d '{\"query\": \"¿Cuáles son los síntomas de la diabetes?\"}'"
+echo "🐍 Entorn virtual creat a: $PROJECT_ROOT/$VENV_NAME"
 echo ""
-echo "📚 For more information, see README.md"
+echo "   Per activar-lo manualment:"
+echo "   source $PROJECT_ROOT/$VENV_NAME/bin/activate"
+echo ""
+echo "   O usa l'script d'execució directa (sense activar):"
+echo "   ./scripts/activate_and_run.sh python3 src/test/unit/core/test_core_components.py"
+echo "   ./scripts/activate_and_run.sh pytest src/test/ -v"
+echo ""
+echo "⚠️  IMPORTANT — Intèrpret Python per al teu IDE (Windsurf/VS Code):"
+echo "   Selecciona manualment: $PROJECT_ROOT/$VENV_NAME/bin/python3"
+echo "   Cmd+Shift+P → 'Python: Select Interpreter' → Enter interpreter path"
+echo ""
+echo "📚 Més informació: README.md"

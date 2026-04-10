@@ -41,15 +41,14 @@ def test_python_packages():
     
     required_packages = [
         "fastapi",
-        "uvicorn", 
+        "uvicorn",
         "qdrant_client",
         "sentence_transformers",
-        "FlagEmbedding",
         "transformers",
         "torch",
-        "langchain",
         "pydantic",
         "aiohttp",
+        "httpx",
         "numpy",
         "pandas"
     ]
@@ -174,13 +173,8 @@ def test_embeddings():
     print_status("Testing embeddings functionality...")
     
     try:
-        from indexing.embeddings.bge_m3 import BGEM3Embeddings
-        
-        # Initialize embeddings model
-        embeddings = BGEM3Embeddings(device="cpu")
-        
-        # This is a basic test - in practice you'd run this async
-        print_status("BGE-M3 embeddings model can be imported ✓", "SUCCESS")
+        from src.main.infrastructure.embeddings.bge_m3 import BGEM3Embeddings
+        print_status("BGE-M3 embeddings model (sentence-transformers) pot ser importat ✓", "SUCCESS")
         return True
         
     except Exception as e:
@@ -193,16 +187,16 @@ def test_directories():
     
     required_dirs = [
         "data",
-        "data/raw", 
+        "data/raw",
         "data/processed",
         "data/embeddings",
         "data/qdrant_storage",
         "config",
-        "ingestion",
-        "indexing", 
-        "retrieval",
-        "generation",
-        "api"
+        "src/main/api",
+        "src/main/core",
+        "src/main/infrastructure",
+        "src/test",
+        "deploy/compose"
     ]
     
     all_exist = True
@@ -222,8 +216,9 @@ def test_configuration():
     
     config_files = [
         ".env",
+        ".env.example",
         "requirements.txt",
-        "docker-compose.yml"
+        "deploy/compose/docker-compose.yml"
     ]
     
     all_exist = True

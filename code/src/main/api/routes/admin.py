@@ -9,7 +9,7 @@ from typing import Dict, List, Optional, Any
 import logging
 import asyncio
 
-from src.main.api.dependencies import get_ollama_client, get_qdrant_client
+from src.main.api.dependencies import get_ollama_client, get_qdrant_client, get_embeddings_model
 from src.main.infrastructure.llm.ollama_client import OllamaClient
 from src.main.infrastructure.vector_db.qdrant_client import HealthcareQdrantClient
 # from src.main.infrastructure.embeddings.bge_m3 import BGEM3Embeddings  # Temporarily disabled
@@ -29,7 +29,8 @@ class SystemStatus(BaseModel):
 @router.get("/status")
 async def get_system_status(
     ollama_client: OllamaClient = Depends(get_ollama_client),
-    qdrant_client: HealthcareQdrantClient = Depends(get_qdrant_client)
+    qdrant_client: HealthcareQdrantClient = Depends(get_qdrant_client),
+    embeddings_model = Depends(get_embeddings_model)
 ):
     """Get comprehensive system status"""
     try:
@@ -58,8 +59,8 @@ async def get_system_status(
                     "collection_info": collection_info
                 },
                 "embeddings": {
-                    "status": "disabled",
-                    "message": "Embeddings temporarily disabled for compatibility"
+                    "status": "healthy" if await embeddings_model.health_check() else "unhealthy",
+                    "model": embeddings_model.model_name
                 }
             },
             "timestamp": asyncio.get_event_loop().time()
@@ -74,7 +75,8 @@ async def get_system_status(
 async def initialize_system(
     background_tasks: BackgroundTasks,
     ollama_client: OllamaClient = Depends(get_ollama_client),
-    qdrant_client: HealthcareQdrantClient = Depends(get_qdrant_client)
+    qdrant_client: HealthcareQdrantClient = Depends(get_qdrant_client),
+    embeddings_model = Depends(get_embeddings_model)
 ):
     """Initialize or reinitialize system components"""
     try:
@@ -143,8 +145,11 @@ async def initialize_components(
         else:
             logger.info("Qdrant client initialized successfully")
         
-        # Embeddings temporarily disabled
-        logger.info("Embeddings temporarily disabled for compatibility")
+        # Initialize embeddings
+        if await embeddings_model.health_check():
+            logger.info("Embeddings model initialized successfully")
+        else:
+            logger.warning("Embeddings model initialization failed")
         
         logger.info("System component initialization completed")
         

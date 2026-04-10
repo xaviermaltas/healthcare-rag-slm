@@ -262,9 +262,6 @@ async def process_document_chunks(
     try:
         logger.info(f"Processing {len(chunks)} chunks for document {document['id']}")
         
-        # Embeddings temporarily disabled
-        logger.warning("Embeddings disabled - skipping document processing")
-        return
         for i, chunk in enumerate(chunks):
             doc_data = {
                 'id': f"{document['id']}_chunk_{i}",

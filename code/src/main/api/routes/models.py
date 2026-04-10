@@ -8,7 +8,7 @@ from pydantic import BaseModel
 from typing import Dict, List, Optional, Any
 import logging
 
-from src.main.api.dependencies import get_ollama_client
+from src.main.api.dependencies import get_ollama_client, get_embeddings_model
 from src.main.infrastructure.llm.ollama_client import OllamaClient
 # from src.main.infrastructure.embeddings.bge_m3 import BGEM3Embeddings  # Temporarily disabled
 
@@ -73,18 +73,31 @@ async def delete_ollama_model(
 
 
 @router.get("/embeddings")
-async def get_embeddings_info():
+async def get_embeddings_info(embeddings_model = Depends(get_embeddings_model)):
     """Get embeddings model information"""
-    return {
-        "status": "disabled",
-        "message": "Embeddings temporarily disabled for compatibility"
-    }
+    try:
+        is_healthy = await embeddings_model.health_check()
+        return {
+            "status": "healthy" if is_healthy else "unhealthy",
+            "model": embeddings_model.model_name,
+            "device": embeddings_model.device,
+            "batch_size": embeddings_model.batch_size
+        }
+    except Exception as e:
+        logger.error(f"Error getting embeddings info: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to get embeddings info: {str(e)}")
 
 
 @router.delete("/embeddings/cache")
-async def clear_embeddings_cache():
+async def clear_embeddings_cache(embeddings_model = Depends(get_embeddings_model)):
     """Clear embeddings cache"""
-    return {
-        "status": "disabled",
-        "message": "Embeddings temporarily disabled for compatibility"
-    }
+    try:
+        # Clear cache if model has cache
+        if hasattr(embeddings_model, 'clear_cache'):
+            await embeddings_model.clear_cache()
+            return {"status": "success", "message": "Embeddings cache cleared"}
+        else:
+            return {"status": "info", "message": "No cache to clear"}
+    except Exception as e:
+        logger.error(f"Error clearing embeddings cache: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to clear cache: {str(e)}")

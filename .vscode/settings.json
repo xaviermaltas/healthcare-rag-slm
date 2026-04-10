@@ -1,0 +1,12 @@
+{
+  "python.defaultInterpreterPath": "/Users/xaviermaltastarridas/Desktop/myRepos/healthcare-rag-slm/code/healthcare-rag-env/bin/python3",
+  "python.terminal.activateEnvironment": true,
+  "python.terminal.useEnvFile": true,
+  "python.envFile": "/Users/xaviermaltastarridas/Desktop/myRepos/healthcare-rag-slm/code/.env",
+  "python.testing.pytestEnabled": true,
+  "python.testing.pytestPath": "/Users/xaviermaltastarridas/Desktop/myRepos/healthcare-rag-slm/code/healthcare-rag-env/bin/pytest",
+  "python.testing.pytestArgs": ["code/src/test/", "-v"],
+  "python.testing.unittestEnabled": false,
+  "python.testing.autoTestDiscoverOnSaveEnabled": true,
+  "editor.formatOnSave": false
+}

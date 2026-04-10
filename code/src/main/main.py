@@ -13,7 +13,7 @@ from typing import Dict, List, Optional, Any
 
 from config.settings import get_settings
 from src.main.api.routes import health, query, documents, collections, models, admin
-from src.main.api.dependencies import get_ollama_client, get_qdrant_client
+from src.main.api.dependencies import get_ollama_client, get_qdrant_client, get_embeddings_model
 from src.main.api.middleware import setup_logging_middleware
 
 # Configure logging
@@ -43,8 +43,15 @@ async def lifespan(app: FastAPI):
         if not await qdrant_client.health_check():
             logger.warning("Qdrant client health check failed")
         
-        # Embeddings temporarily disabled
-        logger.info("Embeddings temporarily disabled for compatibility")
+        # Initialize Embeddings model
+        try:
+            embeddings_model = await get_embeddings_model()
+            if await embeddings_model.health_check():
+                logger.info("Embeddings model initialized successfully")
+            else:
+                logger.warning("Embeddings model health check failed")
+        except Exception as e:
+            logger.error(f"Failed to initialize embeddings model: {e}")
         
         logger.info("Healthcare RAG API started successfully")
         
