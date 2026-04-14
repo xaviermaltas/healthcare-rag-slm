@@ -38,15 +38,15 @@ fi
 cd deploy/compose
 
 echo "🛑 Aturant contenidors anteriors..."
-docker-compose down
+docker compose down
 
 echo ""
 echo "🔨 Construint imatges Docker..."
-docker-compose build --no-cache
+docker compose build --no-cache
 
 echo ""
 echo "🚀 Aixecant contenidors..."
-docker-compose up -d
+docker compose up -d
 
 echo ""
 echo "⏳ Esperant que els serveis estiguin llestos..."
@@ -89,5 +89,5 @@ echo "📝 Per veure logs:"
 echo "   docker logs -f healthcare-rag-api"
 echo ""
 echo "🛑 Per aturar el sistema:"
-echo "   cd deploy/compose && docker-compose down"
+echo "   ./scripts/stop.sh"
 echo "=============================================="

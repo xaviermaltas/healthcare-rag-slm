@@ -145,9 +145,9 @@ class HealthcareQdrantClient:
                 )
             
             # Perform search
-            search_result = self.client.search(
+            search_result = self.client.query_points(
                 collection_name=self.collection_name,
-                query_vector=query_vector.tolist() if isinstance(query_vector, np.ndarray) else query_vector,
+                query=query_vector.tolist() if isinstance(query_vector, np.ndarray) else query_vector,
                 limit=limit,
                 score_threshold=score_threshold,
                 query_filter=search_filter,
@@ -157,7 +157,7 @@ class HealthcareQdrantClient:
             
             # Format results
             results = []
-            for hit in search_result:
+            for hit in search_result.points:
                 result = {
                     'id': hit.id,
                     'score': hit.score,

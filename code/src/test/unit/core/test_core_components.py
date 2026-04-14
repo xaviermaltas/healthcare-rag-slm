@@ -131,7 +131,7 @@ def test_text_cleaner():
         Notes:     Patient presents with elevated glucose levels...
         """
         
-        cleaned = cleaner.clean(dirty_text)
+        cleaned = cleaner.clean_text(dirty_text)
         
         print("   Text original:")
         print(f"   {repr(dirty_text[:100])}...")
@@ -167,15 +167,15 @@ def test_medical_chunker():
         serious complications.
         """
         
-        chunks = chunker.chunk_text(medical_text)
+        chunks = chunker.chunk_document(medical_text)
         
         print(f"   Text original: {len(medical_text)} caràcters")
         print(f"   Nombre de chunks: {len(chunks)}")
         
         for i, chunk in enumerate(chunks[:3], 1):
             print(f"\n   Chunk {i}:")
-            print(f"   - Mida: {len(chunk['text'])} caràcters")
-            print(f"   - Contingut: {chunk['text'][:80]}...")
+            print(f"   - Mida: {len(chunk.content)} caràcters")
+            print(f"   - Contingut: {chunk.content[:80]}...")
         
         print_result("Medical Chunker", "OK", f"{len(chunks)} chunks generats")
         
@@ -199,7 +199,7 @@ def test_medical_ner():
         print(f"\n   Entitats detectades: {len(entities)}")
         
         for entity in entities:
-            print(f"   - {entity['text']}: {entity['label']} (score: {entity.get('score', 'N/A')})")
+            print(f"   - {entity.text}: {entity.entity_type} (score: {entity.confidence})")
         
         print_result("Medical NER", "OK", f"{len(entities)} entitats detectades")
         

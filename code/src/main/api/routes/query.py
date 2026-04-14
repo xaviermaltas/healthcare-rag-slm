@@ -13,7 +13,7 @@ from datetime import datetime
 from src.main.api.dependencies import get_ollama_client, get_qdrant_client, get_embeddings_model
 from src.main.infrastructure.llm.ollama_client import OllamaClient
 from src.main.infrastructure.vector_db.qdrant_client import HealthcareQdrantClient
-# from src.main.infrastructure.embeddings.bge_m3 import BGEM3Embeddings  # Temporarily disabled
+from src.main.infrastructure.embeddings.bge_m3 import BGEM3Embeddings
 from src.main.core.retrieval.query_processing.medical_ner import MedicalNER
 
 logger = logging.getLogger(__name__)
@@ -50,9 +50,10 @@ class QueryResponse(BaseModel):
 @router.post("/", response_model=QueryResponse)
 async def query_rag(
     request: QueryRequest,
+    background_tasks: BackgroundTasks,
     ollama_client: OllamaClient = Depends(get_ollama_client),
     qdrant_client: HealthcareQdrantClient = Depends(get_qdrant_client),
-    embeddings_model = Depends(get_embeddings_model)
+    embeddings_model: BGEM3Embeddings = Depends(get_embeddings_model)
 ):
     """Main RAG query endpoint"""
     
@@ -65,10 +66,11 @@ async def query_rag(
         entity_summary = medical_ner.get_entity_summary(entities)
         
         # Step 2: Generate query embeddings and retrieve documents
-        query_embedding = await embeddings_model.encode([request.query])
-        retrieved_docs = await qdrant_client.search(
-            query_vector=query_embedding[0],
-            limit=request.top_k
+        query_embedding = await embeddings_model.encode_query(request.query)
+        retrieved_docs = await qdrant_client.search_similar(
+            query_vector=query_embedding['dense'],
+            limit=request.top_k,
+            score_threshold=request.score_threshold
         )
         
         if not retrieved_docs:
@@ -226,10 +228,11 @@ async def retrieve_documents(
     """Retrieve relevant documents without generation"""
     try:
         # Generate query embeddings and retrieve documents
-        query_embedding = await embeddings_model.encode([query])
-        documents = await qdrant_client.search(
-            query_vector=query_embedding[0],
-            limit=top_k
+        query_embedding = await embeddings_model.encode_query(query)
+        documents = await qdrant_client.search_similar(
+            query_vector=query_embedding['dense'],
+            limit=top_k,
+            score_threshold=score_threshold
         )
         
         return {

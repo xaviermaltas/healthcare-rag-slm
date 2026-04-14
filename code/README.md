@@ -39,12 +39,12 @@ macOS M1/M2
 
 ## Requisits del Sistema
 
-- **macOS**: M1/M2 (recomanat per Metal GPU)
+- **SO**: macOS (recomanat M1/M2 per Metal GPU) o Linux
 - **RAM**: Mínim 16GB
 - **Emmagatzematge**: 10GB lliures
-- **Docker/OrbStack**: Instal·lat i funcionant
-- **Homebrew**: Instal·lat
-- **Python**: 3.11+ (compatible amb 3.14+)
+- **Docker**: Instal·lat i funcionant ([Docker Desktop](https://www.docker.com/products/docker-desktop/) o [OrbStack](https://orbstack.dev/))
+- **Ollama**: [ollama.com/download](https://ollama.com/download)
+- **Python**: 3.11+
 
 ## Instal·lació
 
@@ -55,39 +55,26 @@ git clone <repository-url>
 cd healthcare-rag-slm/code
 ```
 
-### 2. Crear Entorn Virtual (OBLIGATORI)
+### 2. Configurar Variables d'Entorn
 
 ```bash
-# Crear entorn virtual
-python3 -m venv healthcare-rag-env
-
-# Activar entorn virtual
-source healthcare-rag-env/bin/activate
-
-# Verificar que l'entorn està actiu (hauria d'aparèixer el nom)
-# (healthcare-rag-env) xaviermaltastarridas@...
-
-# Instal·lar dependències
-python3 -m pip install --upgrade pip
-python3 -m pip install -r code/requirements.txt
+cp .env.example .env
+# Edita .env si necessites API keys (ex: BIOPORTER_API_KEY)
 ```
 
-**Nota Important**: Si obtens "command not found: pip", utilitza sempre `python3 -m pip`.
-
-### 3. Executar Script d'Instal·lació
+### 3. Instal·lació Automàtica (recomanat)
 
 ```bash
-# Fer executable l'script
-chmod +x scripts/setup.sh
-
-# Executar instal·lació automàtica
-./scripts/setup.sh
+chmod +x scripts/bootstrap.sh
+./scripts/bootstrap.sh
 ```
 
 L'script automàticament:
-- ✅ Instal·la Ollama i models necessaris
-- ✅ Inicia serveis Docker (Qdrant)
-- ✅ Construeix i desplega l'API
+- ✅ Comprova Python 3.11+ i Docker
+- ✅ Crea l'entorn virtual `healthcare-rag-env`
+- ✅ Instal·la totes les dependències Python
+- ✅ Instal·la Ollama i descarrega els models LLM
+- ✅ Inicia Qdrant i API via Docker Compose
 - ✅ Verifica la instal·lació completa
 
 ### 4. Verificar Instal·lació
@@ -95,6 +82,39 @@ L'script automàticament:
 ```bash
 python3 scripts/verify_setup.py
 ```
+
+## Entorn Virtual i Intèrpret Python
+
+> ⚠️ **Important**: Sempre usa el Python de l'entorn virtual, mai el del sistema.
+
+El `bootstrap.sh` crea automàticament `healthcare-rag-env/`. L'intèrpret a usar és:
+
+```
+healthcare-rag-env/bin/python3
+```
+
+### Executar tests o scripts
+
+```bash
+# Amb l'script d'execució directa (recomanat, no cal activar el venv)
+./scripts/activate_and_run.sh pytest src/test/ -v
+./scripts/activate_and_run.sh python3 src/test/unit/core/test_core_components.py
+
+# O activant el venv manualment
+source healthcare-rag-env/bin/activate
+pytest src/test/ -v
+```
+
+### Configurar IDE (Windsurf / VS Code)
+
+Selecciona l'intèrpret del venv manualment:
+
+1. `Cmd+Shift+P` → **Python: Select Interpreter**
+2. Clica **"Enter interpreter path..."**
+3. Introdueix la ruta absoluta al teu entorn:
+   ```
+   /ruta/al/teu/projecte/healthcare-rag-slm/code/healthcare-rag-env/bin/python3
+   ```
 
 ## Instal·lació Manual (Opcional)
 
@@ -114,27 +134,26 @@ ollama pull llama3.2
 ### Pas 2: Configurar Entorn Python
 
 ```bash
-# Crear entorn virtual (OBLIGATORI)
+# Crear entorn virtual
 python3 -m venv healthcare-rag-env
-
-# Activar entorn virtual
 source healthcare-rag-env/bin/activate
 
-# Actualitzar pip
-python3 -m pip install --upgrade pip
-
 # Instal·lar dependències
+python3 -m pip install --upgrade pip
 python3 -m pip install -r requirements.txt
 ```
 
-### Pas 3: Iniciar Serveis
+### Pas 3: Configurar `.env`
 
 ```bash
-# Iniciar Qdrant
-docker-compose up -d qdrant
+cp .env.example .env
+```
 
-# Construir i iniciar API
-docker-compose up -d api
+### Pas 4: Iniciar Serveis
+
+```bash
+docker compose up -d qdrant
+docker compose up -d api
 ```
 
 ## Estructura del Proyecto

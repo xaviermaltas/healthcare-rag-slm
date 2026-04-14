@@ -58,7 +58,7 @@ cd deploy/compose
 
 # Aixecar contenidors (sense rebuild, mantenint volums)
 echo "🐳 Aixecant contenidors Docker..."
-docker-compose up -d
+docker compose up -d
 
 echo ""
 echo "⏳ Esperant que els serveis estiguin llestos..."

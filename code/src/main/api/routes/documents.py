@@ -11,10 +11,11 @@ import logging
 from datetime import datetime
 import tempfile
 import os
+import uuid
 
-from src.main.api.dependencies import get_qdrant_client
+from src.main.api.dependencies import get_qdrant_client, get_embeddings_model
 from src.main.infrastructure.vector_db.qdrant_client import HealthcareQdrantClient
-# from src.main.infrastructure.embeddings.bge_m3 import BGEM3Embeddings  # Temporarily disabled
+from src.main.infrastructure.embeddings.bge_m3 import BGEM3Embeddings
 from src.main.core.ingestion.connectors.sas_pdf import SASPDFConnector
 from src.main.core.ingestion.processors.text_cleaner import TextCleaner
 from src.main.core.ingestion.chunking.medical_chunker import MedicalChunker
@@ -43,7 +44,8 @@ async def upload_document(
     file: UploadFile = File(...),
     source: str = "upload",
     language: str = "es",
-    qdrant_client: HealthcareQdrantClient = Depends(get_qdrant_client)
+    qdrant_client: HealthcareQdrantClient = Depends(get_qdrant_client),
+    embeddings_model: BGEM3Embeddings = Depends(get_embeddings_model)
 ):
     """Upload and process a document"""
     
@@ -115,7 +117,8 @@ async def upload_document(
             process_document_chunks,
             chunks,
             document,
-            qdrant_client
+            qdrant_client,
+            embeddings_model
         )
         
         # Cleanup temp file
@@ -256,15 +259,20 @@ async def get_document(
 async def process_document_chunks(
     chunks,
     document,
-    qdrant_client: HealthcareQdrantClient
+    qdrant_client: HealthcareQdrantClient,
+    embeddings_model: BGEM3Embeddings
 ):
-    """Process document chunks in background"""
+    """Process document chunks in background: embed + index to Qdrant"""
     try:
         logger.info(f"Processing {len(chunks)} chunks for document {document['id']}")
         
+        # Build document list and extract texts for embedding
+        qdrant_documents = []
+        texts = []
+        
         for i, chunk in enumerate(chunks):
             doc_data = {
-                'id': f"{document['id']}_chunk_{i}",
+                'id': str(uuid.uuid5(uuid.NAMESPACE_DNS, f"{document['id']}_chunk_{i}")),
                 'content': chunk.content,
                 'source': document['source'],
                 'language': document['language'],
@@ -278,17 +286,23 @@ async def process_document_chunks(
                 }
             }
             qdrant_documents.append(doc_data)
+            texts.append(chunk.content)
         
-        # Add to Qdrant
+        # Generate embeddings (BGE-M3 dense vectors)
+        logger.info(f"Generating embeddings for {len(texts)} chunks...")
+        embeddings_result = await embeddings_model.encode_documents(texts)
+        vectors = embeddings_result['dense_vecs']
+        
+        # Index to Qdrant
         success = await qdrant_client.add_documents(
             documents=qdrant_documents,
-            vectors=embeddings_result['dense_vecs']
+            vectors=vectors
         )
         
         if success:
-            logger.info(f"Successfully processed {len(chunks)} chunks for document {document['id']}")
+            logger.info(f"Successfully indexed {len(chunks)} chunks for document {document['id']}")
         else:
-            logger.error(f"Failed to add chunks to Qdrant for document {document['id']}")
+            logger.error(f"Failed to index chunks to Qdrant for document {document['id']}")
             
     except Exception as e:
         logger.error(f"Error processing document chunks: {e}", exc_info=True)
