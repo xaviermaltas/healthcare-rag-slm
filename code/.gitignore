@@ -35,6 +35,10 @@ htmlcov/
 
 # Runtime data
 data/qdrant_storage/
+data/raw/*.txt
+data/raw/*.json
+data/raw/*.xml
+data/raw/*.pdf
 *.log
 *.pid
 
