@@ -1,286 +1,536 @@
-# Guia d'Instal·lació i Configuració
+# Healthcare RAG - Setup Complet
 
-## Requisits Previs
+Guia completa per configurar i executar el sistema Healthcare RAG amb ontologies mèdiques (SNOMED CT, MeSH, ICD-10) i articles PubMed.
 
-- **Python 3.11+**
-- **Docker i Docker Compose**
-- **Ollama** (instal·lat localment)
-- **Git**
+---
 
-## Estructura del Projecte
+## 📋 Prerequisites
 
-```
-code/
-├── config/          # Configuració del sistema
-├── data/            # Dades locals i caches
-├── docs/            # Documentació
-├── scripts/         # Scripts d'utilitat
-├── deploy/          # Infraestructura Docker
-│   ├── docker/      # Dockerfile
-│   └── compose/     # docker-compose.yml
-├── src/
-│   ├── main/        # Codi de producció
-│   │   ├── api/     # FastAPI endpoints
-│   │   ├── core/    # Lògica de negoci
-│   │   └── infrastructure/  # Clients tècnics
-│   └── test/        # Tests
-└── requirements.txt
-```
+### **1. Sistema Operatiu**
+- macOS M1/M2 (recomanat) o Linux
+- Docker Desktop instal·lat i running
+- Python 3.9+
 
-## Pas 1: Clonar el Repositori
+### **2. Verificar Entorn**
 
 ```bash
+# Verificar Docker
+docker --version
+docker ps
+
+# Verificar Python
+python3 --version
+
+# Verificar Ollama (ha d'estar instal·lat nativament)
+ollama --version
+```
+
+---
+
+## 🔑 Configuració API Keys
+
+### **1. BioPortal API Key (Obligatori per Ontologies)**
+
+**Pas 1:** Registra't a BioPortal
+- URL: https://bioportal.bioontology.org/account
+- Crea un compte gratuït
+
+**Pas 2:** Obtenir API Key
+- Fes login
+- Ves a "Account Details"
+- Copia la teva API key (format: `xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx`)
+
+**Pas 3:** Configurar `.env`
+
+```bash
+# Navegar al projecte
 cd /Users/xaviermaltastarridas/Desktop/myRepos/healthcare-rag-slm/code
+
+# Copiar exemple
+cp .env.example .env
+
+# Editar fitxer
+nano .env
+
+# Afegir API key
+BIOPORTAL_API_KEY=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+BIOPORTAL_BASE_URL=https://data.bioontology.org
+
+# Guardar: Ctrl+O, Enter, Ctrl+X
 ```
 
-## Pas 2: Configurar Entorn Virtual Python (Opcional però Recomanat)
+---
+
+### **2. NCBI API Key (Opcional per PubMed)**
+
+**Beneficis:**
+- Augmenta rate limit de 3 → 10 requests/segon
+- Recomanat per ingesta massiva
+
+**Pas 1:** Registra't a NCBI
+- URL: https://www.ncbi.nlm.nih.gov/account/
+
+**Pas 2:** Crear API Key
+- Ves a: https://www.ncbi.nlm.nih.gov/account/settings/
+- Crea una nova API key
+
+**Pas 3:** Afegir a configuració
 
 ```bash
-# Crear entorn virtual
-python3.11 -m venv healthcare-rag-env
+# Editar .env
+nano .env
 
-# Activar entorn virtual
+# Afegir (opcional)
+NCBI_API_KEY=your-ncbi-api-key-here
+NCBI_EMAIL=your-email@example.com
+```
+
+---
+
+## 🚀 Instal·lació
+
+### **1. Clonar Repositori**
+
+```bash
+git clone <repository-url>
+cd healthcare-rag-slm/code
+```
+
+---
+
+### **2. Crear Entorn Virtual**
+
+```bash
+# Crear entorn
+python3 -m venv healthcare-rag-env
+
+# Activar entorn
 source healthcare-rag-env/bin/activate
 
-# Instal·lar dependències
-pip install -r requirements.txt
+# Verificar
+which python3
+# Ha de mostrar: .../healthcare-rag-env/bin/python3
 ```
 
-## Pas 3: Configurar Ollama
+---
+
+### **3. Instal·lar Dependències**
 
 ```bash
-# Instal·lar Ollama (si no està instal·lat)
-# Visita: https://ollama.ai
+# Instal·lar requirements
+pip install -r requirements.txt
 
-# Descarregar model Mistral
+# Verificar instal·lació
+pip list | grep -E "fastapi|qdrant|transformers|torch"
+```
+
+---
+
+### **4. Configurar Ollama**
+
+```bash
+# Verificar que Ollama està running
+ollama list
+
+# Descarregar model Mistral (si no el tens)
 ollama pull mistral
 
-# Verificar que Ollama està executant-se
+# Verificar
 ollama list
+# Ha de mostrar: mistral:latest
 ```
 
-## Pas 4: Configurar Variables d'Entorn
+---
 
-Crea un fitxer `.env` a l'arrel del projecte:
+## 🐳 Aixecar el Sistema
+
+### **Opció 1: Script Automàtic (Recomanat)**
 
 ```bash
-# Application
-APP_NAME=Healthcare RAG System
-APP_VERSION=1.0.0
-APP_ENV=development
-DEBUG=true
+# Aixecar tots els serveis
+./scripts/start.sh
 
-# API
-API_HOST=0.0.0.0
-API_PORT=8000
-API_WORKERS=4
-
-# Ollama
-OLLAMA_BASE_URL=http://host.docker.internal:11434
-OLLAMA_MODEL=mistral
-OLLAMA_TIMEOUT=120
-
-# Qdrant
-QDRANT_HOST=qdrant
-QDRANT_PORT=6333
-QDRANT_COLLECTION=healthcare_documents
-QDRANT_VECTOR_SIZE=1024
-
-# Logging
-LOG_LEVEL=INFO
+# Espera ~30 segons mentre s'inicialitzen els serveis
 ```
 
-## Pas 5: Aixecar el Sistema
+**Output esperat:**
+```
+✅ Qdrant: OK
+✅ API: OK
+✅ Ollama: OK
 
-### Opció A: Instal·lació Automàtica (Recomanat)
-
-```bash
-# Des de l'arrel del projecte
-./scripts/bootstrap.sh
+📍 Endpoints disponibles:
+   - API: http://localhost:8000
+   - API Docs: http://localhost:8000/docs
+   - Qdrant: http://localhost:6333
+   - Qdrant Dashboard: http://localhost:6333/dashboard
+   - Ollama: http://localhost:11434
 ```
 
-Aquest script farà tots els passos anteriors automàticament.
+---
 
-### Opció B: Manual
+### **Opció 2: Manual**
 
 ```bash
-# Navegar al directori de compose
-cd deploy/compose
+# Aixecar Qdrant i API
+docker-compose -f deploy/compose/docker-compose.yml up -d
 
-# Aturar contenidors anteriors (si n'hi ha)
-docker-compose stop
-
-# Construir imatges des de zero
-docker-compose build --no-cache
-
-# Aixecar contenidors
-docker-compose up -d
-
-# Verificar estat dels contenidors
+# Verificar
 docker ps
-```
+# Ha de mostrar: healthcare-rag-api, healthcare-rag-qdrant
 
-## Pas 6: Verificar el Sistema
-
-```bash
-# Comprovar salut de l'API
-curl http://localhost:8000/health/live
-
-# Comprovar estat complet del sistema
-curl http://localhost:8000/health/
-
-# Comprovar Qdrant
-curl http://localhost:6333/health
-
-# Obrir documentació de l'API
-open http://localhost:8000/docs
-
-# Obrir dashboard de Qdrant
-open http://localhost:6333/dashboard
-```
-
-## Pas 7: Veure Logs
-
-```bash
-# Logs de l'API
-docker logs healthcare-rag-api
-
-# Logs de Qdrant
-docker logs healthcare-rag-qdrant
-
-# Seguir logs en temps real
+# Verificar logs
 docker logs -f healthcare-rag-api
 ```
 
-## 📋 Scripts de Gestió del Sistema
+---
 
-El projecte inclou scripts per gestionar el cicle de vida del sistema:
+## 🧬 Ingesta d'Ontologies i PubMed
 
-| Script | Propòsit | Quan usar-lo |
-|--------|----------|-------------|
-| `bootstrap.sh` | Instal·lació inicial completa | Primera vegada |
-| `start.sh` | Aixecar sistema (manté volums) | Ús diari |
-| `stop.sh` | Aturar sistema (manté volums) | Ús diari |
-| `rebuild.sh` | Reconstruir després de canvis | Després de modificar codi |
-
-**Veure `scripts/README.md` per documentació completa.**
-
-## Comandaments Útils
-
-### Aturar el Sistema
+### **1. Executar Script d'Ingesta**
 
 ```bash
-# Opció recomanada (manté volums)
+# Assegura't que el sistema està running
+./scripts/start.sh
+
+# Executar ingesta
+python3 scripts/ingest_medical_knowledge.py
+```
+
+---
+
+### **2. Què fa el Script**
+
+**Ontologies (SNOMED CT, MeSH, ICD-10):**
+- Per cada tema mèdic (diabetes, hipertensió, etc.):
+  - Cerca 50 conceptes a cada ontologia
+  - Extreu sinònims, definicions, jerarquies
+  - Total: ~500 conceptes
+
+**PubMed:**
+- Per cada tema mèdic:
+  - 10 articles altament citats (>50 citacions, >10 anys)
+  - 10 articles recents (<2 anys)
+  - Total: ~200 articles
+
+**Temps estimat:** 10-15 minuts
+
+---
+
+### **3. Output Esperat**
+
+```
+🚀 Starting Medical Knowledge Ingestion
+Topics to process: 10
+
+🔌 Initializing connectors...
+  ✓ OntologyManager initialized
+  ✓ PubMed connector initialized
+
+📊 ONTOLOGY STATISTICS
+  SNOMEDCT: 350,000+ classes
+  MESH: 30,000+ descriptors
+  ICD10CM: 70,000+ codes
+
+📚 INGESTING ONTOLOGY CONCEPTS
+  ✓ diabetes mellitus type 2: 50 concepts
+    - SNOMEDCT: 25 concepts
+    - MESH: 15 concepts
+    - ICD10CM: 10 concepts
+  ...
+
+📄 INGESTING PUBMED ARTICLES
+  ✓ diabetes mellitus type 2: 20 articles
+    - 10 highly cited (avg 156 citations)
+    - 10 recent (2024-2026)
+  ...
+
+✅ INGESTION COMPLETE
+  ✅ Ontology concepts: 500
+  ✅ PubMed articles: 200
+  ✅ Total documents: 700
+```
+
+---
+
+## ✅ Verificació
+
+### **1. Health Check**
+
+```bash
+# Verificar estat del sistema
+curl -s http://localhost:8000/health/detailed | python3 -m json.tool
+```
+
+**Output esperat:**
+```json
+{
+  "status": "healthy",
+  "components": {
+    "ollama": {
+      "status": "healthy",
+      "model": "mistral"
+    },
+    "qdrant": {
+      "status": "healthy",
+      "collections": 1,
+      "vectors_count": 700
+    },
+    "embeddings": {
+      "status": "healthy",
+      "model": "BAAI/bge-m3"
+    }
+  }
+}
+```
+
+---
+
+### **2. Test Query**
+
+```bash
+# Query simple
+curl -X POST "http://localhost:8000/query/" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "query": "¿Cuál es el tratamiento de primera línea para diabetes tipo 2?",
+    "top_k": 3,
+    "language": "es"
+  }' | python3 -m json.tool
+```
+
+---
+
+### **3. Verificar Documents Indexats**
+
+```bash
+# Llistar documents
+curl -s "http://localhost:8000/documents/" | python3 -m json.tool | head -50
+
+# Estadístiques col·lecció
+curl -s "http://localhost:8000/collections/healthcare_rag/stats" | python3 -m json.tool
+```
+
+---
+
+## 🎯 Temes Mèdics Configurats
+
+El sistema està pre-configurat amb aquests 10 temes:
+
+1. **Diabetes mellitus type 2**
+2. **Hypertension**
+3. **Heart failure**
+4. **Chronic kidney disease**
+5. **Asthma**
+6. **COPD**
+7. **Depression**
+8. **Anxiety disorder**
+9. **Stroke**
+10. **Myocardial infarction**
+
+### **Afegir Nous Temes**
+
+```python
+# Edita scripts/ingest_medical_knowledge.py
+MEDICAL_TOPICS = [
+    "diabetes mellitus type 2",
+    "hypertension",
+    # Afegeix els teus temes aquí
+    "rheumatoid arthritis",
+    "multiple sclerosis"
+]
+
+# Re-executa ingesta
+python3 scripts/ingest_medical_knowledge.py
+```
+
+---
+
+## 🔧 Configuració Avançada
+
+### **1. Ajustar Paràmetres d'Ingesta**
+
+```python
+# Edita scripts/ingest_medical_knowledge.py
+
+# Més conceptes per tema
+concepts_count = await ingest_ontology_concepts(
+    ontology_manager=ontology_manager,
+    topics=MEDICAL_TOPICS,
+    concepts_per_topic=100  # Default: 50
+)
+
+# Més articles per tema
+articles_count = await ingest_pubmed_articles(
+    pubmed_connector=pubmed_connector,
+    topics=MEDICAL_TOPICS,
+    articles_per_topic=40  # Default: 20
+)
+```
+
+---
+
+### **2. Configurar Rate Limits**
+
+```bash
+# Edita .env
+
+# BioPortal (màxim 1000 req/dia gratuït)
+BIOPORTAL_RATE_LIMIT=10  # req/s
+
+# PubMed
+NCBI_RATE_LIMIT=3  # sense API key
+NCBI_RATE_LIMIT=10  # amb API key
+```
+
+---
+
+### **3. Configurar Chunking**
+
+```bash
+# Edita .env
+
+# Mida chunks (tokens)
+CHUNK_SIZE=512  # Default: 512
+CHUNK_OVERLAP=50  # Default: 50
+
+# Per documents més llargs
+CHUNK_SIZE=1024
+CHUNK_OVERLAP=100
+```
+
+---
+
+## 🐛 Troubleshooting
+
+### **Error: "BIOPORTAL_API_KEY not set"**
+
+```bash
+# Verifica .env
+cat .env | grep BIOPORTAL_API_KEY
+
+# Si no existeix, afegeix-la
+echo "BIOPORTAL_API_KEY=your-key-here" >> .env
+
+# Reinicia API
+docker restart healthcare-rag-api
+```
+
+---
+
+### **Error: "HTTP 401 Unauthorized" (BioPortal)**
+
+- API key incorrecta o expirada
+- Verifica a https://bioportal.bioontology.org/account
+- Regenera API key si cal
+
+---
+
+### **Error: "HTTP 429 Too Many Requests"**
+
+**BioPortal:**
+- Límit: 1.000 requests/dia (gratuït)
+- Solució: Espera 24h o crea un altre compte
+
+**PubMed:**
+- Límit: 3 req/s (sense API key)
+- Solució: Afegeix NCBI API key per 10 req/s
+
+---
+
+### **Error: "Ollama connection refused"**
+
+```bash
+# Verifica que Ollama està running
+ollama list
+
+# Si no està running, inicia'l
+open -a Ollama  # macOS
+
+# Verifica port
+curl http://localhost:11434/api/tags
+```
+
+---
+
+### **Error: "Qdrant connection refused"**
+
+```bash
+# Verifica que Qdrant està running
+docker ps | grep qdrant
+
+# Si no està running
+docker-compose -f deploy/compose/docker-compose.yml up -d qdrant
+
+# Verifica port
+curl http://localhost:6333/collections
+```
+
+---
+
+## 🧹 Manteniment
+
+### **Parar el Sistema**
+
+```bash
+# Parar tots els serveis
 ./scripts/stop.sh
 
 # O manualment
-cd deploy/compose
-docker-compose stop
+docker-compose -f deploy/compose/docker-compose.yml down
 ```
 
-### Eliminar Tot (incloent volums)
+---
+
+### **Netejar Dades**
 
 ```bash
-cd deploy/compose
-docker-compose down -v
+# Eliminar tots els documents indexats
+curl -X DELETE "http://localhost:8000/collections/healthcare_rag/clear"
+
+# Eliminar volumes Docker (ATENCIÓ: elimina tot)
+docker-compose -f deploy/compose/docker-compose.yml down -v
 ```
 
-### Reconstruir després de Canvis
+---
+
+### **Reconstruir des de Zero**
 
 ```bash
-# Opció recomanada
+# Reconstruir tot
 ./scripts/rebuild.sh
 
 # O manualment
-cd deploy/compose
-docker-compose down
-docker-compose build --no-cache
-docker-compose up -d
+docker-compose -f deploy/compose/docker-compose.yml down -v
+docker-compose -f deploy/compose/docker-compose.yml build --no-cache
+docker-compose -f deploy/compose/docker-compose.yml up -d
 ```
 
-### Reiniciar Contenidors
+---
 
-```bash
-cd deploy/compose
-docker-compose restart
-```
+## 📚 Recursos
 
-### Eliminar Volums i Dades
+- **BioPortal**: https://bioportal.bioontology.org
+- **BioPortal API Docs**: https://data.bioontology.org/documentation
+- **PubMed**: https://pubmed.ncbi.nlm.nih.gov
+- **PubMed E-utilities**: https://www.ncbi.nlm.nih.gov/books/NBK25501/
+- **SNOMED CT Browser**: https://browser.ihtsdotools.org
+- **MeSH Browser**: https://meshb.nlm.nih.gov
+- **ICD-10-CM**: https://www.cdc.gov/nchs/icd/icd-10-cm.htm
+- **Ollama**: https://ollama.ai
+- **Qdrant**: https://qdrant.tech
 
-```bash
-cd deploy/compose
-docker-compose down -v
-```
+---
 
-## Resolució de Problemes
+## 🎓 Següents Passos
 
-### Error: "No module named 'src'"
+Després del setup, consulta:
+- `docs/ARCHITECTURE.md` → Arquitectura completa del sistema
+- `docs/DEMO.md` → Guia de demostració pas a pas
+- `http://localhost:8000/docs` → API documentation (Swagger UI)
 
-Assegura't que `PYTHONPATH=/app` està configurat al Dockerfile.
+---
 
-### Error: "Connection refused" a Ollama
-
-Verifica que Ollama està executant-se localment:
-
-```bash
-ollama list
-```
-
-Si no està executant-se:
-
-```bash
-ollama serve
-```
-
-### Error: Qdrant "unhealthy"
-
-Això és un warning conegut amb OrbStack. El sistema segueix funcionant correctament.
-
-### Error: Port 8000 ja en ús
-
-Atura qualsevol servei que estigui utilitzant el port 8000:
-
-```bash
-lsof -ti:8000 | xargs kill -9
-```
-
-## Desenvolupament Local (sense Docker)
-
-Si vols executar l'API localment sense Docker:
-
-```bash
-# Activar entorn virtual
-source healthcare-rag-env/bin/activate
-
-# Configurar variables d'entorn per local
-export QDRANT_HOST=localhost
-export OLLAMA_BASE_URL=http://localhost:11434
-
-# Executar l'API
-cd /Users/xaviermaltastarridas/Desktop/myRepos/healthcare-rag-slm/code
-python -m uvicorn src.main.main:app --reload --host 0.0.0.0 --port 8000
-```
-
-## Endpoints Disponibles
-
-- **GET /health/live** - Comprova si l'API està viva
-- **GET /health/ready** - Comprova si el sistema està preparat
-- **GET /health/** - Estat complet de tots els components
-- **GET /docs** - Documentació interactiva de l'API (Swagger)
-- **GET /redoc** - Documentació alternativa (ReDoc)
-
-## Estat Actual del Sistema
-
-### ✅ Funcional
-- API FastAPI
-- Health endpoints
-- Connexió amb Ollama
-- Connexió amb Qdrant
-- Middleware de logging
-
-### ⏸️ Temporalment Desactivat
-- Embeddings (dependència torch)
-- Indexació de documents amb vectors
-- Cerca semàntica
-
-Aquestes funcionalitats es poden reactivar més endavant quan sigui necessari.
+**Document preparat per:** Xavier Maltas Tarridas  
+**Data:** Abril 2026  
+**Versió:** 2.0 (Unificat)

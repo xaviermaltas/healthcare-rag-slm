@@ -52,34 +52,65 @@ macOS M1/M2 Host
 
 ```
 healthcare-rag-slm/code/
-├── config/                    # Configuració centralitzada (settings, ontologies)
-├── ingestion/                 # Bloc 1: Ingesta intel·ligent
-│   ├── connectors/           # Connectors fonts de dades (MedlinePlus, BioPortal, PDFs)
-│   ├── processors/           # Processadors de text mèdic
-│   ├── chunking/            # Chunking semàntic especialitzat
-│   └── enrichment/          # Enriqueciment ontològic
-├── indexing/                 # Bloc 2: Indexació híbrida
-│   ├── embeddings/          # Models d'embeddings (BGE-M3)
-│   ├── vectorial/           # Índex vectorial (Qdrant)
-│   ├── lexical/            # Índex lexical (BM25)
-│   └── ontological/        # Índex ontològic (SNOMED-CT)
-├── retrieval/               # Bloc 3: Recuperació avançada
-│   ├── query_processing/   # NER mèdic i processament queries
-│   ├── retrievers/         # Recuperadors híbrids
-│   ├── fusion/            # Fusió RRF de resultats
-│   └── reranking/         # Reranking semàntic
-├── generation/             # Generació amb SLM
-│   ├── models/            # Client Ollama
-│   ├── prompts/          # Templates mèdics multilingües
-│   └── context/          # Gestió de context RAG
-├── api/                   # API REST FastAPI
-│   ├── routes/           # Endpoints (health, query, documents, etc.)
-│   └── models/          # Models Pydantic
-├── scripts/              # Scripts d'utilitat (setup, verificació)
-├── data/                # Dades del sistema (raw, processed, cache)
-├── docs/               # Documentació tècnica
-├── tests/              # Tests unitaris i d'integració
-└── [fitxers configuració]  # .env, docker-compose.yml, requirements.txt
+├── src/main/                     # Codi principal de l'aplicació
+│   ├── api/                      # Capa de presentació (FastAPI)
+│   │   ├── routes/              # Endpoints REST
+│   │   ├── dependencies.py      # Singleton instances
+│   │   └── middleware.py        # Logging, CORS, error handling
+│   │
+│   ├── core/                     # Lògica de negoci (RAG Pipeline)
+│   │   ├── ingestion/           # Ingesta de documents
+│   │   │   ├── connectors/      # Connectors per descarregar dades externes
+│   │   │   │   ├── base_connector.py       # Interface base
+│   │   │   │   ├── bioportal_connector.py  # BioPortal (SNOMED/MeSH/ICD)
+│   │   │   │   └── pubmed_connector.py     # PubMed articles
+│   │   │   ├── chunking/        # Fragmentació de documents
+│   │   │   └── document_processor.py  # Orquestrador ingesta
+│   │   │
+│   │   └── retrieval/           # Recuperació de documents
+│   │       ├── query_processing/  # NER mèdic, query expansion
+│   │       ├── semantic_annotation.py  # Mapatge text → codis
+│   │       ├── retriever.py     # Vector search + filtratge
+│   │       └── reranker.py      # Reordenació per rellevància
+│   │
+│   └── infrastructure/           # Clients per serveis externs
+│       ├── llm/                 # Clients LLM
+│       │   └── ollama_client.py
+│       ├── vector_db/           # Clients Vector DB
+│       │   └── qdrant_client.py
+│       ├── embeddings/          # Models d'embeddings
+│       │   └── bge_m3.py
+│       └── ontologies/          # Clients ontologies
+│           ├── snomed_client.py      # Client SNOMED CT (runtime)
+│           └── ontology_manager.py   # Manager unificat (runtime)
+│
+├── config/                      # Configuració centralitzada
+│   ├── settings.py             # Settings amb Pydantic
+│   └── prompts/                # Templates LLM
+│
+├── scripts/                     # Scripts d'utilitat
+│   ├── start.sh                # Aixecar sistema
+│   ├── stop.sh                 # Parar sistema
+│   └── ingest_medical_knowledge.py  # Ingesta ontologies + PubMed
+│
+├── data/                        # Dades del sistema
+│   ├── raw/                    # Documents originals
+│   ├── processed/              # Documents processats
+│   └── embeddings/             # Cache embeddings
+│
+├── docs/                        # Documentació unificada
+│   ├── ARCHITECTURE.md         # Arquitectura completa
+│   ├── SETUP.md                # Setup complet (API keys, ontologies)
+│   └── DEMO.md                 # Guia demostració
+│
+├── deploy/                      # Desplegament
+│   └── compose/
+│       ├── docker-compose.yml
+│       └── Dockerfile
+│
+└── tests/                       # Tests
+    ├── unit/
+    └── integration/
 ```
 
 ## Bloc 1: Ingestion Module
@@ -89,30 +120,47 @@ Ingesta, processament i preparació de documents mèdics de múltiples fonts per
 
 ### Components
 
-#### 1.1 Connectors (`ingestion/connectors/`)
+#### 1.1 Connectors (`core/ingestion/connectors/`)
+
+**Arquitectura de Connectors Unificats**
+
+Tots els connectors segueixen el **patró Strategy** amb una interface comuna:
 
 **BaseConnector** (`base_connector.py`)
-- Classe abstracta que defineix la interfície comuna per tots els connectors
-- Mètodes: `connect()`, `fetch_documents()`, `disconnect()`
+- Classe abstracta que defineix la interfície comuna
+- Mètodes obligatoris:
+  - `connect()` → Establir connexió amb API/servei
+  - `fetch_documents()` → Descarregar documents per indexar
+  - `disconnect()` → Tancar connexió
 - Gestió d'errors i logging unificat
+- Rate limiting automàtic
 
-**MedlinePlusConnector** (`medlineplus.py`)
-- Connector per a l'API de MedlinePlus
-- Cerca d'articles mèdics en anglès i espanyol
-- Processament de metadades mèdiques
-- Rate limiting i gestió d'errors HTTP
+**BioPortalConnector** (`bioportal_connector.py`)
+- **Propòsit:** Descarregar conceptes d'ontologies per indexar offline
+- **APIs suportades:** SNOMED CT, MeSH, ICD-10-CM
+- **Funcionalitats:**
+  - Cerca de conceptes per query
+  - Descàrrega de jerarquies (parents/children)
+  - Extracció de sinònims i definicions
+  - Batch processing per optimització
+- **Ús:** Scripts d'ingesta (`scripts/ingest_medical_knowledge.py`)
 
-**BioPortalConnector** (`bioporter.py`)
-- Connector per a ontologies biomèdiques
-- Accés a SNOMED-CT, ICD-10, ICD-11
-- Expansió de termes mèdics
-- Mapejat de codis mèdics
+**PubMedConnector** (`pubmed_connector.py`)
+- **Propòsit:** Descarregar articles científics per indexar
+- **APIs utilitzades:** NCBI E-utilities (esearch, efetch, elink)
+- **Funcionalitats:**
+  - Cerca d'articles per query
+  - Filtratge per citacions (>50 cites = altament citat)
+  - Filtratge per data (recents <2 anys, clàssics >10 anys)
+  - Extracció completa (títol, abstract, autors, MeSH terms, DOI)
+  - Comptatge automàtic de citacions
+- **Estratègia:** 50% articles clàssics + 50% articles recents
+- **Rate limiting:** 3 req/s (sense API key), 10 req/s (amb API key)
+- **Ús:** Scripts d'ingesta
 
-**PDFConnector** (`pdf_connector.py`)
-- Processament de PDFs mèdics
-- Extracció de text amb PyPDF2
-- Detecció d'idioma (espanyol/català)
-- Preservació de metadades del document
+**Diferència amb `infrastructure/ontologies/`:**
+- `connectors/` → Descàrrega massiva per **indexar offline**
+- `infrastructure/ontologies/` → Consultes **runtime** durant queries
 
 #### 1.2 Processors (`ingestion/processors/`)
 

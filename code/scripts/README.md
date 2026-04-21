@@ -207,8 +207,66 @@ cd ../..
 
 ---
 
+### 🧬 `ingest_medical_knowledge.py` - Ingesta d'Ontologies i PubMed
+
+**Quan usar-lo:** Per poblar la base de dades amb coneixement mèdic (ontologies + articles).
+
+**Què fa:**
+- ✅ Descarrega conceptes de SNOMED CT, MeSH, ICD-10
+- ✅ Descarrega articles de PubMed (altament citats + recents)
+- ✅ Genera embeddings amb BGE-M3
+- ✅ Indexa tot a Qdrant
+
+**Ús:**
+```bash
+./scripts/activate_and_run.sh python3 scripts/ingest_medical_knowledge.py
+```
+
+**Prerequisits:**
+- Sistema aixecat (`./scripts/start.sh`)
+- API key de BioPortal configurada a `.env`
+
+---
+
+### 🧪 `run_ontology_tests.sh` - Tests d'Integració d'Ontologies
+
+**Quan usar-lo:** Per verificar que les ontologies funcionen correctament.
+
+**Què fa:**
+- ✅ Prova connexió a BioPortal
+- ✅ Verifica SNOMED CT, MeSH, ICD-10
+- ✅ Prova cerca de conceptes
+- ✅ Prova mapatge de text clínic
+
+**Ús:**
+```bash
+./scripts/run_ontology_tests.sh
+```
+
+**Nota:** Els tests reals estan a `/tests/integration/`, aquest script només els executa.
+
+---
+
+### 🔧 `activate_and_run.sh` - Executar amb Entorn Virtual
+
+**Quan usar-lo:** Per executar qualsevol script Python amb l'entorn virtual activat.
+
+**Què fa:**
+- ✅ Activa l'entorn virtual automàticament
+- ✅ Executa la comanda especificada
+- ✅ Desactiva l'entorn després
+
+**Ús:**
+```bash
+./scripts/activate_and_run.sh python3 <script.py>
+./scripts/activate_and_run.sh pytest tests/
+```
+
+---
+
 ## 📚 Més Informació
 
 - **Guia ràpida:** `../QUICKSTART.md`
 - **Setup detallat:** `../docs/SETUP.md`
 - **Arquitectura:** `../docs/ARCHITECTURE.md`
+- **Tests:** `../tests/` (tests unitaris i d'integració)

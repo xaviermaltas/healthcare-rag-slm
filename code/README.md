@@ -30,12 +30,14 @@ macOS M1/M2
 
 ## Característiques Principals
 
-- **Ingesta Intel·ligent**: Connectors per MedlinePlus, BioPortal i PDFs
-- **Indexació Híbrida**: Combina cerca vectorial (BGE-M3), lexical (BM25) i ontològica
-- **Processament Mèdic**: NER especialitzat en terminologia mèdica espanyola/catalana
-- **Generació Contextual**: Templates mèdics especialitzats amb Ollama
-- **Chunking Semàntic**: Respecta fronteres semàntiques en documents mèdics
-- **API RESTful**: Endpoints complets per gestió i consultes RAG
+- **Ontologies Mèdiques**: Integració SNOMED CT, MeSH, ICD-10 via BioPortal API
+- **PubMed Integration**: Articles científics amb filtratge per citacions i data
+- **Ingesta Intel·ligent**: Connectors unificats per ontologies i literatura mèdica
+- **Indexació Híbrida**: Cerca vectorial (BGE-M3 1024-dim) amb Qdrant
+- **Medical NER**: Extracció d'entitats mèdiques (DISEASE, MEDICATION, SYMPTOM, etc.)
+- **Generació Contextual**: LLM local (Mistral) amb templates mèdics
+- **Multiidioma**: Suport espanyol, català i anglès
+- **API RESTful**: Endpoints complets amb documentació OpenAPI
 
 ## Requisits del Sistema
 
@@ -59,8 +61,14 @@ cd healthcare-rag-slm/code
 
 ```bash
 cp .env.example .env
-# Edita .env si necessites API keys (ex: BIOPORTER_API_KEY)
+# Edita .env i afegeix les API keys necessàries:
+# - BIOPORTAL_API_KEY (obligatori per ontologies)
+# - NCBI_API_KEY (opcional per PubMed)
 ```
+
+**Obtenir API keys:**
+- BioPortal: https://bioportal.bioontology.org/account
+- NCBI: https://www.ncbi.nlm.nih.gov/account/settings/
 
 ### 3. Instal·lació Automàtica (recomanat)
 
@@ -367,21 +375,43 @@ curl http://localhost:8000/health/embeddings
 - Estadísticas de recuperación
 - Rendimiento de modelos
 
-## Próximos Desarrollos
+## 📚 Documentació
 
-1. **Frontend Web**: Interfaz de usuario para profesionales sanitarios
-2. **Autenticación**: Sistema de usuarios y control de acceso
-3. **Más Conectores**: PubMed, bases de datos hospitalarias
-4. **Ontologías Avanzadas**: SNOMED-CT completo, ICD-11
-5. **Modelos Especializados**: Fine-tuning para dominio médico
-6. **Evaluación**: Métricas específicas para RAG médico
+### **Documentació Unificada**
 
-## Soporte
+Tota la documentació del projecte està centralitzada a `/docs`:
+
+| Document | Descripció |
+|----------|------------|
+| [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | Arquitectura completa del sistema |
+| [`docs/SETUP.md`](docs/SETUP.md) | Guia de setup complet (API keys, ontologies, PubMed) |
+| [`docs/DEMO.md`](docs/DEMO.md) | Guia de demostració pas a pas |
+
+### **API Documentation**
+
+- **Swagger UI**: http://localhost:8000/docs
+- **ReDoc**: http://localhost:8000/redoc
+
+---
+
+## 🚀 Próximos Desarrollos
+
+1. ✅ **Ontologies Mèdiques**: SNOMED CT, MeSH, ICD-10 (completat)
+2. ✅ **PubMed Integration**: Articles amb filtratge per citacions (completat)
+3. ⏳ **Query Expansion**: Sinònims ontològics
+4. ⏳ **Reranking**: Cross-encoder per rellevància clínica
+5. ⏳ **Prompts Específics**: Templates per casos d'ús (informe alta, derivació, resum)
+6. ⏳ **Avaluació**: Mètriques BLEU, ROUGE, BERTScore
+
+---
+
+## 🆘 Soporte
 
 Para problemas técnicos:
-1. Ejecutar `python3 scripts/verify_setup.py`
-2. Revisar logs: `docker-compose logs`
-3. Consultar documentación API: http://localhost:8000/docs
+1. Consultar `docs/SETUP.md` per troubleshooting
+2. Ejecutar `python3 scripts/verify_setup.py`
+3. Revisar logs: `docker-compose logs`
+4. Consultar documentación API: http://localhost:8000/docs
 
 ## Licencia
 
