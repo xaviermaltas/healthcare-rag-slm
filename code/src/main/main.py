@@ -12,8 +12,8 @@ from contextlib import asynccontextmanager
 from typing import Dict, List, Optional, Any
 
 from config.settings import get_settings
-from src.main.api.routes import health, query, documents, collections, models, admin
-from src.main.api.dependencies import get_ollama_client, get_qdrant_client, get_embeddings_model
+from src.main.api.routes import health, query, documents, collections, models, admin, ontology
+from src.main.api.dependencies import get_ollama_client, get_qdrant_client, get_embeddings_model, get_snomed_client
 from src.main.api.middleware import setup_logging_middleware
 
 # Configure logging
@@ -52,6 +52,16 @@ async def lifespan(app: FastAPI):
                 logger.warning("Embeddings model health check failed")
         except Exception as e:
             logger.error(f"Failed to initialize embeddings model: {e}")
+        
+        # Initialize SNOMED CT client (optional)
+        try:
+            if settings.BIOPORTAL_API_KEY:
+                snomed_client = await get_snomed_client()
+                logger.info("SNOMED CT client initialized successfully")
+            else:
+                logger.info("SNOMED CT disabled (no API key)")
+        except Exception as e:
+            logger.warning(f"SNOMED CT client initialization failed: {e}")
         
         logger.info("Healthcare RAG API started successfully")
         
@@ -95,6 +105,7 @@ setup_logging_middleware(app)
 app.include_router(health.router, prefix="/health", tags=["Health"])
 app.include_router(query.router, prefix="/query", tags=["Query"])
 app.include_router(documents.router, prefix="/documents", tags=["Documents"])
+app.include_router(ontology.router, prefix="/ontology", tags=["Ontology"])
 app.include_router(collections.router, prefix="/collections", tags=["Collections"])
 app.include_router(models.router, prefix="/models", tags=["Models"])
 app.include_router(admin.router, prefix="/admin", tags=["Admin"])
