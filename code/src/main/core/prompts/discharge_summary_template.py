@@ -1,0 +1,340 @@
+"""
+Discharge Summary Prompt Template
+Template per generar informes d'alta hospitalària amb estructura validada
+"""
+
+from typing import Dict, List, Optional
+from dataclasses import dataclass
+
+
+@dataclass
+class DischargeSummaryPrompt:
+    """
+    Prompt template per informe d'alta hospitalària
+    
+    Estructura basada en protocols SAS i estàndards clínics
+    Suporta català i castellà
+    """
+    
+    # Seccions obligatòries de l'informe
+    REQUIRED_SECTIONS = [
+        "datos_paciente",
+        "motivo_ingreso",
+        "diagnostico_principal",
+        "tratamiento_medicacion",
+        "recomendaciones_seguimiento"
+    ]
+    
+    @staticmethod
+    def get_system_prompt(language: str = "es") -> str:
+        """
+        Obté el system prompt segons l'idioma
+        
+        Args:
+            language: Idioma (es/ca)
+            
+        Returns:
+            System prompt per configurar el comportament del LLM
+        """
+        if language == "ca":
+            return """Ets un assistent mèdic especialitzat en la generació d'informes d'alta hospitalària.
+
+INSTRUCCIONS CRÍTIQUES:
+1. Genera informes clínics professionals seguint protocols oficials del SAS
+2. Utilitza terminologia mèdica precisa i codis SNOMED CT / ICD-10 quan sigui possible
+3. Estructura l'informe amb les seccions obligatòries
+4. Sigues concís però complet - inclou tota la informació clínicament rellevant
+5. Utilitza llenguatge tècnic però comprensible
+6. SEMPRE inclou codis de diagnòstics i medicacions quan estiguin disponibles
+7. Basa't en els protocols i guies clíniques proporcionades
+8. Assegura't que les recomanacions de seguiment siguin específiques i accionables
+
+IMPORTANT: La resposta ha de ser un informe mèdic formal, no una conversa."""
+        
+        else:  # es
+            return """Eres un asistente médico especializado en la generación de informes de alta hospitalaria.
+
+INSTRUCCIONES CRÍTICAS:
+1. Genera informes clínicos profesionales siguiendo protocolos oficiales del SAS
+2. Utiliza terminología médica precisa y códigos SNOMED CT / ICD-10 cuando sea posible
+3. Estructura el informe con las secciones obligatorias
+4. Sé conciso pero completo - incluye toda la información clínicamente relevante
+5. Utiliza lenguaje técnico pero comprensible
+6. SIEMPRE incluye códigos de diagnósticos y medicaciones cuando estén disponibles
+7. Basa tu respuesta en los protocolos y guías clínicas proporcionadas
+8. Asegúrate de que las recomendaciones de seguimiento sean específicas y accionables
+
+IMPORTANTE: La respuesta debe ser un informe médico formal, no una conversación."""
+    
+    @staticmethod
+    def get_template(language: str = "es") -> str:
+        """
+        Obté el template de l'informe segons l'idioma
+        
+        Args:
+            language: Idioma (es/ca)
+            
+        Returns:
+            Template estructurat per l'informe
+        """
+        if language == "ca":
+            return """INFORME D'ALTA HOSPITALÀRIA
+
+1. DADES DEL PACIENT
+{patient_context}
+
+2. MOTIU D'INGRÉS
+{admission_reason}
+
+3. DIAGNÒSTIC PRINCIPAL
+[Diagnòstic principal amb codi SNOMED CT o ICD-10]
+Codi: [CODI_ONTOLÒGIC]
+
+4. DIAGNÒSTICS SECUNDARIS
+[Llista de diagnòstics secundaris amb codis si estan disponibles]
+
+5. PROCEDIMENTS REALITZATS
+{procedures}
+
+6. TRACTAMENT I MEDICACIÓ
+{medications}
+[Incloure codis ATC quan sigui possible]
+
+7. EVOLUCIÓ CLÍNICA
+[Resum de l'evolució durant l'ingrés]
+
+8. RECOMANACIONS DE SEGUIMENT
+[Recomanacions específiques i accionables]
+- Visites de seguiment
+- Proves complementàries pendents
+- Modificacions en el tractament
+- Signes d'alarma
+
+9. CONTRAINDICACIONS
+[Al·lèrgies, interaccions medicamentoses, precaucions]
+
+10. FIRMA I DATA
+Data d'alta: [DATA]
+Metge responsable: [NOM]
+Especialitat: [ESPECIALITAT]
+
+---
+FONTS CONSULTADES:
+{sources}"""
+        
+        else:  # es
+            return """INFORME DE ALTA HOSPITALARIA
+
+1. DATOS DEL PACIENTE
+{patient_context}
+
+2. MOTIVO DE INGRESO
+{admission_reason}
+
+3. DIAGNÓSTICO PRINCIPAL
+[Diagnóstico principal con código SNOMED CT o ICD-10]
+Código: [CÓDIGO_ONTOLÓGICO]
+
+4. DIAGNÓSTICOS SECUNDARIOS
+[Lista de diagnósticos secundarios con códigos si están disponibles]
+
+5. PROCEDIMIENTOS REALIZADOS
+{procedures}
+
+6. TRATAMIENTO Y MEDICACIÓN
+{medications}
+[Incluir códigos ATC cuando sea posible]
+
+7. EVOLUCIÓN CLÍNICA
+[Resumen de la evolución durante el ingreso]
+
+8. RECOMENDACIONES DE SEGUIMIENTO
+[Recomendaciones específicas y accionables]
+- Visitas de seguimiento
+- Pruebas complementarias pendientes
+- Modificaciones en el tratamiento
+- Signos de alarma
+
+9. CONTRAINDICACIONES
+[Alergias, interacciones medicamentosas, precauciones]
+
+10. FIRMA Y FECHA
+Fecha de alta: [FECHA]
+Médico responsable: [NOMBRE]
+Especialidad: [ESPECIALIDAD]
+
+---
+FUENTES CONSULTADAS:
+{sources}"""
+    
+    @staticmethod
+    def build_prompt(
+        patient_context: str,
+        admission_reason: str,
+        procedures: List[str],
+        medications: List[str],
+        retrieved_protocols: List[Dict],
+        language: str = "es"
+    ) -> str:
+        """
+        Construeix el prompt complet per generar l'informe
+        
+        Args:
+            patient_context: Context del pacient (edat, antecedents, etc.)
+            admission_reason: Motiu d'ingrés
+            procedures: Llista de procediments realitzats
+            medications: Llista de medicacions actuals
+            retrieved_protocols: Protocols i guies clíniques recuperades
+            language: Idioma (es/ca)
+            
+        Returns:
+            Prompt complet per enviar al LLM
+        """
+        # Format procedures
+        procedures_text = "\n".join([f"- {proc}" for proc in procedures]) if procedures else "[No especificats]"
+        
+        # Format medications
+        medications_text = "\n".join([f"- {med}" for med in medications]) if medications else "[No especificades]"
+        
+        # Format sources
+        sources_text = ""
+        if retrieved_protocols:
+            sources_text = "\n".join([
+                f"- {doc.get('source', 'Unknown')}: {doc.get('content', '')[:200]}..."
+                for doc in retrieved_protocols[:5]  # Top 5 protocols
+            ])
+        else:
+            sources_text = "[No s'han recuperat protocols específics]" if language == "ca" else "[No se han recuperado protocolos específicos]"
+        
+        # Get template
+        template = DischargeSummaryPrompt.get_template(language)
+        
+        # Fill template
+        filled_template = template.format(
+            patient_context=patient_context,
+            admission_reason=admission_reason,
+            procedures=procedures_text,
+            medications=medications_text,
+            sources=sources_text
+        )
+        
+        # Build context from protocols
+        context_text = ""
+        if retrieved_protocols:
+            if language == "ca":
+                context_text = "\n\nCONTEXT CLÍNIC (protocols i guies recuperades):\n"
+            else:
+                context_text = "\n\nCONTEXTO CLÍNICO (protocolos y guías recuperadas):\n"
+            
+            for i, doc in enumerate(retrieved_protocols[:3], 1):  # Top 3 for context
+                context_text += f"\n{i}. {doc.get('content', '')[:500]}...\n"
+        
+        # Final prompt
+        if language == "ca":
+            final_prompt = f"""{context_text}
+
+Genera un informe d'alta hospitalària professional seguint aquesta estructura:
+
+{filled_template}
+
+RECORDATORI IMPORTANT:
+- Utilitza codis SNOMED CT o ICD-10 per diagnòstics
+- Utilitza codis ATC per medicacions
+- Basa't en els protocols proporcionats
+- Sigues específic en les recomanacions de seguiment
+- Inclou contraindicacions i precaucions rellevants"""
+        else:
+            final_prompt = f"""{context_text}
+
+Genera un informe de alta hospitalaria profesional siguiendo esta estructura:
+
+{filled_template}
+
+RECORDATORIO IMPORTANTE:
+- Utiliza códigos SNOMED CT o ICD-10 para diagnósticos
+- Utiliza códigos ATC para medicaciones
+- Basa tu respuesta en los protocolos proporcionados
+- Sé específico en las recomendaciones de seguimiento
+- Incluye contraindicaciones y precauciones relevantes"""
+        
+        return final_prompt
+    
+    @staticmethod
+    def validate_response(response: str, language: str = "es") -> Dict[str, bool]:
+        """
+        Valida que la resposta contingui les seccions obligatòries
+        
+        Args:
+            response: Resposta generada pel LLM
+            language: Idioma (es/ca)
+            
+        Returns:
+            Dict amb validació de cada secció
+        """
+        validation = {}
+        
+        if language == "ca":
+            sections = {
+                "datos_paciente": ["DADES DEL PACIENT", "1."],
+                "motivo_ingreso": ["MOTIU D'INGRÉS", "2."],
+                "diagnostico_principal": ["DIAGNÒSTIC PRINCIPAL", "3.", "Codi:"],
+                "diagnosticos_secundarios": ["DIAGNÒSTICS SECUNDARIS", "4."],
+                "procedimientos": ["PROCEDIMENTS REALITZATS", "5."],
+                "tratamiento": ["TRACTAMENT I MEDICACIÓ", "6."],
+                "evolucion": ["EVOLUCIÓ CLÍNICA", "7."],
+                "recomendaciones": ["RECOMANACIONS DE SEGUIMENT", "8."],
+                "contraindicaciones": ["CONTRAINDICACIONS", "9."],
+                "firma": ["FIRMA I DATA", "10."]
+            }
+        else:
+            sections = {
+                "datos_paciente": ["DATOS DEL PACIENTE", "1."],
+                "motivo_ingreso": ["MOTIVO DE INGRESO", "2."],
+                "diagnostico_principal": ["DIAGNÓSTICO PRINCIPAL", "3.", "Código:"],
+                "diagnosticos_secundarios": ["DIAGNÓSTICOS SECUNDARIOS", "4."],
+                "procedimientos": ["PROCEDIMIENTOS REALIZADOS", "5."],
+                "tratamiento": ["TRATAMIENTO Y MEDICACIÓN", "6."],
+                "evolucion": ["EVOLUCIÓN CLÍNICA", "7."],
+                "recomendaciones": ["RECOMENDACIONES DE SEGUIMIENTO", "8."],
+                "contraindicaciones": ["CONTRAINDICACIONES", "9."],
+                "firma": ["FIRMA Y FECHA", "10."]
+            }
+        
+        # Check each section
+        for section_key, keywords in sections.items():
+            validation[section_key] = any(keyword in response for keyword in keywords)
+        
+        return validation
+    
+    @staticmethod
+    def extract_codes(response: str) -> Dict[str, List[str]]:
+        """
+        Extreu codis ontològics de la resposta
+        
+        Args:
+            response: Resposta generada pel LLM
+            
+        Returns:
+            Dict amb codis SNOMED, ICD-10 i ATC extrets
+        """
+        import re
+        
+        codes = {
+            "snomed": [],
+            "icd10": [],
+            "atc": []
+        }
+        
+        # SNOMED CT codes (numeric, 6-18 digits)
+        snomed_pattern = r'\b\d{6,18}\b'
+        codes["snomed"] = list(set(re.findall(snomed_pattern, response)))
+        
+        # ICD-10 codes (letter + 2 digits + optional decimal + digits)
+        icd10_pattern = r'\b[A-Z]\d{2}(?:\.\d{1,2})?\b'
+        codes["icd10"] = list(set(re.findall(icd10_pattern, response)))
+        
+        # ATC codes (letter + 2 digits + letter + letter + 2 digits)
+        atc_pattern = r'\b[A-Z]\d{2}[A-Z]{2}\d{2}\b'
+        codes["atc"] = list(set(re.findall(atc_pattern, response)))
+        
+        return codes
