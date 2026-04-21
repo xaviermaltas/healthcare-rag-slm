@@ -42,8 +42,12 @@ class Settings(BaseSettings):
     EMBEDDING_BATCH_SIZE: int = Field(default=32, env="EMBEDDING_BATCH_SIZE")
     
     # BioPortal API settings
-    BIOPORTER_API_KEY: str = Field(default="", env="BIOPORTER_API_KEY")
-    BIOPORTER_BASE_URL: str = Field(default="https://data.bioontology.org", env="BIOPORTER_BASE_URL")
+    BIOPORTAL_API_KEY: str = Field(default="", env="BIOPORTAL_API_KEY")
+    BIOPORTAL_BASE_URL: str = Field(default="https://data.bioontology.org", env="BIOPORTAL_BASE_URL")
+    
+    # SNOMED CT settings
+    SNOMED_MIN_CONFIDENCE: float = Field(default=0.5, env="SNOMED_MIN_CONFIDENCE")
+    SNOMED_ENABLE_QUERY_EXPANSION: bool = Field(default=True, env="SNOMED_ENABLE_QUERY_EXPANSION")
     
     # MedlinePlus API settings
     MEDLINEPLUS_BASE_URL: str = Field(default="https://wsearch.nlm.nih.gov/ws/query", env="MEDLINEPLUS_BASE_URL")
