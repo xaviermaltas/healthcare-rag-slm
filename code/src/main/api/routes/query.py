@@ -10,11 +10,13 @@ import asyncio
 import logging
 from datetime import datetime
 
-from src.main.api.dependencies import get_ollama_client, get_qdrant_client, get_embeddings_model
+from src.main.api.dependencies import get_ollama_client, get_qdrant_client, get_embeddings_model, get_ontology_manager
 from src.main.infrastructure.llm.ollama_client import OllamaClient
 from src.main.infrastructure.vector_db.qdrant_client import HealthcareQdrantClient
 from src.main.infrastructure.embeddings.bge_m3 import BGEM3Embeddings
+from src.main.infrastructure.ontologies.ontology_manager import OntologyManager
 from src.main.core.retrieval.query_processing.medical_ner import MedicalNER
+from src.main.core.retrieval.query_processing.query_expander import QueryExpander
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -33,15 +35,19 @@ class QueryRequest(BaseModel):
     score_threshold: Optional[float] = Field(default=0.0, ge=0.0, le=1.0, description="Minimum similarity score")
     language: Optional[str] = Field(default="es", description="Response language (es/ca/en)")
     include_sources: Optional[bool] = Field(default=True, description="Include source documents in response")
+    use_query_expansion: Optional[bool] = Field(default=True, description="Use ontology-based query expansion")
+    include_ontology_codes: Optional[bool] = Field(default=True, description="Include ontology codes in expansion")
 
 
 class QueryResponse(BaseModel):
     """Response model for RAG queries"""
     response: str = Field(..., description="Generated response")
     query: str = Field(..., description="Original query")
+    expanded_query: Optional[str] = Field(default=None, description="Query expanded with ontology terms")
     model_used: str = Field(..., description="Model used for generation")
     sources: List[Dict[str, Any]] = Field(default=[], description="Retrieved source documents")
     medical_entities: Dict[str, List[str]] = Field(default={}, description="Extracted medical entities")
+    query_expansion_stats: Optional[Dict[str, Any]] = Field(default=None, description="Query expansion statistics")
     retrieval_stats: Dict[str, Any] = Field(default={}, description="Retrieval statistics")
     generation_stats: Dict[str, Any] = Field(default={}, description="Generation statistics")
     timestamp: datetime = Field(default_factory=datetime.utcnow)
@@ -53,7 +59,8 @@ async def query_rag(
     background_tasks: BackgroundTasks,
     ollama_client: OllamaClient = Depends(get_ollama_client),
     qdrant_client: HealthcareQdrantClient = Depends(get_qdrant_client),
-    embeddings_model: BGEM3Embeddings = Depends(get_embeddings_model)
+    embeddings_model: BGEM3Embeddings = Depends(get_embeddings_model),
+    ontology_manager: Optional[OntologyManager] = Depends(get_ontology_manager)
 ):
     """Main RAG query endpoint"""
     
@@ -65,8 +72,43 @@ async def query_rag(
         entities = medical_ner.extract_entities(request.query)
         entity_summary = medical_ner.get_entity_summary(entities)
         
-        # Step 2: Generate query embeddings and retrieve documents
-        query_embedding = await embeddings_model.encode_query(request.query)
+        # Step 2: Query Expansion (if enabled and ontology manager available)
+        expanded_query_text = request.query
+        expansion_stats = None
+        
+        if request.use_query_expansion and ontology_manager:
+            try:
+                logger.info("Expanding query with ontologies...")
+                query_expander = QueryExpander(
+                    ontology_manager=ontology_manager,
+                    medical_ner=medical_ner,
+                    config={
+                        'include_codes': request.include_ontology_codes,
+                        'max_synonyms_per_entity': 5,
+                        'max_concepts_per_entity': 3
+                    }
+                )
+                
+                expanded_query = await query_expander.expand_query(request.query)
+                expanded_query_text = expanded_query.get_search_text(include_codes=request.include_ontology_codes)
+                
+                # Get expansion summary
+                expansion_summary = query_expander.get_expansion_summary(expanded_query)
+                expansion_stats = {
+                    'total_terms': expansion_summary['total_terms'],
+                    'entities_detected': expansion_summary['entities_detected'],
+                    'terms_by_source': expansion_summary['terms_by_source'],
+                    'ontologies_used': expansion_summary['ontologies_used']
+                }
+                
+                logger.info(f"Query expanded: {expansion_summary['total_terms']} terms from {expansion_summary['entities_detected']} entities")
+                
+            except Exception as e:
+                logger.warning(f"Query expansion failed, using original query: {e}")
+                expanded_query_text = request.query
+        
+        # Step 3: Generate query embeddings and retrieve documents
+        query_embedding = await embeddings_model.encode_query(expanded_query_text)
         retrieved_docs = await qdrant_client.search_similar(
             query_vector=query_embedding['dense'],
             limit=request.top_k,
@@ -152,9 +194,11 @@ Instructions:
         response = QueryResponse(
             response=generation_result.get("response", ""),
             query=request.query,
+            expanded_query=expanded_query_text if request.use_query_expansion else None,
             model_used=request.model,
             sources=sources,
             medical_entities=entity_summary,
+            query_expansion_stats=expansion_stats,
             retrieval_stats={
                 "documents_found": len(retrieved_docs),
                 "retrieval_time": retrieval_time,

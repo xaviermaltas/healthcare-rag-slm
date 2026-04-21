@@ -12,6 +12,9 @@ from config.settings import get_settings
 from src.main.infrastructure.llm.ollama_client import OllamaClient
 from src.main.infrastructure.vector_db.qdrant_client import HealthcareQdrantClient
 from src.main.infrastructure.embeddings.bge_m3 import BGEM3Embeddings
+from src.main.infrastructure.ontologies.snomed_client import SNOMEDClient
+from src.main.infrastructure.ontologies.ontology_manager import OntologyManager
+from src.main.core.retrieval.semantic_annotation import SemanticAnnotationService
 
 logger = logging.getLogger(__name__)
 settings = get_settings()
@@ -20,6 +23,9 @@ settings = get_settings()
 _ollama_client: Optional[OllamaClient] = None
 _qdrant_client: Optional[HealthcareQdrantClient] = None
 _embeddings_model: Optional[BGEM3Embeddings] = None
+_snomed_client: Optional[SNOMEDClient] = None
+_ontology_manager: Optional[OntologyManager] = None
+_semantic_annotation_service: Optional[SemanticAnnotationService] = None
 
 
 async def get_ollama_client() -> OllamaClient:
@@ -78,13 +84,82 @@ async def get_embeddings_model() -> BGEM3Embeddings:
     return _embeddings_model
 
 
+async def get_snomed_client() -> SNOMEDClient:
+    """Get or create SNOMED CT client instance"""
+    global _snomed_client
+    
+    if _snomed_client is None:
+        if not settings.BIOPORTAL_API_KEY:
+            logger.warning("BIOPORTAL_API_KEY not set - SNOMED CT features will be disabled")
+            # Return a dummy client that will fail gracefully
+            _snomed_client = SNOMEDClient(
+                api_key="",
+                base_url=settings.BIOPORTAL_BASE_URL
+            )
+        else:
+            _snomed_client = SNOMEDClient(
+                api_key=settings.BIOPORTAL_API_KEY,
+                base_url=settings.BIOPORTAL_BASE_URL
+            )
+            
+            # Initialize client
+            if not await _snomed_client.initialize():
+                logger.warning("Failed to initialize SNOMED CT client")
+    
+    return _snomed_client
+
+
+async def get_ontology_manager() -> Optional[OntologyManager]:
+    """Get or create OntologyManager instance"""
+    global _ontology_manager
+    
+    if _ontology_manager is None:
+        if not settings.BIOPORTAL_API_KEY:
+            logger.warning("BIOPORTAL_API_KEY not set - Query expansion will be disabled")
+            return None
+        
+        _ontology_manager = OntologyManager(
+            api_key=settings.BIOPORTAL_API_KEY,
+            base_url=settings.BIOPORTAL_BASE_URL
+        )
+        
+        # Initialize manager
+        if not await _ontology_manager.initialize():
+            logger.warning("Failed to initialize OntologyManager")
+            return None
+        
+        logger.info("OntologyManager initialized successfully")
+    
+    return _ontology_manager
+
+
+async def get_semantic_annotation_service() -> SemanticAnnotationService:
+    """Get or create Semantic Annotation Service instance"""
+    global _semantic_annotation_service
+    
+    if _semantic_annotation_service is None:
+        snomed_client = await get_snomed_client()
+        _semantic_annotation_service = SemanticAnnotationService(snomed_client)
+        logger.info("Semantic Annotation Service initialized")
+    
+    return _semantic_annotation_service
+
+
 async def cleanup_dependencies():
     """Cleanup all dependency instances"""
-    global _ollama_client, _qdrant_client
+    global _ollama_client, _qdrant_client, _snomed_client, _ontology_manager
     
     if _ollama_client:
         await _ollama_client.close()
         _ollama_client = None
+    
+    if _snomed_client:
+        await _snomed_client.close()
+        _snomed_client = None
+    
+    if _ontology_manager:
+        await _ontology_manager.close()
+        _ontology_manager = None
     
     # Qdrant and embeddings don't need explicit cleanup
     _qdrant_client = None
