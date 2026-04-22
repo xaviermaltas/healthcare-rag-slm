@@ -1,10 +1,23 @@
 # 📜 Scripts del Sistema Healthcare RAG
 
-Aquesta carpeta conté els scripts per gestionar el cicle de vida del sistema Healthcare RAG.
+Aquesta carpeta conté tots els scripts organitzats per funcionalitat.
 
-## 📋 Scripts Disponibles
+## 📂 Estructura de Directoris
 
-### 🎯 `bootstrap.sh` - Instal·lació Inicial del Sistema
+```
+scripts/
+├── lifecycle/     # Gestió del cicle de vida del sistema
+├── utils/         # Utilitats generals
+├── data/          # Ingesta i processament de dades
+├── tests/         # Scripts de test i validació
+└── demos/         # Demos interactives dels casos d'ús
+```
+
+---
+
+## 🔄 Lifecycle - Gestió del Sistema
+
+### 🎯 `lifecycle/bootstrap.sh` - Instal·lació Inicial
 
 **Quan usar-lo:** **Una sola vegada** quan configures el projecte per primera vegada.
 
@@ -20,14 +33,14 @@ Aquesta carpeta conté els scripts per gestionar el cicle de vida del sistema He
 
 **Ús:**
 ```bash
-./scripts/bootstrap.sh
+./scripts/lifecycle/bootstrap.sh
 ```
 
 **Nota:** Aquest script només cal executar-lo una vegada. Després usa `start.sh` i `stop.sh`.
 
 ---
 
-### 🚀 `start.sh` - Aixecar el Sistema
+### 🚀 `lifecycle/start.sh` - Aixecar el Sistema
 
 **Quan usar-lo:** Cada vegada que vulguis **aixecar** el sistema.
 
@@ -40,7 +53,7 @@ Aquesta carpeta conté els scripts per gestionar el cicle de vida del sistema He
 
 **Ús:**
 ```bash
-./scripts/start.sh
+./scripts/lifecycle/start.sh
 ```
 
 **Característiques:**
@@ -50,7 +63,7 @@ Aquesta carpeta conté els scripts per gestionar el cicle de vida del sistema He
 
 ---
 
-### 🛑 `stop.sh` - Aturar el Sistema
+### 🛑 `lifecycle/stop.sh` - Aturar el Sistema
 
 **Quan usar-lo:** Cada vegada que vulguis **aturar** el sistema.
 
@@ -62,7 +75,7 @@ Aquesta carpeta conté els scripts per gestionar el cicle de vida del sistema He
 
 **Ús:**
 ```bash
-./scripts/stop.sh
+./scripts/lifecycle/stop.sh
 ```
 
 **Característiques:**
@@ -72,7 +85,7 @@ Aquesta carpeta conté els scripts per gestionar el cicle de vida del sistema He
 
 ---
 
-### 🔨 `rebuild.sh` - Reconstruir des de Zero
+### 🔨 `lifecycle/rebuild.sh` - Reconstruir des de Zero
 
 **Quan usar-lo:** Quan facis **canvis al codi** i necessitis reconstruir les imatges Docker.
 
@@ -84,7 +97,7 @@ Aquesta carpeta conté els scripts per gestionar el cicle de vida del sistema He
 
 **Ús:**
 ```bash
-./scripts/rebuild.sh
+./scripts/lifecycle/rebuild.sh
 ```
 
 **⚠️ ATENCIÓ:**
@@ -99,24 +112,24 @@ Aquesta carpeta conté els scripts per gestionar el cicle de vida del sistema He
 ### Primera vegada (Setup inicial)
 ```bash
 # 1. Instal·lació inicial (només una vegada)
-./scripts/bootstrap.sh
+./scripts/lifecycle/bootstrap.sh
 ```
 
 ### Ús diari
 ```bash
 # Aixecar el sistema
-./scripts/start.sh
+./scripts/lifecycle/start.sh
 
 # ... treballar amb el sistema ...
 
 # Aturar el sistema
-./scripts/stop.sh
+./scripts/lifecycle/stop.sh
 ```
 
 ### Després de fer canvis al codi
 ```bash
 # Reconstruir amb els canvis
-./scripts/rebuild.sh
+./scripts/lifecycle/rebuild.sh
 ```
 
 ---
@@ -188,13 +201,13 @@ docker logs healthcare-rag-api
 docker logs healthcare-rag-qdrant
 
 # Reconstruir des de zero
-./scripts/rebuild.sh
+./scripts/lifecycle/rebuild.sh
 ```
 
 ### Vull començar de zero completament
 ```bash
 # 1. Aturar tot
-./scripts/stop.sh
+./scripts/lifecycle/stop.sh
 
 # 2. Eliminar volums
 cd deploy/compose
@@ -202,12 +215,49 @@ docker-compose down -v
 
 # 3. Tornar a executar bootstrap
 cd ../..
-./scripts/bootstrap.sh
+./scripts/lifecycle/bootstrap.sh
 ```
 
 ---
 
-### 🧬 `ingest_medical_knowledge.py` - Ingesta d'Ontologies i PubMed
+## 🛠️ Utils - Utilitats Generals
+
+### 🔧 `utils/activate_and_run.sh` - Executar amb Entorn Virtual
+
+**Quan usar-lo:** Per executar qualsevol script Python amb l'entorn virtual activat.
+
+**Què fa:**
+- ✅ Activa l'entorn virtual automàticament
+- ✅ Executa la comanda especificada
+- ✅ Desactiva l'entorn després
+
+**Ús:**
+```bash
+./scripts/utils/activate_and_run.sh python <script.py>
+./scripts/utils/activate_and_run.sh pytest tests/
+```
+
+### ✅ `utils/verify_setup.py` - Verificar Configuració del Sistema
+
+**Quan usar-lo:** Per verificar que tot està correctament configurat.
+
+**Què fa:**
+- ✅ Verifica versió de Python
+- ✅ Verifica paquets instal·lats
+- ✅ Verifica estructura de directoris
+- ✅ Verifica connexió a Ollama, Qdrant i API
+- ✅ Verifica models d'embeddings
+
+**Ús:**
+```bash
+./scripts/utils/activate_and_run.sh python scripts/utils/verify_setup.py
+```
+
+---
+
+## 📊 Data - Ingesta i Processament
+
+### 🧬 `data/ingest_medical_knowledge.py` - Ingesta d'Ontologies i PubMed
 
 **Quan usar-lo:** Per poblar la base de dades amb coneixement mèdic (ontologies + articles).
 
@@ -219,48 +269,110 @@ cd ../..
 
 **Ús:**
 ```bash
-./scripts/activate_and_run.sh python3 scripts/ingest_medical_knowledge.py
+./scripts/utils/activate_and_run.sh python scripts/data/ingest_medical_knowledge.py
 ```
 
 **Prerequisits:**
-- Sistema aixecat (`./scripts/start.sh`)
+- Sistema aixecat (`./scripts/lifecycle/start.sh`)
 - API key de BioPortal configurada a `.env`
+
+### 🏥 `data/ingest_sas_protocols.py` - Ingesta de Protocols SAS
+
+**Quan usar-lo:** Per indexar protocols clínics del SAS a Qdrant.
+
+**Què fa:**
+- ✅ Crea protocols simulats per diferents especialitats
+- ✅ Genera embeddings amb BGE-M3
+- ✅ Indexa protocols a Qdrant amb metadata
+
+**Ús:**
+```bash
+./scripts/utils/activate_and_run.sh python scripts/data/ingest_sas_protocols.py
+```
 
 ---
 
-### 🧪 `run_ontology_tests.sh` - Tests d'Integració d'Ontologies
+## 🧪 Tests - Validació i Testing
 
-**Quan usar-lo:** Per verificar que les ontologies funcionen correctament.
+### 🧪 `tests/run_ontology_tests.sh` - Tests d'Integració d'Ontologies
 
 **Què fa:**
 - ✅ Prova connexió a BioPortal
 - ✅ Verifica SNOMED CT, MeSH, ICD-10
 - ✅ Prova cerca de conceptes
-- ✅ Prova mapatge de text clínic
 
 **Ús:**
 ```bash
-./scripts/run_ontology_tests.sh
+./scripts/tests/run_ontology_tests.sh
 ```
 
-**Nota:** Els tests reals estan a `/tests/integration/`, aquest script només els executa.
+### 🧪 `tests/run_query_expansion_tests.sh` - Tests d'Expansió de Queries
+
+**Què fa:**
+- ✅ Prova expansió semàntica de queries
+- ✅ Verifica integració amb ontologies
+
+**Ús:**
+```bash
+./scripts/tests/run_query_expansion_tests.sh
+```
+
+### 📋 `tests/test_discharge_summary_endpoint.py` - Test Complet d'Informes d'Alta
+
+**Què fa:**
+- ✅ Testa endpoint `/generate/discharge-summary`
+- ✅ 3 casos clínics complets (Infart, Diabetis, AVC)
+- ✅ Validació de resposta i estructura
+
+**Ús:**
+```bash
+./scripts/utils/activate_and_run.sh python scripts/tests/test_discharge_summary_endpoint.py
+```
+
+### ⚡ `tests/test_discharge_simple.py` - Test Ràpid
+
+**Què fa:**
+- ✅ Test ràpid amb cas clínic simple
+- ✅ Verificació bàsica de funcionalitat
+
+**Ús:**
+```bash
+./scripts/utils/activate_and_run.sh python scripts/tests/test_discharge_simple.py
+```
+
+### 🔍 `tests/test_sas_protocols_retrieval.py` - Test de Retrieval de Protocols
+
+**Què fa:**
+- ✅ Verifica recuperació de protocols de Qdrant
+- ✅ Testa filtratge per especialitat
+
+**Ús:**
+```bash
+./scripts/utils/activate_and_run.sh python scripts/tests/test_sas_protocols_retrieval.py
+```
 
 ---
 
-### 🔧 `activate_and_run.sh` - Executar amb Entorn Virtual
+## 🎭 Demos - Casos d'Ús Interactius
 
-**Quan usar-lo:** Per executar qualsevol script Python amb l'entorn virtual activat.
+### 🏥 `demos/demo_discharge_summary.py` - Demo Informe d'Alta
 
 **Què fa:**
-- ✅ Activa l'entorn virtual automàticament
-- ✅ Executa la comanda especificada
-- ✅ Desactiva l'entorn després
+- ✅ Demo interactiva del cas d'ús principal
+- ✅ Cas clínic real d'Infart Agut de Miocardi
+- ✅ Mostra tot el procés de generació
+- ✅ Visualitza protocols utilitzats i validació
 
 **Ús:**
 ```bash
-./scripts/activate_and_run.sh python3 <script.py>
-./scripts/activate_and_run.sh pytest tests/
+./scripts/utils/activate_and_run.sh python scripts/demos/demo_discharge_summary.py
 ```
+
+**Característiques:**
+- 📊 Mostra temps de generació i mètriques
+- 📚 Llista protocols SAS consultats
+- ✅ Validació automàtica de l'informe
+- 💡 Mostra beneficis i impacte estimat
 
 ---
 

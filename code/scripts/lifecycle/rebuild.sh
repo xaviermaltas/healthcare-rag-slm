@@ -1,17 +1,20 @@
 #!/bin/bash
 
-# Script per AIXECAR el sistema Healthcare RAG
-# Manté volums i dades existents
-# Aixeca Ollama si no està executant-se
+# Script per RECONSTRUIR el sistema Healthcare RAG des de zero
+# ATENCIÓ: Aquest script elimina contenidors i reconstrueix imatges
+# Usa start.sh per aixecar el sistema mantenint volums
 
 set -e
 
-echo "🚀 Healthcare RAG System - Aixecant Sistema"
+echo "🔨 Healthcare RAG System - Reconstrucció Completa"
 echo "=============================================="
+echo "⚠️  ATENCIÓ: Aquest script reconstruirà tot des de zero"
 echo ""
 
 # Navegar al directori arrel del projecte
-cd "$(dirname "$0")/.."
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+cd "$PROJECT_ROOT"
 
 echo "📂 Directori actual: $(pwd)"
 echo ""
@@ -26,38 +29,25 @@ fi
 echo "✅ Docker està executant-se"
 echo ""
 
-# Comprovar i iniciar Ollama si cal
-echo "🤖 Verificant Ollama..."
+# Comprovar si Ollama està executant-se
 if ! curl -s http://localhost:11434/api/tags > /dev/null 2>&1; then
-    echo "⚠️  Ollama no està executant-se. Iniciant..."
-    
-    # Intentar iniciar Ollama amb brew services
-    if command -v brew &> /dev/null; then
-        brew services start ollama
-        echo "   Esperant que Ollama s'iniciï..."
-        sleep 5
-        
-        # Verificar que s'ha iniciat
-        if curl -s http://localhost:11434/api/tags > /dev/null 2>&1; then
-            echo "✅ Ollama iniciat correctament"
-        else
-            echo "⚠️  Ollama no respon. Pot ser que necessitis executar 'ollama serve' manualment"
-        fi
-    else
-        echo "⚠️  No es pot iniciar Ollama automàticament"
-        echo "   Executa manualment: ollama serve"
-    fi
-else
-    echo "✅ Ollama ja està executant-se"
+    echo "⚠️  Advertència: Ollama no sembla estar executant-se"
+    echo "   Executa: ollama serve"
+    echo ""
 fi
-
-echo ""
 
 # Navegar al directori de compose
 cd deploy/compose
 
-# Aixecar contenidors (sense rebuild, mantenint volums)
-echo "🐳 Aixecant contenidors Docker..."
+echo "🛑 Aturant contenidors anteriors..."
+docker compose down
+
+echo ""
+echo "🔨 Construint imatges Docker..."
+docker compose build --no-cache
+
+echo ""
+echo "🚀 Aixecant contenidors..."
 docker compose up -d
 
 echo ""
@@ -87,13 +77,6 @@ else
     echo "❌ API: Error"
 fi
 
-# Comprovar Ollama
-if curl -s http://localhost:11434/api/tags > /dev/null 2>&1; then
-    echo "✅ Ollama: OK"
-else
-    echo "⚠️  Ollama: No respon"
-fi
-
 echo ""
 echo "=============================================="
 echo "✨ Sistema aixecat correctament!"
@@ -103,14 +86,10 @@ echo "   - API: http://localhost:8000"
 echo "   - API Docs: http://localhost:8000/docs"
 echo "   - Qdrant: http://localhost:6333"
 echo "   - Qdrant Dashboard: http://localhost:6333/dashboard"
-echo "   - Ollama: http://localhost:11434"
 echo ""
 echo "📝 Per veure logs:"
 echo "   docker logs -f healthcare-rag-api"
 echo ""
 echo "🛑 Per aturar el sistema:"
-echo "   ./scripts/stop.sh"
-echo ""
-echo "🔨 Per reconstruir des de zero:"
-echo "   ./scripts/rebuild.sh"
+echo "   ./scripts/lifecycle/stop.sh"
 echo "=============================================="

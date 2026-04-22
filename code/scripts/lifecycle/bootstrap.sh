@@ -172,7 +172,7 @@ done
 
 # Run system verification
 print_status "Running system verification..."
-python3 "$PROJECT_ROOT/scripts/verify_setup.py"
+python3 "$PROJECT_ROOT/scripts/utils/verify_setup.py"
 
 print_success "Healthcare RAG System setup completed successfully!"
 echo ""
