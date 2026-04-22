@@ -12,7 +12,7 @@ from contextlib import asynccontextmanager
 from typing import Dict, List, Optional, Any
 
 from config.settings import get_settings
-from src.main.api.routes import health, query, documents, collections, models, admin, ontology
+from src.main.api.routes import health, query, documents, collections, models, admin, ontology, discharge_summary
 from src.main.api.dependencies import get_ollama_client, get_qdrant_client, get_embeddings_model, get_snomed_client
 from src.main.api.middleware import setup_logging_middleware
 
@@ -109,6 +109,7 @@ app.include_router(ontology.router, prefix="/ontology", tags=["Ontology"])
 app.include_router(collections.router, prefix="/collections", tags=["Collections"])
 app.include_router(models.router, prefix="/models", tags=["Models"])
 app.include_router(admin.router, prefix="/admin", tags=["Admin"])
+app.include_router(discharge_summary.router, tags=["Generation"])
 
 
 @app.get("/")
