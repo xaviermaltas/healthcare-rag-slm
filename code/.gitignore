@@ -47,3 +47,4 @@ data/raw/*.pdf
 
 # Docker
 .docker/
+.env
