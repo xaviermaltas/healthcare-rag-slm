@@ -126,8 +126,10 @@ class OllamaClient:
                     return {"error": f"HTTP {response.status}: {error_text}"}
                     
         except Exception as e:
-            logger.error(f"Error during text generation: {e}")
-            return {"error": str(e)}
+            logger.error(f"Error during text generation: {e}", exc_info=True)
+            import traceback
+            traceback.print_exc()
+            return {"error": str(e) if str(e) else "Unknown error during generation"}
     
     async def _handle_streaming_response(self, response) -> AsyncGenerator[Dict[str, Any], None]:
         """Handle streaming response from Ollama"""
