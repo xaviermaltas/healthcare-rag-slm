@@ -15,6 +15,7 @@ from src.main.infrastructure.embeddings.bge_m3 import BGEM3Embeddings
 from src.main.infrastructure.ontologies.snomed_client import SNOMEDClient
 from src.main.infrastructure.ontologies.ontology_manager import OntologyManager
 from src.main.core.retrieval.semantic_annotation import SemanticAnnotationService
+from src.main.core.coding.medical_coding_service import MedicalCodingService
 
 logger = logging.getLogger(__name__)
 settings = get_settings()
@@ -26,6 +27,7 @@ _embeddings_model: Optional[BGEM3Embeddings] = None
 _snomed_client: Optional[SNOMEDClient] = None
 _ontology_manager: Optional[OntologyManager] = None
 _semantic_annotation_service: Optional[SemanticAnnotationService] = None
+_medical_coding_service: Optional[MedicalCodingService] = None
 
 
 async def get_ollama_client() -> OllamaClient:
@@ -143,6 +145,27 @@ async def get_semantic_annotation_service() -> SemanticAnnotationService:
         logger.info("Semantic Annotation Service initialized")
     
     return _semantic_annotation_service
+
+
+async def get_medical_coding_service() -> Optional[MedicalCodingService]:
+    """Get or create Medical Coding Service instance"""
+    global _medical_coding_service
+    
+    if _medical_coding_service is None:
+        if not settings.BIOPORTAL_API_KEY:
+            logger.warning("BIOPORTAL_API_KEY not set - Medical coding will be disabled")
+            return None
+        
+        snomed_client = await get_snomed_client()
+        ontology_manager = await get_ontology_manager()
+        
+        _medical_coding_service = MedicalCodingService(
+            snomed_client=snomed_client,
+            ontology_manager=ontology_manager
+        )
+        logger.info("Medical Coding Service initialized")
+    
+    return _medical_coding_service
 
 
 async def cleanup_dependencies():

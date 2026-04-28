@@ -14,7 +14,7 @@ from src.main.core.parsers.discharge_summary_parser import DischargeSummaryParse
 from src.main.core.specialty_detector import SpecialtyDetector
 from src.main.infrastructure.embeddings.bge_m3 import BGEM3Embeddings
 from src.main.infrastructure.llm.ollama_client import OllamaClient
-from src.main.api.dependencies import get_ollama_client, get_embeddings_model
+from src.main.api.dependencies import get_ollama_client, get_embeddings_model, get_medical_coding_service
 from qdrant_client import QdrantClient
 from qdrant_client.models import Filter, FieldCondition, MatchValue
 from config.settings import settings
@@ -180,7 +180,8 @@ class DischargeSummaryResponse(BaseModel):
 async def generate_discharge_summary(
     request: DischargeSummaryRequest,
     ollama_client: OllamaClient = Depends(get_ollama_client),
-    embeddings_client: BGEM3Embeddings = Depends(get_embeddings_model)
+    embeddings_client: BGEM3Embeddings = Depends(get_embeddings_model),
+    coding_service = Depends(get_medical_coding_service)
 ) -> DischargeSummaryResponse:
     """
     Generate a hospital discharge summary using RAG
@@ -415,6 +416,52 @@ async def generate_discharge_summary(
         # Update validation status
         validation_status.has_diagnoses = len(diagnoses) > 0
         validation_status.has_medications = len(medications) > 0
+        
+        # ====================================================================
+        # STEP 7.5: Enrich with automatic medical coding (if available)
+        # ====================================================================
+        
+        if coding_service:
+            try:
+                logger.info("Enriching diagnoses and medications with automatic coding...")
+                
+                # Enrich diagnoses with missing codes
+                for diag in diagnoses:
+                    # Only enrich if codes are missing
+                    if not diag.snomed_code or not diag.icd10_code:
+                        coding_result = await coding_service.code_diagnosis(
+                            diagnosis_text=diag.description,
+                            min_confidence=0.6
+                        )
+                        
+                        # Update codes if found and not already present
+                        if coding_result.snomed_code and not diag.snomed_code:
+                            diag.snomed_code = coding_result.snomed_code.code
+                            logger.debug(f"Added SNOMED code {diag.snomed_code} for: {diag.description}")
+                        
+                        if coding_result.icd10_code and not diag.icd10_code:
+                            diag.icd10_code = coding_result.icd10_code.code
+                            logger.debug(f"Added ICD-10 code {diag.icd10_code} for: {diag.description}")
+                
+                # Enrich medications with missing ATC codes
+                for med in medications:
+                    if not med.atc_code:
+                        coding_result = await coding_service.code_medication(
+                            medication_text=med.name,
+                            min_confidence=0.6
+                        )
+                        
+                        if coding_result.atc_code:
+                            med.atc_code = coding_result.atc_code.code
+                            logger.debug(f"Added ATC code {med.atc_code} for: {med.name}")
+                
+                logger.info(f"Automatic coding completed: {len(diagnoses)} diagnoses, {len(medications)} medications")
+            
+            except Exception as e:
+                logger.warning(f"Automatic coding failed: {e}")
+                # Continue without enrichment
+        else:
+            logger.debug("Medical coding service not available - skipping automatic coding")
         
         # ====================================================================
         # STEP 8: Extract follow-up recommendations
