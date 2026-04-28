@@ -1,0 +1,66 @@
+{
+  "summary": "INFORME D'ALTA HOSPITALÀRIA\n\n1. DADES DEL PACIENT\nEl pacient és un home de 65 anys amb antecedents de hipertensió arterial en tractament amb IECA, dislipèmia en tractament amb estatines, i tabaquisme actiu (20 cigarrets/dia durant 40 anys). Sense antecedents de diabetis mellitus ni cardiopatia isquèmica prèvia.\n\n2. MOTIU D'INGRÉS\nEl pacient presentà un dolor toràcic opressiu d'inici sobtat mentre feia exercici físic moderat, irradiat a braç esquerre i mandíbula, acompanyat de sudoració freda i dispnea. Durada de 45 minuts sense alleujament amb repòs. A urgències: ECG amb elevació del segment ST en derivacions anteriors (V1-V4), elevació de troponines (12.5 ng/mL, VN <0.04).\n\n3. DIAGNÒSTIC PRINCIPAL\nEl pacient presenta insuficiència cardíaca aguda descompensada.\n\n* Codi SNOMED CT: 42343007\n* Codi ICD-10: I50.9\n\n4. DIAGNÒSTICS SECUNDARIS\nEl pacient també presenta una elevació del segment ST en derivacions anteriors (V1-V4) i elevació de troponines, indicant un infart agut de miocardi amb elevació del segment ST (IAMCEST).\n\n* Codi SNOMED CT: 401303003\n* Codi ICD-10: I21.9\n\n5. PROCEDIMENTS REALITZATS\nEl pacient ha realitzat els següents procediments:\n\n* ECG de 12 derivacions seriats\n* Analítica completa amb enzims cardíacs (troponines, CK-MB)\n* Ecocardiografia transtorácica\n* Coronariografia urgent per cateterisme cardíac\n* Angioplastia primària amb implantació de stent farmacoactiu en artèria descendent anterior\n* Monitorització contínua en Unitat Coronària\n\n6. TRACTAMENT I MEDICACIÓ A L'ALTA\nEl pacient ha rebut els següents medicaments:\n\n* Enalapril 10mg cada 12 hores (Codi ATC: C09AA02)\n* Atorvastatina 40mg cada 24 hores (Codi ATC: B01AC06)\n* Àcid acetilsalicílic 100mg cada 24 hores\n\n7. EVOLUCIÓ CLÍNICA\nDurant l'ingrés hospitalari, el pacient ha presentat una milloria en la seva condició clínica, amb reducció de les sintomes i millora del seu estat general.\n\n8. RECOMANACIONS DE SEGUIMENT\nEl pacient ha de ser controlat per un especialista cardíac en els 30 dies següents.\n\n* Proves complementàries específiques: ecocardiografia transtorácica a les 7 dies i 14 dies\n* Modificacions en el tractament: ajustar la dosi d'Enalapril si es necessari\n\n9. CONTRAINDICACIONS I PRECAUCIONS\nEl pacient ha de ser conscientitzat sobre les següents precaucions:\n\n* Al·lèrgies medicamentoses: no han",
+  "diagnoses": [
+    {
+      "description": "El pacient presenta insuficiència cardíaca aguda descompensada.",
+      "snomed_code": null,
+      "icd10_code": null,
+      "is_primary": true
+    }
+  ],
+  "medications": [
+    {
+      "name": "Enalapril",
+      "dosage": "10mg",
+      "atc_code": "C09AA02",
+      "duration": null
+    },
+    {
+      "name": "Atorvastatina",
+      "dosage": "40mg",
+      "atc_code": "C09AA02",
+      "duration": null
+    }
+  ],
+  "follow_up_recommendations": [
+    "Proves complementàries específiques: ecocardiografia transtorácica a les 7 dies i 14 dies",
+    "Modificacions en el tractament: ajustar la dosi d'Enalapril si es necessari"
+  ],
+  "contraindications": [],
+  "sources": [
+    {
+      "title": "Protocol d'Alta Hospitalària - Insuficiència Cardíaca Aguda",
+      "specialty": "Cardiologia",
+      "score": 0.6026,
+      "official": true
+    },
+    {
+      "title": "Protocol d'Alta Hospitalària - Infart Agut de Miocardi",
+      "specialty": "Cardiologia",
+      "score": 0.5855,
+      "official": true
+    }
+  ],
+  "validation_status": {
+    "all_sections_present": false,
+    "missing_sections": [
+      "firma"
+    ],
+    "has_diagnoses": true,
+    "has_medications": true,
+    "has_follow_up": true
+  },
+  "generation_metadata": {
+    "generation_time_seconds": 55.18,
+    "protocols_retrieved": 2,
+    "language": "ca",
+    "specialty_requested": "Cardiologia",
+    "specialty_detected": "Cardiologia",
+    "specialty_confidence": 1.0,
+    "specialty_matched_terms": [
+      "Cardiologia"
+    ],
+    "model": "llama3.2",
+    "timestamp": "2026-04-28T18:47:25.082218"
+  }
+}

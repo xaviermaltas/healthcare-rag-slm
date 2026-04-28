@@ -1,0 +1,103 @@
+{
+  "summary": "INFORME D'ALTA HOSPITALÀRIA\n\n1. DADES DEL PACIENT\nDona de 58 anys amb antecedents d'obesitat (IMC 34 kg/m²), hipertensió arterial i antecedents familiars de diabetis mellitus tipus 2 (mare i germà). Sense seguiment mèdic regular els últims 5 anys.\n\n2. MOTIU D'INGRÉS\nQuadre de poliúria, polidipsia i pèrdua de pes de 8 kg en les últimes 3 setmanes. A urgències: glucèmia capilar de 485 mg/dL, gasometria arterial amb pH 7.28, HCO3 15 mEq/L, cetonúria positiva (+++). Diagnòstic de cetoacidosi diabètica.\n\n3. DIAGNÒSTIC PRINCIPAL\nCetoacidosi diabètica descompensada\n\n- Codi SNOMED CT: 44054006\n- Codi ICD-10: E11.9\n\n4. DIAGNÒSTICS SECUNDARIS\n- Hiperglucèmia severa (>400 mg/dL)\n  - Codi SNOMED CT: 59621000\n  - Codi ICD-10: E11.0\n- Estat hiperosmolar hiperglucèmic\n  - Codi SNOMED CT: 370992007\n  - Codi ICD-10: E12.9\n\n5. PROCEDIMENTS REALITZATS\n- Analítica completa amb glucèmia, HbA1c, funció renal i hepàtica\n- Gasometria arterial seriada\n- Monitorització contínua de glucosa\n- Perfusió d'insulina ràpida en bomba\n- Reposició hidroelectrolítica\n- Educació diabetològica\n\n6. TRACTAMENT I MEDICACIÓ A L'ALTA\n- Metformina 850mg/12h (Codi ATC: A10BA02)\n- Insulina basal (Glargina/Degludec)\n  * Glargina 20 UI/24h (Codi ATC: A10AE04)\n- Enalapril 10mg cada 24 hores\n- Hidroclorotiazida 25mg cada 24 hores\n\n7. EVOLUCIÓ CLÍNICA\nLa dona es va estabilitzant en els últims 48 hores, amb una glucèmia capilar de 420 mg/dL i un pH arterial de 7.32. La cetonúria ha disminuït a -++, i la funció renal s'ha millorat.\n\n8. RECOMANACIONS DE SEGUIMENT\n- Control per endocrinologia en 1 setmana\n- Proves complementàries específiques: glucèmia capilar, gasometria arterial i monitorització contínua de glucosa\n- Modificacions en el tractament: ajustar la dosi de metformina i insulina basal segons les necessitats\n\n9. CONTRAINDICACIONS I PRECAUCIONS\n- Al·lèrgies medicamentoses: hipersensibilitat a metformina o insulina\n- Interaccions a evitar: hidroclorotiazida amb diurètics\n- Precaucions específiques: monitoritzar la glucèmia capilar i ajustar la dosi de metformina segons les necessit",
+  "diagnoses": [
+    {
+      "description": "Cetoacidosi diabètica descompensada",
+      "snomed_code": null,
+      "icd10_code": null,
+      "is_primary": true
+    },
+    {
+      "description": "Hiperglucèmia severa (>400 mg/dL)",
+      "snomed_code": null,
+      "icd10_code": null,
+      "is_primary": false
+    }
+  ],
+  "medications": [
+    {
+      "name": "Metformina",
+      "dosage": "850mg",
+      "atc_code": "A10BA02",
+      "duration": null
+    },
+    {
+      "name": "Glargina",
+      "dosage": "20UI",
+      "atc_code": "A10AE04",
+      "duration": null
+    },
+    {
+      "name": "Enalapril",
+      "dosage": "10mg",
+      "atc_code": "A10AE04",
+      "duration": null
+    },
+    {
+      "name": "Hidroclorotiazida",
+      "dosage": "25mg",
+      "atc_code": "A10AE04",
+      "duration": null
+    }
+  ],
+  "follow_up_recommendations": [
+    "Control per endocrinologia en 1 setmana",
+    "Proves complementàries específiques: glucèmia capilar, gasometria arterial i monitorització contínua de glucosa",
+    "Modificacions en el tractament: ajustar la dosi de metformina i insulina basal segons les necessitats"
+  ],
+  "contraindications": [],
+  "sources": [
+    {
+      "title": "Protocol d'Alta Hospitalària - Diabetis Mellitus Descompensada",
+      "specialty": "Endocrinologia",
+      "score": 0.6357,
+      "official": true
+    },
+    {
+      "title": "Protocol d'Alta Hospitalària - Insuficiència Cardíaca Aguda",
+      "specialty": "Cardiologia",
+      "score": 0.5962,
+      "official": true
+    },
+    {
+      "title": "Protocol d'Alta Hospitalària - Accident Cerebrovascular Isquèmic",
+      "specialty": "Neurologia",
+      "score": 0.5529,
+      "official": true
+    },
+    {
+      "title": "Protocol d'Alta Hospitalària - Pneumònia Adquirida a la Comunitat",
+      "specialty": "Medicina Interna",
+      "score": 0.5414,
+      "official": true
+    },
+    {
+      "title": "Protocol d'Alta Hospitalària - Infart Agut de Miocardi",
+      "specialty": "Cardiologia",
+      "score": 0.5184,
+      "official": true
+    }
+  ],
+  "validation_status": {
+    "all_sections_present": false,
+    "missing_sections": [
+      "firma"
+    ],
+    "has_diagnoses": true,
+    "has_medications": true,
+    "has_follow_up": true
+  },
+  "generation_metadata": {
+    "generation_time_seconds": 54.92,
+    "protocols_retrieved": 5,
+    "language": "ca",
+    "specialty_requested": "Endocrinologia",
+    "specialty_detected": "Endocrinologia",
+    "specialty_confidence": 1.0,
+    "specialty_matched_terms": [
+      "Endocrinologia"
+    ],
+    "model": "llama3.2",
+    "timestamp": "2026-04-28T18:48:21.833390"
+  }
+}

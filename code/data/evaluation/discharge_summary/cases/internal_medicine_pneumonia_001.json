@@ -1,0 +1,55 @@
+{
+  "case_id": "internal_medicine_pneumonia_001",
+  "specialty": "Medicina Interna",
+  "patient_context": "Dona de 68 anys amb antecedents de EPOC GOLD II en tractament amb broncodilatadors, tabaquisme actiu (40 paquets-any), i hipertensió arterial. Viu sola, autònoma per a les activitats bàsiques.",
+  "admission_reason": "Quadre de 4 dies d'evolució de febre de fins a 39°C, tos productiva amb expectoració purulenta, dispnea progressiva i dolor toràcic pleurític en hemitòrax dret. A urgències: saturació O2 88% amb aire ambient, taquipnea (28 rpm), crepitants a base pulmonar dreta. Radiografia toràcica amb infiltrat alveolar a lòbul inferior dret compatible amb pneumònia.",
+  "procedures": [
+    "Radiografia toràcica PA i lateral",
+    "Analítica completa amb hemograma, bioquímica i PCR",
+    "Gasometria arterial",
+    "Hemocultius (2 mostres)",
+    "Antigenúria per Legionella i Pneumococ",
+    "Oxigenoteràpia amb màscara Venturi"
+  ],
+  "current_medications": [
+    "Tiotropi 18mcg inhalat cada 24 hores",
+    "Salbutamol 100mcg inhalat a demanda",
+    "Enalapril 10mg cada 24 hores"
+  ],
+  "language": "ca",
+  "metadata": {
+    "complexity": "medium",
+    "primary_diagnosis": "Pneumònia adquirida a la comunitat lòbul inferior dret",
+    "expected_codes": {
+      "snomed": [
+        "385093006",
+        "13645005"
+      ],
+      "icd10": [
+        "J18.1",
+        "J44.1"
+      ],
+      "atc": [
+        "J01CR02",
+        "R03BB04",
+        "R03AC02",
+        "C09AA02"
+      ]
+    },
+    "expected_sections": [
+      "dades_pacient",
+      "motiu_ingres",
+      "diagnostic_principal",
+      "diagnostics_secundaris",
+      "procediments",
+      "tractament_medicacio",
+      "evolucio_clinica",
+      "recomanacions_seguiment",
+      "contraindicacions"
+    ],
+    "expected_medications_count": 4,
+    "expected_diagnoses_count": 2,
+    "creation_date": "2026-04-28",
+    "author": "Medical evaluation team"
+  }
+}

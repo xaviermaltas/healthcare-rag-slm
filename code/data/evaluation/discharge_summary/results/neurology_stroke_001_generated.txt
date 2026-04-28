@@ -1,0 +1,46 @@
+INFORME D'ALTA HOSPITALÀRIA
+
+1. DADES DEL PACIENT
+El pacient és un home de 72 anys amb antecedents de fibril·lació auricular paroxística en tractament anticoagulant amb acenocumarol, hipertensió arterial i dislipèmia. L'home és autònom per a les activitats bàsiques de la vida diària.
+
+2. MOTIU D'INGRÉS
+El pacient va presentant un sobtat inici de debilitat de hemicòs dret i disàrtria fa 2 hores mentre mirava la televisió. La família va activar el codi ictus. A urgències, l'escala NIHSS de 8 punts (parèsia facial dreta, parèsia de membre superior dret 3/5, disàrtria moderada). TAC cranial urgent sense signes d'hemorràgia.
+
+3. DIAGNÒSTIC PRINCIPAL
+El diagnòstic principal del pacient és un accident cerebrovascular isquèmic (ACVI).
+
+4. DIAGNÒSTICS SECUNDARIS
+A més del diagnòstic principal, el pacient també presenta una parèsia facial dreta i una parèsia de membre superior dret 3/5.
+
+5. PROCEDIMENTS REALITZATS
+El pacient ha realitzat els següents procediments:
+- TAC cranial urgent sense contrast
+- Ressonància magnètica cerebral amb difusió
+- Doppler de troncs supraaòrtics
+- Ecocardiografia transtorácica
+- Trombòlisi intravenosa amb rtPA
+- Monitorització neurològica contínua
+- Rehabilitació precoç (fisioteràpia i logopèdia)
+
+6. TRACTAMENT I MEDICACIÓ A L'ALTA
+El pacient ha rebut els següents medicaments:
+- Acenocumarol segons pauta INR
+- Enalapril 10mg cada 12 hores
+- Atorvastatina 40mg cada 24 hores
+
+7. EVOLUCIÓ CLÍNICA
+Durant el seu estadi hospitalari, el pacient ha presentat una evolució clínica següent:
+- El pacient ha mostrat una melioració en la seva parèsia facial i de membre superior dret.
+- L'escala NIHSS ha disminuït a 6 punts.
+- El pacient ha rebut trombòlisi intravenosa amb rtPA sense complicacions.
+
+8. RECOMANACIONS DE SEGUIMENT
+El pacient ha de ser seguit per un especialista en neurologia en les 3 setmanes següents.
+- Proves complementàries específiques: TAC cerebral i escala NIHSS.
+- Modificacions en el tractament: ajustar la dosi d'Enalapril si s'observa hipertensió arterial.
+- Signes d'alarma a vigilar: parèsia facial o de membre superior dret, disàrtria, etc.
+
+9. CONTRAINDICACIONS I PRECAUCIONS
+El pacient no té al·lèrgies medicamentoses conegudes.
+- Interaccions a evitar: no hi ha interaccions conegudes amb els medicaments prescrits.
+- Precaucions específiques: el pacient ha de ser atent a la seg

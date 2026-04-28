@@ -1,0 +1,54 @@
+{
+  "case_id": "endocrinology_diabetes_001",
+  "specialty": "Endocrinologia",
+  "patient_context": "Dona de 58 anys amb antecedents d'obesitat (IMC 34 kg/m²), hipertensió arterial i antecedents familiars de diabetis mellitus tipus 2 (mare i germà). Sense seguiment mèdic regular els últims 5 anys.",
+  "admission_reason": "Quadre de poliúria, polidipsia i pèrdua de pes de 8 kg en les últimes 3 setmanes. A urgències: glucèmia capilar de 485 mg/dL, gasometria arterial amb pH 7.28, HCO3 15 mEq/L, cetonúria positiva (+++). Diagnòstic de cetoacidosi diabètica.",
+  "procedures": [
+    "Analítica completa amb glucèmia, HbA1c, funció renal i hepàtica",
+    "Gasometria arterial seriada",
+    "Monitorització contínua de glucosa",
+    "Perfusió d'insulina ràpida en bomba",
+    "Reposició hidroelectrolítica",
+    "Educació diabetològica"
+  ],
+  "current_medications": [
+    "Enalapril 10mg cada 24 hores",
+    "Hidroclorotiazida 25mg cada 24 hores"
+  ],
+  "language": "ca",
+  "metadata": {
+    "complexity": "high",
+    "primary_diagnosis": "Diabetis mellitus tipus 2 de debut amb cetoacidosi diabètica",
+    "expected_codes": {
+      "snomed": [
+        "44054006",
+        "420422005"
+      ],
+      "icd10": [
+        "E11.10",
+        "E87.2"
+      ],
+      "atc": [
+        "A10AB01",
+        "A10BA02",
+        "C09AA02",
+        "C03AA03"
+      ]
+    },
+    "expected_sections": [
+      "dades_pacient",
+      "motiu_ingres",
+      "diagnostic_principal",
+      "diagnostics_secundaris",
+      "procediments",
+      "tractament_medicacio",
+      "evolucio_clinica",
+      "recomanacions_seguiment",
+      "contraindicacions"
+    ],
+    "expected_medications_count": 4,
+    "expected_diagnoses_count": 4,
+    "creation_date": "2026-04-28",
+    "author": "Medical evaluation team"
+  }
+}

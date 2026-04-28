@@ -1,0 +1,71 @@
+INFORME D'ALTA HOSPITALÀRIA
+
+1. DADES DEL PACIENT
+Dona de 58 anys
+
+2. MOTIU D'INGRÉS
+Quadre de poliúria, polidipsia i pèrdua de pes amb hiperglucèmia severa i cetoacidosi diabètica.
+
+3. DIAGNÒSTIC PRINCIPAL
+Diabetis mellitus tipus 2 de debut amb cetoacidosi diabètica
+- Codi SNOMED CT: 44054006 (Diabetis mellitus tipus 2)
+- Codi SNOMED CT: 420422005 (Cetoacidosi diabètica)
+- Codi ICD-10: E11.10
+
+4. DIAGNÒSTICS SECUNDARIS
+- Obesitat
+  - Codi SNOMED CT: 414915002
+  - Codi ICD-10: E66.9
+- Hipertensió arterial essencial
+  - Codi SNOMED CT: 59621000
+  - Codi ICD-10: I10
+- Deshidratació secundària
+  - Codi SNOMED CT: 34095006
+  - Codi ICD-10: E87.1
+
+5. PROCEDIMENTS REALITZATS
+- Analítica completa amb determinació de glucèmia, HbA1c (12.8%), funció renal i hepàtica
+- Gasometria arterial seriada per control d'acidosi metabòlica
+- Perfusió contínua d'insulina ràpida en bomba
+- Reposició hidroelectrolítica amb sèrum fisiològic i potassi
+- Monitorització contínua de glucosa
+- Educació diabetològica per part d'infermeria especialitzada
+
+6. TRACTAMENT I MEDICACIÓ A L'ALTA
+
+Tractament antidiabètic:
+- Insulina glargina 20 UI subcutània cada 24 hores (abans d'anar a dormir) (Codi ATC: A10AE04)
+- Insulina asparta 6-8-6 UI subcutània abans de cada àpat (Codi ATC: A10AB05)
+- Metformina 850mg cada 12 hores (Codi ATC: A10BA02)
+
+Tractament antihipertensiu:
+- Enalapril 10mg cada 24 hores (Codi ATC: C09AA02)
+
+7. EVOLUCIÓ CLÍNICA
+La pacient va ingressar amb quadre de cetoacidosi diabètica secundària a diabetis mellitus tipus 2 de debut. A l'arribada presentava hiperglucèmia severa (485 mg/dL), acidosi metabòlica (pH 7.28) i cetonúria positiva.
+
+Es va iniciar tractament amb perfusió contínua d'insulina ràpida i reposició hidroelectrolítica intensiva. La pacient va respondre favorablement, amb correcció progressiva de l'acidosi i normalització dels nivells de glucèmia en 24 hores.
+
+L'HbA1c a l'ingrés era de 12.8%, indicativa de mal control glucèmic crònic. Es va iniciar educació diabetològica intensiva amb infermeria especialitzada, incloent tècnica d'administració d'insulina, autocontrol glucèmic i reconeixement de símptomes d'hipoglucèmia.
+
+Es va ajustar el tractament a pauta basal-bolus amb insulina glargina i asparta, associant metformina per millorar la sensibilitat a la insulina. La pacient va ser donada d'alta amb glucèmies capil·lars en rang objectiu (80-130 mg/dL preprandials).
+
+8. RECOMANACIONS DE SEGUIMENT
+- Control per Endocrinologia en 2 setmanes amb analítica de control (glucèmia, HbA1c, perfil lipídic, funció renal)
+- Derivació a Unitat d'Educació Diabetològica per completar formació
+- Autocontrol glucèmic capilar: 4 vegades al dia (dejú, abans de dinar, abans de sopar i abans de dormir)
+- Objectius glucèmics: 80-130 mg/dL preprandials, <180 mg/dL postprandials
+- Dieta per diabètics amb restricció calòrica (1500 kcal/dia) per pèrdua de pes
+- Exercici físic regular: caminar 30 minuts diaris
+- Control oftalmològic per descartar retinopatia diabètica
+- Control podològic per prevenció de peu diabètic
+- Vacunació antigripal i antineumocòccica
+
+9. CONTRAINDICACIONS I PRECAUCIONS
+- Vigilar símptomes d'hipoglucèmia: tremolor, sudoració, palpitacions, confusió (portar sempre sucre ràpid)
+- No suspendre mai la insulina, encara que no mengi
+- Evitar dejuns prolongats
+- En cas de malaltia intercurrent, augmentar controls glucèmics
+- Contraindicat l'alcohol en dejú (risc d'hipoglucèmia)
+- Precaució amb metformina en cas de procediments amb contrast iodats (suspendre 48h abans)
+- Acudir a urgències si: glucèmia >300 mg/dL persistent, vòmits, dolor abdominal, dificultat respiratòria

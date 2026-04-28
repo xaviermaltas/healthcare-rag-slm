@@ -1,0 +1,64 @@
+INFORME D'ALTA HOSPITALÀRIA
+
+1. DADES DEL PACIENT
+Home de 65 anys
+
+2. MOTIU D'INGRÉS
+Dolor toràcic opressiu d'inici sobtat amb irradiació a braç esquerre i mandíbula, acompanyat de sudoració i dispnea.
+
+3. DIAGNÒSTIC PRINCIPAL
+Infart agut de miocardi amb elevació del segment ST (IAMEST) de localització anterior
+- Codi SNOMED CT: 57054005
+- Codi ICD-10: I21.0
+
+4. DIAGNÒSTICS SECUNDARIS
+- Hipertensió arterial essencial
+  - Codi SNOMED CT: 59621000
+  - Codi ICD-10: I10
+- Dislipèmia mixta
+  - Codi SNOMED CT: 370992007
+  - Codi ICD-10: E78.2
+- Tabaquisme actiu
+  - Codi SNOMED CT: 77176002
+  - Codi ICD-10: F17.2
+
+5. PROCEDIMENTS REALITZATS
+- Coronariografia urgent amb cateterisme cardíac
+- Angioplastia primària amb implantació de stent farmacoactiu en artèria descendent anterior
+- Ecocardiografia transtorácica
+- Monitorització contínua en Unitat Coronària
+
+6. TRACTAMENT I MEDICACIÓ A L'ALTA
+
+Medicació antiagregant i anticoagulant:
+- Àcid acetilsalicílic 100mg cada 24 hores (Codi ATC: B01AC06)
+- Clopidogrel 75mg cada 24 hores (Codi ATC: B01AC04)
+
+Medicació cardiovascular:
+- Bisoprolol 5mg cada 24 hores (Codi ATC: C07AB07)
+- Enalapril 10mg cada 12 hores (Codi ATC: C09AA02)
+- Atorvastatina 80mg cada 24 hores (Codi ATC: C10AA05)
+
+7. EVOLUCIÓ CLÍNICA
+El pacient va ingressar a urgències amb quadre de dolor toràcic típic d'origen isquèmic. L'ECG va mostrar elevació del segment ST en derivacions anteriors i les troponines estaven marcadament elevades (12.5 ng/mL). Es va realitzar coronariografia urgent que va evidenciar oclusió total de l'artèria descendent anterior en el seu segment proximal. Es va procedir a angioplastia primària amb implantació exitosa d'un stent farmacoactiu, amb restabliment del flux coronari TIMI 3.
+
+Durant l'estada a la Unitat Coronària, el pacient va evolucionar favorablement, sense complicacions arrítmiques ni hemodinàmiques. L'ecocardiografia de control va mostrar disfunció ventricular esquerra lleu-moderada (FEVI 45%) amb aquinèsia del segment anterior i apical.
+
+Es va iniciar tractament amb doble antiagregació, betabloqueig, IECA i estatines a dosis altes. El pacient va romandre hemodinàmicament estable i sense angor residual.
+
+8. RECOMANACIONS DE SEGUIMENT
+- Control per Cardiologia en 2 setmanes amb analítica de control (perfil lipídic, funció renal, enzims hepàtics)
+- Ecocardiografia de control en 1 mes per valorar funció ventricular
+- Programa de rehabilitació cardíaca
+- Cessació tabàquica: derivació a Unitat de Deshabituació Tabàquica
+- Control estricte de factors de risc cardiovascular (HTA, dislipèmia)
+- Dieta cardiosaludable baixa en sal i greixos saturats
+- Exercici físic progressiu segons tolerància
+- Mantenir doble antiagregació durant 12 mesos mínim
+
+9. CONTRAINDICACIONS I PRECAUCIONS
+- Contraindicat suspendre antiagregació sense consultar amb Cardiologia (risc de trombosi de stent)
+- Evitar antiinflamatoris no esteroidals (AINE) pel risc de complicacions cardiovasculars
+- Precaució amb procediments invasius o cirurgia electiva durant el primer any (risc hemorràgic per doble antiagregació)
+- Contraindicat l'exercici físic intens fins a valoració en rehabilitació cardíaca
+- Vigilar símptomes d'alarma: dolor toràcic, dispnea de nova aparició, palpitacions, síncope

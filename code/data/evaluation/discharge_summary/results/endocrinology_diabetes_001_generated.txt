@@ -1,0 +1,49 @@
+INFORME D'ALTA HOSPITALÀRIA
+
+1. DADES DEL PACIENT
+Dona de 58 anys amb antecedents d'obesitat (IMC 34 kg/m²), hipertensió arterial i antecedents familiars de diabetis mellitus tipus 2 (mare i germà). Sense seguiment mèdic regular els últims 5 anys.
+
+2. MOTIU D'INGRÉS
+Quadre de poliúria, polidipsia i pèrdua de pes de 8 kg en les últimes 3 setmanes. A urgències: glucèmia capilar de 485 mg/dL, gasometria arterial amb pH 7.28, HCO3 15 mEq/L, cetonúria positiva (+++). Diagnòstic de cetoacidosi diabètica.
+
+3. DIAGNÒSTIC PRINCIPAL
+Cetoacidosi diabètica descompensada
+
+- Codi SNOMED CT: 44054006
+- Codi ICD-10: E11.9
+
+4. DIAGNÒSTICS SECUNDARIS
+- Hiperglucèmia severa (>400 mg/dL)
+  - Codi SNOMED CT: 59621000
+  - Codi ICD-10: E11.0
+- Estat hiperosmolar hiperglucèmic
+  - Codi SNOMED CT: 370992007
+  - Codi ICD-10: E12.9
+
+5. PROCEDIMENTS REALITZATS
+- Analítica completa amb glucèmia, HbA1c, funció renal i hepàtica
+- Gasometria arterial seriada
+- Monitorització contínua de glucosa
+- Perfusió d'insulina ràpida en bomba
+- Reposició hidroelectrolítica
+- Educació diabetològica
+
+6. TRACTAMENT I MEDICACIÓ A L'ALTA
+- Metformina 850mg/12h (Codi ATC: A10BA02)
+- Insulina basal (Glargina/Degludec)
+  * Glargina 20 UI/24h (Codi ATC: A10AE04)
+- Enalapril 10mg cada 24 hores
+- Hidroclorotiazida 25mg cada 24 hores
+
+7. EVOLUCIÓ CLÍNICA
+La dona es va estabilitzant en els últims 48 hores, amb una glucèmia capilar de 420 mg/dL i un pH arterial de 7.32. La cetonúria ha disminuït a -++, i la funció renal s'ha millorat.
+
+8. RECOMANACIONS DE SEGUIMENT
+- Control per endocrinologia en 1 setmana
+- Proves complementàries específiques: glucèmia capilar, gasometria arterial i monitorització contínua de glucosa
+- Modificacions en el tractament: ajustar la dosi de metformina i insulina basal segons les necessitats
+
+9. CONTRAINDICACIONS I PRECAUCIONS
+- Al·lèrgies medicamentoses: hipersensibilitat a metformina o insulina
+- Interaccions a evitar: hidroclorotiazida amb diurètics
+- Precaucions específiques: monitoritzar la glucèmia capilar i ajustar la dosi de metformina segons les necessit

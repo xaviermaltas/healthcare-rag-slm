@@ -1,0 +1,56 @@
+{
+  "case_id": "neurology_stroke_001",
+  "specialty": "Neurologia",
+  "patient_context": "Home de 72 anys amb antecedents de fibril·lació auricular paroxística en tractament anticoagulant amb acenocumarol, hipertensió arterial i dislipèmia. Autònom per a les activitats bàsiques de la vida diària.",
+  "admission_reason": "Inici sobtat de debilitat de hemicòs dret i disàrtria fa 2 hores mentre mirava la televisió. La família va activar el codi ictus. A urgències: escala NIHSS de 8 punts (parèsia facial dreta, parèsia de membre superior dret 3/5, disàrtria moderada). TAC cranial urgent sense signes d'hemorràgia.",
+  "procedures": [
+    "TAC cranial urgent sense contrast",
+    "Ressonància magnètica cerebral amb difusió",
+    "Doppler de troncs supraaòrtics",
+    "Ecocardiografia transtorácica",
+    "Trombòlisi intravenosa amb rtPA",
+    "Monitorització neurològica contínua",
+    "Rehabilitació precoç (fisioteràpia i logopèdia)"
+  ],
+  "current_medications": [
+    "Acenocumarol segons pauta INR",
+    "Enalapril 10mg cada 12 hores",
+    "Atorvastatina 40mg cada 24 hores"
+  ],
+  "language": "ca",
+  "metadata": {
+    "complexity": "high",
+    "primary_diagnosis": "Accident cerebrovascular isquèmic en territori de l'artèria cerebral mitjana esquerra",
+    "expected_codes": {
+      "snomed": [
+        "422504002",
+        "49436004"
+      ],
+      "icd10": [
+        "I63.4",
+        "I48.0"
+      ],
+      "atc": [
+        "B01AA03",
+        "B01AC06",
+        "C09AA02",
+        "C10AA05"
+      ]
+    },
+    "expected_sections": [
+      "dades_pacient",
+      "motiu_ingres",
+      "diagnostic_principal",
+      "diagnostics_secundaris",
+      "procediments",
+      "tractament_medicacio",
+      "evolucio_clinica",
+      "recomanacions_seguiment",
+      "contraindicacions"
+    ],
+    "expected_medications_count": 4,
+    "expected_diagnoses_count": 3,
+    "creation_date": "2026-04-28",
+    "author": "Medical evaluation team"
+  }
+}

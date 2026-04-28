@@ -1,0 +1,83 @@
+INFORME D'ALTA HOSPITALÀRIA
+
+1. DADES DEL PACIENT
+Home de 72 anys
+
+2. MOTIU D'INGRÉS
+Inici sobtat de debilitat de hemicòs dret i disàrtria d'inici fa 2 hores.
+
+3. DIAGNÒSTIC PRINCIPAL
+Accident cerebrovascular isquèmic en territori de l'artèria cerebral mitjana esquerra
+- Codi SNOMED CT: 422504002
+- Codi ICD-10: I63.4
+
+4. DIAGNÒSTICS SECUNDARIS
+- Fibril·lació auricular paroxística
+  - Codi SNOMED CT: 49436004
+  - Codi ICD-10: I48.0
+- Hipertensió arterial essencial
+  - Codi SNOMED CT: 59621000
+  - Codi ICD-10: I10
+- Dislipèmia mixta
+  - Codi SNOMED CT: 370992007
+  - Codi ICD-10: E78.2
+
+5. PROCEDIMENTS REALITZATS
+- TAC cranial urgent sense contrast
+- Ressonància magnètica cerebral amb seqüències de difusió
+- Doppler de troncs supraaòrtics
+- Ecocardiografia transtorácica
+- Trombòlisi intravenosa amb rtPA (alteplasa)
+- Monitorització neurològica contínua en Unitat d'Ictus
+- Rehabilitació precoç amb fisioteràpia i logopèdia
+
+6. TRACTAMENT I MEDICACIÓ A L'ALTA
+
+Anticoagulació:
+- Acenocumarol segons pauta per INR 2-3 (Codi ATC: B01AA03)
+
+Antiagregació (alternativa si contraindicació anticoagulació):
+- Àcid acetilsalicílic 100mg cada 24 hores (Codi ATC: B01AC06)
+
+Tractament antihipertensiu:
+- Enalapril 10mg cada 12 hores (Codi ATC: C09AA02)
+
+Tractament hipolipemiant:
+- Atorvastatina 80mg cada 24 hores (Codi ATC: C10AA05)
+
+7. EVOLUCIÓ CLÍNICA
+El pacient va ingressar amb codi ictus activat presentant un quadre de debilitat sobtada de hemicòs dret i disàrtria d'inici fa 2 hores. A l'exploració inicial presentava una escala NIHSS de 8 punts (parèsia facial dreta, parèsia de membre superior dret 3/5, disàrtria moderada).
+
+El TAC cranial urgent va descartar hemorràgia intracranial. Complint criteris d'inclusió per trombòlisi i dins de la finestra terapèutica, es va administrar rtPA (alteplasa) intravenosa a dosi de 0.9 mg/kg.
+
+La ressonància magnètica cerebral posterior va confirmar infart isquèmic agut en territori de l'artèria cerebral mitjana esquerra, amb restricció a la difusió en gangli basal i corona radiada esquerra. El doppler de troncs supraaòrtics va mostrar ateromatosi carotídia bilateral sense estenosis significatives.
+
+L'ecocardiografia transtorácica va confirmar la presència de fibril·lació auricular amb aurícula esquerra dilatada (45 mm), sense trombes intracavitàries visibles.
+
+Durant l'estada a la Unitat d'Ictus, el pacient va evolucionar favorablement amb millora progressiva del dèficit neurològic. A l'alta, NIHSS de 3 punts (parèsia facial lleu, força 4/5 en membre superior dret, disàrtria lleu). Es va iniciar rehabilitació precoç amb fisioteràpia i logopèdia amb bona resposta.
+
+Es va iniciar anticoagulació oral amb acenocumarol per prevenció secundària d'ictus cardioembòlic en context de fibril·lació auricular (CHA2DS2-VASc: 4 punts).
+
+8. RECOMANACIONS DE SEGUIMENT
+- Control per Neurologia en 1 mes amb TAC cranial de control
+- Control per Hematologia per ajust d'anticoagulació oral (INR objectiu 2-3)
+- Primer control INR en 3-5 dies
+- Continuïtat de rehabilitació: fisioteràpia i logopèdia ambulatòries
+- Control de factors de risc cardiovascular (HTA, dislipèmia)
+- Ecocardiografia de control en 3 mesos
+- Holter-ECG per valorar càrrega de fibril·lació auricular
+- Dieta cardiosaludable baixa en sal
+- Exercici físic progressiu segons tolerància
+- Evitar alcohol i tabac
+- Educació sobre símptomes d'alarma d'ictus (codi FAST: Face, Arms, Speech, Time)
+
+9. CONTRAINDICACIONS I PRECAUCIONS
+- Contraindicat suspendre anticoagulació sense consultar amb Neurologia o Hematologia
+- Precaució amb procediments invasius o cirurgia (risc hemorràgic per anticoagulació)
+- Evitar antiinflamatoris no esteroidals (AINE) pel risc hemorràgic
+- Contraindicat l'alcohol per interacció amb acenocumarol
+- Precaució amb aliments rics en vitamina K (poden interferir amb anticoagulació)
+- Vigilar símptomes de sagnat: hematomes espontanis, sang en orina o femta, sagnat gingival
+- Acudir a urgències immediatament si: debilitat sobtada, pèrdua de visió, dificultat per parlar, cefalea intensa, pèrdua de consciència
+- Portar sempre targeta identificativa d'anticoagulació
+- Informar a tots els professionals sanitaris de l'anticoagulació abans de qualsevol procediment

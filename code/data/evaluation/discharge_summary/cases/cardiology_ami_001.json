@@ -1,0 +1,54 @@
+{
+  "case_id": "cardiology_ami_001",
+  "specialty": "Cardiologia",
+  "patient_context": "Home de 65 anys amb antecedents de hipertensió arterial en tractament amb IECA, dislipèmia en tractament amb estatines, i tabaquisme actiu (20 cigarrets/dia durant 40 anys). Sense antecedents de diabetis mellitus ni cardiopatia isquèmica prèvia.",
+  "admission_reason": "Dolor toràcic opressiu d'inici sobtat mentre feia exercici físic moderat, irradiat a braç esquerre i mandíbula, acompanyat de sudoració freda i dispnea. Durada de 45 minuts sense alleujament amb repòs. A urgències: ECG amb elevació del segment ST en derivacions anteriors (V1-V4), elevació de troponines (12.5 ng/mL, VN <0.04).",
+  "procedures": [
+    "ECG de 12 derivacions seriats",
+    "Analítica completa amb enzims cardíacs (troponines, CK-MB)",
+    "Ecocardiografia transtorácica",
+    "Coronariografia urgent per cateterisme cardíac",
+    "Angioplastia primària amb implantació de stent farmacoactiu en artèria descendent anterior",
+    "Monitorització contínua en Unitat Coronària"
+  ],
+  "current_medications": [
+    "Enalapril 10mg cada 12 hores",
+    "Atorvastatina 40mg cada 24 hores",
+    "Àcid acetilsalicílic 100mg cada 24 hores"
+  ],
+  "language": "ca",
+  "metadata": {
+    "complexity": "high",
+    "primary_diagnosis": "Infart agut de miocardi amb elevació del segment ST (IAMEST)",
+    "expected_codes": {
+      "snomed": [
+        "57054005"
+      ],
+      "icd10": [
+        "I21.0"
+      ],
+      "atc": [
+        "C09AA02",
+        "C10AA05",
+        "B01AC06",
+        "B01AC04",
+        "C07AB03"
+      ]
+    },
+    "expected_sections": [
+      "dades_pacient",
+      "motiu_ingres",
+      "diagnostic_principal",
+      "diagnostics_secundaris",
+      "procediments",
+      "tractament_medicacio",
+      "evolucio_clinica",
+      "recomanacions_seguiment",
+      "contraindicacions"
+    ],
+    "expected_medications_count": 5,
+    "expected_diagnoses_count": 3,
+    "creation_date": "2026-04-28",
+    "author": "Medical evaluation team"
+  }
+}

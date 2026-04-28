@@ -1,0 +1,81 @@
+INFORME D'ALTA HOSPITALÀRIA
+
+1. DADES DEL PACIENT
+Dona de 68 anys
+
+2. MOTIU D'INGRÉS
+Quadre de febre, tos productiva i dispnea amb infiltrat pulmonar a la radiografia toràcica.
+
+3. DIAGNÒSTIC PRINCIPAL
+Pneumònia adquirida a la comunitat de lòbul inferior dret
+- Codi SNOMED CT: 385093006
+- Codi ICD-10: J18.1
+
+4. DIAGNÒSTICS SECUNDARIS
+- Malaltia pulmonar obstructiva crònica (EPOC) GOLD II
+  - Codi SNOMED CT: 13645005
+  - Codi ICD-10: J44.1
+- Hipertensió arterial essencial
+  - Codi SNOMED CT: 59621000
+  - Codi ICD-10: I10
+- Tabaquisme actiu
+  - Codi SNOMED CT: 77176002
+  - Codi ICD-10: F17.2
+
+5. PROCEDIMENTS REALITZATS
+- Radiografia toràcica posteroanterior i lateral
+- Analítica completa amb hemograma, bioquímica i proteïna C reactiva
+- Gasometria arterial
+- Hemocultius (2 mostres)
+- Antigenúria per Legionella pneumophila i Streptococcus pneumoniae
+- Oxigenoteràpia amb màscara Venturi FiO2 35%
+
+6. TRACTAMENT I MEDICACIÓ A L'ALTA
+
+Antibioteràpia:
+- Amoxicil·lina-àcid clavulànic 875/125mg cada 8 hores durant 7 dies (Codi ATC: J01CR02)
+
+Tractament broncodilatador:
+- Tiotropi 18mcg inhalat cada 24 hores (Codi ATC: R03BB04)
+- Salbutamol 100mcg inhalat a demanda (Codi ATC: R03AC02)
+
+Tractament antihipertensiu:
+- Enalapril 10mg cada 24 hores (Codi ATC: C09AA02)
+
+7. EVOLUCIÓ CLÍNICA
+La pacient va ingressar amb un quadre de 4 dies d'evolució de febre de fins a 39°C, tos productiva amb expectoració purulenta, dispnea progressiva i dolor toràcic pleurític en hemitòrax dret.
+
+A l'exploració física presentava taquipnea (28 respiracions per minut), saturació d'oxigen del 88% amb aire ambient, i crepitants a l'auscultació de base pulmonar dreta. La radiografia toràcica va mostrar un infiltrat alveolar a lòbul inferior dret compatible amb pneumònia.
+
+L'analítica va mostrar leucocitosi (15.200/μL) amb neutrofília (85%), elevació de la proteïna C reactiva (245 mg/L) i procalcitonina elevada (2.8 ng/mL), suggerint infecció bacteriana. La gasometria arterial va evidenciar insuficiència respiratòria parcial (pO2 55 mmHg, pCO2 38 mmHg).
+
+Es va iniciar tractament antibiòtic empíric amb amoxicil·lina-àcid clavulànic intravenós i oxigenoteràpia amb màscara Venturi. Els hemocultius van resultar negatius. L'antigenúria per Streptococcus pneumoniae va ser positiva, confirmant etiologia pneumocòccica.
+
+La pacient va evolucionar favorablement amb defervescència a les 48 hores d'inici d'antibioteràpia, millora progressiva de la dispnea i normalització de la saturació d'oxigen. La radiografia de control va mostrar millora parcial de l'infiltrat.
+
+A l'alta, la pacient es troba afebril, amb saturació d'oxigen del 94% amb aire ambient, sense taquipnea ni treball respiratori. Es va canviar antibioteràpia a via oral per completar 7 dies de tractament.
+
+8. RECOMANACIONS DE SEGUIMENT
+- Control per Medicina Interna en 2 setmanes amb radiografia toràcica de control
+- Analítica de control (hemograma, PCR) en 1 setmana
+- Completar 7 dies d'antibioteràpia oral
+- Derivació a Unitat de Deshabituació Tabàquica per cessació tabàquica
+- Vacunació antineumocòccica (vacuna conjugada 13-valent seguida de polisacàrida 23-valent)
+- Vacunació antigripal anual
+- Espirometria de control en 1 mes per valorar funció pulmonar
+- Optimització del tractament de l'EPOC
+- Educació sobre tècnica inhalatòria correcta
+- Exercicis respiratoris i fisoteràpia respiratòria
+- Hidratació adequada (1.5-2 litres d'aigua al dia)
+- Dieta equilibrada rica en proteïnes per recuperació
+
+9. CONTRAINDICACIONS I PRECAUCIONS
+- Completar el tractament antibiòtic complet encara que millori la simptomatologia (evitar resistències)
+- No suspendre els broncodilatadors sense indicació mèdica
+- Evitar ambients amb fum de tabac (tabaquisme passiu)
+- Precaució amb canvis bruscos de temperatura
+- Evitar contacte amb persones amb infeccions respiratòries
+- Acudir a urgències si: febre persistent >38.5°C després de 48h d'antibiòtic, empitjorament de la dispnea, dolor toràcic intens, hemoptisi, confusió o alteració de consciència
+- Contraindicat l'ús d'antitussígens (poden dificultar l'expectoració)
+- Precaució amb sedants que poden deprimir el centre respiratori
+- Importància de la cessació tabàquica per prevenir futures infeccions i progressió de l'EPOC

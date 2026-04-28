@@ -1,0 +1,85 @@
+{
+  "summary": "INFORME D'ALTA HOSPITALÀRIA\n\n1. DADES DEL PACIENT\nEl pacient és un home de 72 anys amb antecedents de fibril·lació auricular paroxística en tractament anticoagulant amb acenocumarol, hipertensió arterial i dislipèmia. L'home és autònom per a les activitats bàsiques de la vida diària.\n\n2. MOTIU D'INGRÉS\nEl pacient va presentant un sobtat inici de debilitat de hemicòs dret i disàrtria fa 2 hores mentre mirava la televisió. La família va activar el codi ictus. A urgències, l'escala NIHSS de 8 punts (parèsia facial dreta, parèsia de membre superior dret 3/5, disàrtria moderada). TAC cranial urgent sense signes d'hemorràgia.\n\n3. DIAGNÒSTIC PRINCIPAL\nEl diagnòstic principal del pacient és un accident cerebrovascular isquèmic (ACVI).\n\n4. DIAGNÒSTICS SECUNDARIS\nA més del diagnòstic principal, el pacient també presenta una parèsia facial dreta i una parèsia de membre superior dret 3/5.\n\n5. PROCEDIMENTS REALITZATS\nEl pacient ha realitzat els següents procediments:\n- TAC cranial urgent sense contrast\n- Ressonància magnètica cerebral amb difusió\n- Doppler de troncs supraaòrtics\n- Ecocardiografia transtorácica\n- Trombòlisi intravenosa amb rtPA\n- Monitorització neurològica contínua\n- Rehabilitació precoç (fisioteràpia i logopèdia)\n\n6. TRACTAMENT I MEDICACIÓ A L'ALTA\nEl pacient ha rebut els següents medicaments:\n- Acenocumarol segons pauta INR\n- Enalapril 10mg cada 12 hores\n- Atorvastatina 40mg cada 24 hores\n\n7. EVOLUCIÓ CLÍNICA\nDurant el seu estadi hospitalari, el pacient ha presentat una evolució clínica següent:\n- El pacient ha mostrat una melioració en la seva parèsia facial i de membre superior dret.\n- L'escala NIHSS ha disminuït a 6 punts.\n- El pacient ha rebut trombòlisi intravenosa amb rtPA sense complicacions.\n\n8. RECOMANACIONS DE SEGUIMENT\nEl pacient ha de ser seguit per un especialista en neurologia en les 3 setmanes següents.\n- Proves complementàries específiques: TAC cerebral i escala NIHSS.\n- Modificacions en el tractament: ajustar la dosi d'Enalapril si s'observa hipertensió arterial.\n- Signes d'alarma a vigilar: parèsia facial o de membre superior dret, disàrtria, etc.\n\n9. CONTRAINDICACIONS I PRECAUCIONS\nEl pacient no té al·lèrgies medicamentoses conegudes.\n- Interaccions a evitar: no hi ha interaccions conegudes amb els medicaments prescrits.\n- Precaucions específiques: el pacient ha de ser atent a la seg",
+  "diagnoses": [
+    {
+      "description": "El diagnòstic principal del pacient és un accident cerebrovascular isquèmic (ACVI).",
+      "snomed_code": null,
+      "icd10_code": null,
+      "is_primary": true
+    }
+  ],
+  "medications": [
+    {
+      "name": "Enalapril",
+      "dosage": "10mg",
+      "atc_code": null,
+      "duration": null
+    },
+    {
+      "name": "Atorvastatina",
+      "dosage": "40mg",
+      "atc_code": null,
+      "duration": null
+    }
+  ],
+  "follow_up_recommendations": [
+    "Proves complementàries específiques: TAC cerebral i escala NIHSS.",
+    "Modificacions en el tractament: ajustar la dosi d'Enalapril si s'observa hipertensió arterial.",
+    "Signes d'alarma a vigilar: parèsia facial o de membre superior dret, disàrtria, etc."
+  ],
+  "contraindications": [],
+  "sources": [
+    {
+      "title": "Protocol d'Alta Hospitalària - Accident Cerebrovascular Isquèmic",
+      "specialty": "Neurologia",
+      "score": 0.6291,
+      "official": true
+    },
+    {
+      "title": "Protocol d'Alta Hospitalària - Diabetis Mellitus Descompensada",
+      "specialty": "Endocrinologia",
+      "score": 0.5794,
+      "official": true
+    },
+    {
+      "title": "Protocol d'Alta Hospitalària - Infart Agut de Miocardi",
+      "specialty": "Cardiologia",
+      "score": 0.5721,
+      "official": true
+    },
+    {
+      "title": "Protocol d'Alta Hospitalària - Insuficiència Cardíaca Aguda",
+      "specialty": "Cardiologia",
+      "score": 0.5526,
+      "official": true
+    },
+    {
+      "title": "Protocol d'Alta Hospitalària - Pneumònia Adquirida a la Comunitat",
+      "specialty": "Medicina Interna",
+      "score": 0.5143,
+      "official": true
+    }
+  ],
+  "validation_status": {
+    "all_sections_present": false,
+    "missing_sections": [
+      "firma"
+    ],
+    "has_diagnoses": true,
+    "has_medications": true,
+    "has_follow_up": true
+  },
+  "generation_metadata": {
+    "generation_time_seconds": 56.57,
+    "protocols_retrieved": 5,
+    "language": "ca",
+    "specialty_requested": "Neurologia",
+    "specialty_detected": "Neurologia",
+    "specialty_confidence": 1.0,
+    "specialty_matched_terms": [
+      "Neurologia"
+    ],
+    "model": "llama3.2",
+    "timestamp": "2026-04-28T18:50:11.617575"
+  }
+}

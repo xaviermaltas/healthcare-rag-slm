@@ -47,10 +47,10 @@ class DischargeSummaryParser:
     - Validació de format de codis
     """
     
-    # Patterns per codis mèdics
-    SNOMED_PATTERN = r'(?:SNOMED|Codi SNOMED|SNOMED CT)[:\s]*(\d{6,18})'
-    ICD10_PATTERN = r'(?:ICD-10|ICD10|Codi ICD)[:\s]*([A-Z]\d{2}(?:\.\d{1,2})?)'
-    ATC_PATTERN = r'(?:ATC|Codi ATC)[:\s]*([A-Z]\d{2}[A-Z]{2}\d{2})'
+    # Patterns per codis mèdics (més flexibles per capturar diferents formats)
+    SNOMED_PATTERN = r'(?:SNOMED|Codi\s+SNOMED|Código\s+SNOMED|SNOMED\s+CT)[\s:]*(\d{6,18})'
+    ICD10_PATTERN = r'(?:ICD-10|ICD10|Codi\s+ICD-10|Código\s+ICD-10|Codi\s+ICD|Código\s+ICD)[\s:]*([A-Z]\d{2}(?:\.\d{1,2})?)'
+    ATC_PATTERN = r'(?:ATC|Codi\s+ATC|Código\s+ATC)[\s:]*([A-Z]\d{2}[A-Z]{2}\d{2})'
     
     # Patterns alternatius (codis solts en el text)
     SNOMED_LOOSE_PATTERN = r'\b(\d{6,18})\b'
@@ -128,20 +128,26 @@ class DischargeSummaryParser:
         diagnoses = []
         search_text = section_text if section_text else text
         
-        # Buscar diagnòstic principal amb codi
-        main_diag_pattern = r'(?:DIAGNÒSTIC PRINCIPAL|DIAGNÓSTICO PRINCIPAL)[:\s]*\n([^\n]+)'
-        main_match = re.search(main_diag_pattern, search_text, re.IGNORECASE | re.MULTILINE)
+        # Buscar diagnòstic principal amb codi (format multi-línia)
+        main_diag_pattern = r'(?:DIAGNÒSTIC PRINCIPAL|DIAGNÓSTICO PRINCIPAL)[:\s]*\n(.*?)(?=\n\d+\.|$)'
+        main_match = re.search(main_diag_pattern, search_text, re.IGNORECASE | re.MULTILINE | re.DOTALL)
         
         if main_match:
-            diag_text = main_match.group(1).strip()
+            diag_section = main_match.group(1).strip()
             
-            # Extreure codis
-            snomed_match = re.search(cls.SNOMED_PATTERN, diag_text, re.IGNORECASE)
-            icd10_match = re.search(cls.ICD10_PATTERN, diag_text, re.IGNORECASE)
+            # Extreure descripció (primera línia o text abans dels codis)
+            description_lines = []
+            for line in diag_section.split('\n'):
+                line = line.strip()
+                if line and not re.match(r'[-*•]\s*Codi', line, re.IGNORECASE):
+                    description_lines.append(line)
+                else:
+                    break
+            description = ' '.join(description_lines).strip()
             
-            # Netejar descripció (eliminar línies de codi)
-            description = re.sub(r'Codi.*', '', diag_text, flags=re.IGNORECASE).strip()
-            description = re.sub(r'(?:SNOMED|ICD).*', '', description, flags=re.IGNORECASE).strip()
+            # Extreure codis de tota la secció
+            snomed_match = re.search(cls.SNOMED_PATTERN, diag_section, re.IGNORECASE)
+            icd10_match = re.search(cls.ICD10_PATTERN, diag_section, re.IGNORECASE)
             
             if description:
                 diagnoses.append(ExtractedDiagnosis(
@@ -151,29 +157,57 @@ class DischargeSummaryParser:
                     is_primary=True
                 ))
         
-        # Buscar diagnòstics secundaris
-        secondary_pattern = r'(?:DIAGNÒSTICS SECUNDARIS|DIAGNÓSTICOS SECUNDARIOS)[:\s]*\n((?:[-•*].*\n?)+)'
-        secondary_match = re.search(secondary_pattern, search_text, re.IGNORECASE | re.MULTILINE)
+        # Buscar diagnòstics secundaris (format multi-línia amb sub-bullets per codis)
+        secondary_pattern = r'(?:DIAGNÒSTICS SECUNDARIS|DIAGNÓSTICOS SECUNDARIOS)[:\s]*\n(.*?)(?=\n\d+\.|$)'
+        secondary_match = re.search(secondary_pattern, search_text, re.IGNORECASE | re.MULTILINE | re.DOTALL)
         
         if secondary_match:
             secondary_text = secondary_match.group(1)
-            # Extreure cada línia que comença amb -, •, o *
-            for line in re.findall(r'[-•*]\s*([^\n]+)', secondary_text):
-                # Extreure codis
-                snomed_match = re.search(cls.SNOMED_PATTERN, line, re.IGNORECASE)
-                icd10_match = re.search(cls.ICD10_PATTERN, line, re.IGNORECASE)
+            
+            # Dividir per diagnòstics (línies que comencen amb -)
+            current_diag = None
+            current_text = []
+            
+            for line in secondary_text.split('\n'):
+                line = line.strip()
+                if not line:
+                    continue
+                    
+                # Nova diagnòstic (comença amb - sense indentació extra)
+                if re.match(r'^[-•*]\s+[A-ZÀ-Ú]', line):
+                    # Guardar diagnòstic anterior si existeix
+                    if current_diag:
+                        diag_full_text = '\n'.join(current_text)
+                        snomed_match = re.search(cls.SNOMED_PATTERN, diag_full_text, re.IGNORECASE)
+                        icd10_match = re.search(cls.ICD10_PATTERN, diag_full_text, re.IGNORECASE)
+                        
+                        diagnoses.append(ExtractedDiagnosis(
+                            description=current_diag,
+                            snomed_code=snomed_match.group(1) if snomed_match else None,
+                            icd10_code=icd10_match.group(1) if icd10_match else None,
+                            is_primary=False
+                        ))
+                    
+                    # Extreure descripció del diagnòstic
+                    current_diag = re.sub(r'^[-•*]\s+', '', line)
+                    current_diag = re.sub(r'\s*[-–]\s*Codi.*', '', current_diag, flags=re.IGNORECASE).strip()
+                    current_text = [line]
+                else:
+                    # Línia de codi o continuació
+                    current_text.append(line)
+            
+            # Guardar últim diagnòstic
+            if current_diag:
+                diag_full_text = '\n'.join(current_text)
+                snomed_match = re.search(cls.SNOMED_PATTERN, diag_full_text, re.IGNORECASE)
+                icd10_match = re.search(cls.ICD10_PATTERN, diag_full_text, re.IGNORECASE)
                 
-                # Netejar descripció
-                description = re.sub(r'Codi.*', '', line, flags=re.IGNORECASE).strip()
-                description = re.sub(r'(?:SNOMED|ICD).*', '', description, flags=re.IGNORECASE).strip()
-                
-                if description:
-                    diagnoses.append(ExtractedDiagnosis(
-                        description=description,
-                        snomed_code=snomed_match.group(1) if snomed_match else None,
-                        icd10_code=icd10_match.group(1) if icd10_match else None,
-                        is_primary=False
-                    ))
+                diagnoses.append(ExtractedDiagnosis(
+                    description=current_diag,
+                    snomed_code=snomed_match.group(1) if snomed_match else None,
+                    icd10_code=icd10_match.group(1) if icd10_match else None,
+                    is_primary=False
+                ))
         
         # Si no hem trobat res amb els patterns estrictes, buscar codis solts
         if not diagnoses:
