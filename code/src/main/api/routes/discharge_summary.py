@@ -11,6 +11,7 @@ import logging
 
 from src.main.core.prompts.discharge_summary_template import DischargeSummaryPrompt
 from src.main.core.parsers.discharge_summary_parser import DischargeSummaryParser
+from src.main.core.specialty_detector import SpecialtyDetector
 from src.main.infrastructure.embeddings.bge_m3 import BGEM3Embeddings
 from src.main.infrastructure.llm.ollama_client import OllamaClient
 from src.main.api.dependencies import get_ollama_client, get_embeddings_model
@@ -224,22 +225,37 @@ async def generate_discharge_summary(
         query_embedding = query_result.get('dense', query_result.get('embedding', []))
         
         # ====================================================================
-        # STEP 3: Retrieve relevant SAS protocols
+        # STEP 3: Detect specialty and retrieve relevant protocols
         # ====================================================================
         
-        # Build filter for specialty if provided
+        # Detect specialty from clinical context
+        specialty_match = SpecialtyDetector.detect_specialty(
+            patient_context=request.patient_context,
+            admission_reason=request.admission_reason,
+            procedures=request.procedures,
+            medications=request.current_medications,
+            explicit_specialty=request.specialty
+        )
+        
+        detected_specialty = specialty_match.specialty
+        specialty_confidence = specialty_match.confidence
+        
+        logger.info(f"Detected specialty: {detected_specialty} (confidence: {specialty_confidence:.2f})")
+        logger.info(f"Matched terms: {', '.join(specialty_match.matched_terms[:3])}")
+        
+        # Build filter for specialty
         query_filter = Filter(
             must=[
                 FieldCondition(key="type", match=MatchValue(value="protocol_sas"))
             ]
         )
         
-        if request.specialty:
-            query_filter.must.append(
-                FieldCondition(key="specialty", match=MatchValue(value=request.specialty))
-            )
+        # Try with specialty filter first
+        query_filter.must.append(
+            FieldCondition(key="specialty", match=MatchValue(value=detected_specialty))
+        )
         
-        # Search in Qdrant
+        # Search in Qdrant with specialty filter
         protocol_results = qdrant_client.query_points(
             collection_name=settings.QDRANT_COLLECTION,
             query=query_embedding,
@@ -248,7 +264,35 @@ async def generate_discharge_summary(
             query_filter=query_filter
         ).points
         
-        logger.info(f"Retrieved {len(protocol_results)} protocols")
+        logger.info(f"Retrieved {len(protocol_results)} protocols for {detected_specialty}")
+        
+        # Fallback: if not enough protocols, search in related specialties
+        if len(protocol_results) < 2 and specialty_confidence > 0.5:
+            related_specialties = SpecialtyDetector.get_related_specialties(detected_specialty)
+            logger.info(f"Fallback: searching in related specialties: {related_specialties}")
+            
+            # Remove specialty filter and search again
+            query_filter_fallback = Filter(
+                must=[
+                    FieldCondition(key="type", match=MatchValue(value="protocol_sas"))
+                ]
+            )
+            
+            fallback_results = qdrant_client.query_points(
+                collection_name=settings.QDRANT_COLLECTION,
+                query=query_embedding,
+                limit=5,
+                score_threshold=0.25,  # Lower threshold for fallback
+                query_filter=query_filter_fallback
+            ).points
+            
+            # Combine results, prioritizing specialty matches
+            protocol_results = protocol_results + [
+                r for r in fallback_results 
+                if r.id not in [p.id for p in protocol_results]
+            ][:5 - len(protocol_results)]
+            
+            logger.info(f"After fallback: {len(protocol_results)} total protocols")
         
         # Format protocols for prompt
         retrieved_protocols = []
@@ -407,7 +451,10 @@ async def generate_discharge_summary(
                 'generation_time_seconds': round(generation_time, 2),
                 'protocols_retrieved': len(protocol_results),
                 'language': request.language,
-                'specialty': request.specialty,
+                'specialty_requested': request.specialty,
+                'specialty_detected': detected_specialty,
+                'specialty_confidence': round(specialty_confidence, 2),
+                'specialty_matched_terms': specialty_match.matched_terms[:3],
                 'model': settings.OLLAMA_MODEL,
                 'timestamp': end_time.isoformat()
             }
