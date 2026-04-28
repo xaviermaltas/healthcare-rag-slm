@@ -10,6 +10,7 @@ from datetime import datetime
 import logging
 
 from src.main.core.prompts.discharge_summary_template import DischargeSummaryPrompt
+from src.main.core.parsers.discharge_summary_parser import DischargeSummaryParser
 from src.main.infrastructure.embeddings.bge_m3 import BGEM3Embeddings
 from src.main.infrastructure.llm.ollama_client import OllamaClient
 from src.main.api.dependencies import get_ollama_client, get_embeddings_model
@@ -328,41 +329,43 @@ async def generate_discharge_summary(
         )
         
         # ====================================================================
-        # STEP 7: Extract medical codes
+        # STEP 7: Extract structured information with improved parser
         # ====================================================================
         
-        extracted_codes = DischargeSummaryPrompt.extract_codes(generated_summary)
+        # Extract sections from the generated summary
+        sections = DischargeSummaryParser.extract_sections(generated_summary)
+        
+        # Extract diagnoses with the new parser
+        extracted_diagnoses = DischargeSummaryParser.extract_diagnoses(
+            text=generated_summary,
+            section_text=sections.get('main_diagnosis', '') + '\n' + sections.get('secondary_diagnoses', '')
+        )
         
         # Build diagnoses list
         diagnoses = []
-        for snomed_code in extracted_codes.get('snomed_codes', []):
+        for extracted_diag in extracted_diagnoses:
             diagnoses.append(DiagnosisInfo(
-                description="Extracted from summary",
-                snomed_code=snomed_code,
-                is_primary=len(diagnoses) == 0  # First one is primary
+                description=extracted_diag.description,
+                snomed_code=extracted_diag.snomed_code,
+                icd10_code=extracted_diag.icd10_code,
+                is_primary=extracted_diag.is_primary
             ))
         
-        for icd10_code in extracted_codes.get('icd10_codes', []):
-            # Try to find matching diagnosis or create new
-            found = False
-            for diag in diagnoses:
-                if not diag.icd10_code:
-                    diag.icd10_code = icd10_code
-                    found = True
-                    break
-            if not found:
-                diagnoses.append(DiagnosisInfo(
-                    description="Extracted from summary",
-                    icd10_code=icd10_code
-                ))
+        # Extract medications with the new parser
+        extracted_medications = DischargeSummaryParser.extract_medications(
+            text=generated_summary,
+            section_text=sections.get('treatment', '')
+        )
         
         # Build medications list
         medications = []
-        for atc_code in extracted_codes.get('atc_codes', []):
+        for extracted_med in extracted_medications:
             medications.append(MedicationInfo(
-                name="Extracted from summary",
-                dosage="See summary",
-                atc_code=atc_code
+                name=extracted_med.name,
+                dosage=extracted_med.dosage or "See summary",
+                frequency=extracted_med.frequency,
+                route=extracted_med.route,
+                atc_code=extracted_med.atc_code
             ))
         
         # Update validation status
@@ -370,16 +373,20 @@ async def generate_discharge_summary(
         validation_status.has_medications = len(medications) > 0
         
         # ====================================================================
-        # STEP 8: Extract follow-up and contraindications
+        # STEP 8: Extract follow-up recommendations
         # ====================================================================
         
-        # Simple extraction based on section headers
-        follow_up = []
-        contraindications = []
+        # Extract follow-up with the new parser
+        extracted_follow_ups = DischargeSummaryParser.extract_follow_up(
+            text=generated_summary,
+            section_text=sections.get('follow_up', '')
+        )
         
-        # Split by sections and extract
-        if "SEGUIMENT" in generated_summary or "SEGUIMIENTO" in generated_summary:
-            validation_status.has_follow_up = True
+        follow_up = [fu.description for fu in extracted_follow_ups]
+        contraindications = []  # TODO: Implement contraindications extraction
+        
+        # Update validation status
+        validation_status.has_follow_up = len(follow_up) > 0
         
         # ====================================================================
         # STEP 9: Build response

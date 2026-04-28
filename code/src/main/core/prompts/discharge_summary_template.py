@@ -21,8 +21,8 @@ class DischargeSummaryPrompt:
         "datos_paciente",
         "motivo_ingreso",
         "diagnostico_principal",
-        "tratamiento_medicacion",
-        "recomendaciones_seguimiento"
+        "tratamiento",
+        "recomendaciones"
     ]
     
     @staticmethod
@@ -87,18 +87,21 @@ IMPORTANTE: La respuesta debe ser un informe médico formal, no una conversació
 {admission_reason}
 
 3. DIAGNÒSTIC PRINCIPAL
-[Diagnòstic principal amb codi SNOMED CT o ICD-10]
-Codi: [CODI_ONTOLÒGIC]
+[Descripció del diagnòstic principal]
+Codi SNOMED CT: [codi numèric de 6-18 dígits]
+Codi ICD-10: [format: Lletra + 2 dígits, ex: I21.0]
 
 4. DIAGNÒSTICS SECUNDARIS
-[Llista de diagnòstics secundaris amb codis si estan disponibles]
+- [Diagnòstic secundari 1] - Codi SNOMED CT: [codi] - Codi ICD-10: [codi]
+- [Diagnòstic secundari 2] - Codi SNOMED CT: [codi] - Codi ICD-10: [codi]
 
 5. PROCEDIMENTS REALITZATS
 {procedures}
 
 6. TRACTAMENT I MEDICACIÓ
+- [Nom medicament] [dosi]mg/[freqüència] - Codi ATC: [format: Lletra+2dígits+2lletres+2dígits, ex: C09AA02]
+- [Nom medicament] [dosi]mg/[freqüència] - Codi ATC: [codi]
 {medications}
-[Incloure codis ATC quan sigui possible]
 
 7. EVOLUCIÓ CLÍNICA
 [Resum de l'evolució durant l'ingrés]
@@ -132,18 +135,21 @@ FONTS CONSULTADES:
 {admission_reason}
 
 3. DIAGNÓSTICO PRINCIPAL
-[Diagnóstico principal con código SNOMED CT o ICD-10]
-Código: [CÓDIGO_ONTOLÓGICO]
+[Descripción del diagnóstico principal]
+Código SNOMED CT: [código numérico de 6-18 dígitos]
+Código ICD-10: [formato: Letra + 2 dígitos, ej: I21.0]
 
 4. DIAGNÓSTICOS SECUNDARIOS
-[Lista de diagnósticos secundarios con códigos si están disponibles]
+- [Diagnóstico secundario 1] - Código SNOMED CT: [código] - Código ICD-10: [código]
+- [Diagnóstico secundario 2] - Código SNOMED CT: [código] - Código ICD-10: [código]
 
 5. PROCEDIMIENTOS REALIZADOS
 {procedures}
 
 6. TRATAMIENTO Y MEDICACIÓN
+- [Nombre medicamento] [dosis]mg/[frecuencia] - Código ATC: [formato: Letra+2dígitos+2letras+2dígitos, ej: C09AA02]
+- [Nombre medicamento] [dosis]mg/[frecuencia] - Código ATC: [código]
 {medications}
-[Incluir códigos ATC cuando sea posible]
 
 7. EVOLUCIÓN CLÍNICA
 [Resumen de la evolución durante el ingreso]
