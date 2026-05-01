@@ -29,12 +29,14 @@ class OntologyIndexer:
     Permet retrieval semàntic en lloc de diccionaris hardcoded
     """
     
-    def __init__(self, qdrant_client):
+    def __init__(self, qdrant_client, embeddings_model=None):
         """
         Args:
             qdrant_client: Client de Qdrant per indexar
+            embeddings_model: Model d'embeddings (BGE-M3)
         """
         self.qdrant_client = qdrant_client
+        self.embeddings_model = embeddings_model
         self.collection_name = "medical_ontologies"
     
     async def create_ontology_collection(self):
@@ -108,7 +110,7 @@ class OntologyIndexer:
     
     async def index_entry(self, entry: OntologyEntry):
         """
-        Indexa una entrada d'ontologia a Qdrant
+        ✅ IMPLEMENTAT: Indexa una entrada d'ontologia a Qdrant
         
         Args:
             entry: Entrada d'ontologia a indexar
@@ -118,27 +120,47 @@ class OntologyIndexer:
         if entry.description:
             full_text += f" {entry.description}"
         
-        # Metadata per filtratge
-        metadata = {
-            "code": entry.code,
-            "term": entry.term,
-            "category": entry.category,
-            "ontology_type": entry.ontology_type,
-            "language": entry.language,
-            "synonyms": entry.synonyms
-        }
-        
-        # TODO: Indexar a Qdrant
-        # await self.qdrant_client.upsert(
-        #     collection_name=self.collection_name,
-        #     points=[{
-        #         "id": f"{entry.ontology_type}_{entry.code}",
-        #         "vector": embedding,
-        #         "payload": metadata
-        #     }]
-        # )
-        
-        logger.debug(f"Indexed: {entry.ontology_type} {entry.code} - {entry.term}")
+        # Generate embedding using embeddings model
+        try:
+            # Use BGE-M3 embeddings model
+            if self.embeddings_model is None:
+                logger.error("No embeddings model provided to OntologyIndexer")
+                return
+            
+            # encode returns array, we need first element
+            embeddings = await self.embeddings_model.encode([full_text])
+            embedding = embeddings[0].tolist()  # Convert numpy to list for Qdrant
+            
+            # Metadata per filtratge
+            metadata = {
+                "code": entry.code,
+                "term": entry.term,
+                "category": entry.category,
+                "ontology_type": entry.ontology_type,
+                "language": entry.language,
+                "synonyms": entry.synonyms,
+                "description": entry.description or "",
+                "full_text": full_text
+            }
+            
+            # Indexar a Qdrant
+            from qdrant_client.models import PointStruct
+            
+            point = PointStruct(
+                id=hash(f"{entry.ontology_type}_{entry.code}_{entry.language}"),
+                vector=embedding,
+                payload=metadata
+            )
+            
+            self.qdrant_client.client.upsert(
+                collection_name=self.collection_name,
+                points=[point]
+            )
+            
+            logger.debug(f"✅ Indexed: {entry.ontology_type} {entry.code} - {entry.term}")
+            
+        except Exception as e:
+            logger.error(f"❌ Error indexing {entry.ontology_type} {entry.code}: {e}")
     
     async def index_batch(self, entries: List[OntologyEntry], batch_size: int = 100):
         """
@@ -163,12 +185,14 @@ class OntologyRetriever:
     Substitueix diccionaris estàtics
     """
     
-    def __init__(self, qdrant_client):
+    def __init__(self, qdrant_client, embeddings_model=None):
         """
         Args:
             qdrant_client: Client de Qdrant
+            embeddings_model: Model d'embeddings (BGE-M3)
         """
         self.qdrant_client = qdrant_client
+        self.embeddings_model = embeddings_model
         self.collection_name = "medical_ontologies"
     
     async def search_snomed(self, term: str, limit: int = 5) -> List[Dict]:
@@ -214,7 +238,7 @@ class OntologyRetriever:
         limit: int = 5
     ) -> List[Dict]:
         """
-        Cerca genèrica d'ontologia amb filtre per tipus
+        ✅ IMPLEMENTAT: Cerca genèrica d'ontologia amb filtre per tipus
         
         Args:
             term: Terme a cercar
@@ -225,66 +249,48 @@ class OntologyRetriever:
             Llista de {code, term, score, synonyms}
         """
         try:
-            # TODO: Implementar cerca a Qdrant
-            # results = await self.qdrant_client.search(
-            #     collection_name=self.collection_name,
-            #     query_text=term,
-            #     query_filter={"ontology_type": ontology_type},
-            #     limit=limit
-            # )
+            if self.embeddings_model is None:
+                logger.error("No embeddings model provided to OntologyRetriever")
+                return []
             
-            # Placeholder
+            # Generate embedding for search term
+            embeddings = await self.embeddings_model.encode([term])
+            query_vector = embeddings[0].tolist()
+            
+            # Search in Qdrant with filter
+            from qdrant_client.models import Filter, FieldCondition, MatchValue
+            
+            search_filter = Filter(
+                must=[
+                    FieldCondition(
+                        key="ontology_type",
+                        match=MatchValue(value=ontology_type)
+                    )
+                ]
+            )
+            
+            search_results = self.qdrant_client.client.query_points(
+                collection_name=self.collection_name,
+                query=query_vector,
+                query_filter=search_filter,
+                limit=limit
+            ).points
+            
+            # Format results
             results = []
+            for hit in search_results:
+                results.append({
+                    'code': hit.payload.get('code'),
+                    'term': hit.payload.get('term'),
+                    'score': hit.score,
+                    'synonyms': hit.payload.get('synonyms', []),
+                    'language': hit.payload.get('language'),
+                    'category': hit.payload.get('category')
+                })
             
-            logger.info(f"Search {ontology_type} for '{term}': {len(results)} results")
+            logger.debug(f"Search {ontology_type} for '{term}': {len(results)} results")
             return results
             
         except Exception as e:
             logger.error(f"Error searching ontology: {e}")
             return []
-
-
-# Diccionari mínim de fallback (30 termes ultra-comuns)
-MINIMAL_FALLBACK = {
-    # SNOMED CT - 10 termes més comuns
-    'SNOMED_CT': {
-        'diabetis': '73211009',
-        'diabetes': '73211009',
-        'hipertensió': '38341003',
-        'hipertensión': '38341003',
-        'infart': '57054005',
-        'pneumònia': '233604007',
-        'neumonía': '233604007',
-        'asma': '195967001',
-        'depressió': '35489007',
-        'depresión': '35489007',
-    },
-    
-    # ICD-10 - 10 termes més comuns
-    'ICD10': {
-        'diabetis tipus 2': 'E11.9',
-        'diabetes tipo 2': 'E11.9',
-        'hipertensió': 'I10',
-        'hipertensión': 'I10',
-        'infart miocardi': 'I21.9',
-        'infarto miocardio': 'I21.9',
-        'pneumònia': 'J18.9',
-        'neumonía': 'J18.9',
-        'asma': 'J45.909',
-        'depressió': 'F32.9',
-    },
-    
-    # ATC - 10 medicaments més prescrits
-    'ATC': {
-        'metformina': 'A10BA02',
-        'enalapril': 'C09AA02',
-        'atorvastatina': 'C10AA05',
-        'omeprazol': 'A02BC01',
-        'paracetamol': 'N02BE01',
-        'ibuprofè': 'M01AE01',
-        'ibuprofeno': 'M01AE01',
-        'adiro': 'B01AC06',
-        'aspirina': 'B01AC06',
-        'losartan': 'C09CA01',
-    }
-}

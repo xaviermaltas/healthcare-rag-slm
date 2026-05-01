@@ -8,7 +8,7 @@ import logging
 from typing import List, Optional, Dict, Any
 from dataclasses import dataclass
 
-from src.main.core.ontology.ontology_indexer import OntologyRetriever, MINIMAL_FALLBACK
+from src.main.core.ontology.ontology_indexer import OntologyRetriever
 
 logger = logging.getLogger(__name__)
 
@@ -63,19 +63,7 @@ class SemanticCodingService:
                     source='semantic_retrieval'
                 )
         
-        # 2. Fallback a diccionari mínim
-        fallback_code = MINIMAL_FALLBACK['SNOMED_CT'].get(term.lower().strip())
-        if fallback_code:
-            logger.info(f"SNOMED found via fallback dict: {term} → {fallback_code}")
-            return MedicalCode(
-                code=fallback_code,
-                system='SNOMED_CT',
-                display=term,
-                confidence=0.95,
-                source='fallback_dict'
-            )
-        
-        # 3. Fallback a BioPortal API (si disponible)
+        # 2. Fallback a BioPortal API (si disponible)
         if self.bioportal_client:
             api_result = await self._search_bioportal_snomed(term)
             if api_result:
@@ -109,19 +97,7 @@ class SemanticCodingService:
                     source='semantic_retrieval'
                 )
         
-        # 2. Fallback a diccionari mínim
-        fallback_code = MINIMAL_FALLBACK['ICD10'].get(term.lower().strip())
-        if fallback_code:
-            logger.info(f"ICD-10 found via fallback dict: {term} → {fallback_code}")
-            return MedicalCode(
-                code=fallback_code,
-                system='ICD10',
-                display=term,
-                confidence=0.95,
-                source='fallback_dict'
-            )
-        
-        # 3. Fallback a BioPortal API
+        # 2. Fallback a BioPortal API
         if self.bioportal_client:
             api_result = await self._search_bioportal_icd10(term)
             if api_result:
@@ -158,17 +134,12 @@ class SemanticCodingService:
                     source='semantic_retrieval'
                 )
         
-        # 2. Fallback a diccionari mínim
-        fallback_code = MINIMAL_FALLBACK['ATC'].get(clean_medication.lower().strip())
-        if fallback_code:
-            logger.info(f"ATC found via fallback dict: {medication} → {fallback_code}")
-            return MedicalCode(
-                code=fallback_code,
-                system='ATC',
-                display=clean_medication,
-                confidence=0.95,
-                source='fallback_dict'
-            )
+        # 2. Fallback a BioPortal API
+        if self.bioportal_client:
+            api_result = await self._search_bioportal_atc(clean_medication)
+            if api_result:
+                logger.info(f"ATC found via BioPortal API: {medication} → {api_result.code}")
+                return api_result
         
         logger.warning(f"No ATC code found for: {medication}")
         return None
