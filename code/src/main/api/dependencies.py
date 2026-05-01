@@ -148,22 +148,33 @@ async def get_semantic_annotation_service() -> SemanticAnnotationService:
 
 
 async def get_medical_coding_service() -> Optional[MedicalCodingService]:
-    """Get or create Medical Coding Service instance"""
+    """🔍 NOVA ARQUITECTURA: Get Medical Coding Service with semantic retrieval"""
     global _medical_coding_service
     
     if _medical_coding_service is None:
-        if not settings.BIOPORTAL_API_KEY:
-            logger.warning("BIOPORTAL_API_KEY not set - Medical coding will be disabled")
-            return None
+        # Get Qdrant client for semantic retrieval
+        qdrant_client = await get_qdrant_client()
         
-        snomed_client = await get_snomed_client()
-        ontology_manager = await get_ontology_manager()
+        # Legacy clients (for compatibility and fallback)
+        snomed_client = None
+        ontology_manager = None
         
+        if settings.BIOPORTAL_API_KEY:
+            snomed_client = await get_snomed_client()
+            ontology_manager = await get_ontology_manager()
+            logger.info("✅ BioPortal API available for fallback")
+        else:
+            logger.warning("⚠️ BIOPORTAL_API_KEY not set - Using semantic retrieval only")
+        
+        # Initialize with NEW semantic architecture
         _medical_coding_service = MedicalCodingService(
+            qdrant_client=qdrant_client,  # NEW: Semantic retrieval
+            ner_service=None,  # TODO: Add NER service when available
+            # Legacy compatibility
             snomed_client=snomed_client,
             ontology_manager=ontology_manager
         )
-        logger.info("Medical Coding Service initialized")
+        logger.info("🚀 Medical Coding Service initialized with SEMANTIC architecture")
     
     return _medical_coding_service
 

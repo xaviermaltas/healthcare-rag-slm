@@ -9,12 +9,19 @@ from src.main.core.coding.medical_coding_service import (
     DiagnosisCoding,
     MedicationCoding
 )
-from src.main.core.coding.medical_translator import MedicalTranslator
+# MedicalTranslator ELIMINAT - anti-pattern refactoritzat
+
+# Nova arquitectura semàntica
+from src.main.core.coding.semantic_coding_service import (
+    SemanticCodingService,
+    CodingPipeline
+)
 
 __all__ = [
     'MedicalCodingService',
     'MedicalCode',
     'DiagnosisCoding',
     'MedicationCoding',
-    'MedicalTranslator'
+    'SemanticCodingService',
+    'CodingPipeline'
 ]
