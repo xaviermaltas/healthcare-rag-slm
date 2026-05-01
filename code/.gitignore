@@ -42,6 +42,15 @@ data/raw/*.pdf
 *.log
 *.pid
 
+# Evaluation results (temporary)
+data/evaluation/**/results/*.json
+data/evaluation/**/results/*.txt
+data/evaluation/**/results/evaluation_report_*.json
+test_results_*.json
+
+# Ontology data (generated locally)
+data/ontologies/
+
 # Secrets - .env local no va al repo, .env.example sí
 .env
 
