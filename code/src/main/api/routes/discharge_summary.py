@@ -162,6 +162,116 @@ class DischargeSummaryResponse(BaseModel):
 
 
 # ============================================================================
+# HELPER FUNCTIONS
+# ============================================================================
+
+def _extract_diagnosis_name(description: str) -> str:
+    """
+    Extract a clean diagnosis name from a verbose LLM-generated description.
+    Strips code references and connector phrases so the coding service
+    receives a meaningful clinical term. Also extracts acronyms from parentheses.
+    """
+    import re
+    text = description
+
+    # Remove code references: "Codi SNOMED CT és 422504002", "ICD-10: I63", etc.
+    text = re.sub(
+        r'(?:Codi\s+)?(?:SNOMED(?:\s+CT)?|ICD-10|ATC)\s*(?:és|es|is|:)?\s*[\w.]+',
+        '', text, flags=re.IGNORECASE
+    )
+
+    # Remove common Catalan/Spanish connector phrases at the start
+    text = re.sub(
+        r'^(?:El|La|Els|Les)\s+(?:diagnòstic|diagnóstico)\s+(?:principal|secundari)?\s+(?:és|es|del\s+pacient)?\s*(?:un|una)?\s*',
+        '', text, flags=re.IGNORECASE
+    )
+    text = re.sub(
+        r'^(?:El|La)\s+pacient\s+(?:presenta|té|pateix)\s*(?:un|una)?\s*',
+        '', text, flags=re.IGNORECASE
+    )
+
+    # Extract acronym from parentheses if present (e.g., "IAMEST", "MPOC")
+    # Try acronym first as it's often more specific for lookup
+    acronym_match = re.search(r'\(([A-Z]{3,})\)', text)
+    if acronym_match:
+        acronym = acronym_match.group(1)
+        # Return acronym if it's meaningful (3+ uppercase letters)
+        if len(acronym) >= 3:
+            return acronym.lower()
+
+    # Take only the first meaningful clause (before first comma/period/parenthesis)
+    parts = re.split(r'[,.(]', text)
+    result = ''
+    for part in parts:
+        candidate = part.strip()
+        if len(candidate.split()) >= 2:
+            result = candidate
+            break
+    if not result:
+        result = text.strip()
+
+    return re.sub(r'\s+', ' ', result).strip() or description
+
+
+def _inject_codes_into_summary(
+    summary_text: str,
+    diagnoses: List["DiagnosisInfo"],
+    medications: List["MedicationInfo"]
+) -> str:
+    """
+    Inject BioPortal-validated codes into the generated summary text.
+    Replaces placeholders or invalid values with real validated codes.
+    Uses sequential assignment: codes are matched in order of appearance.
+    """
+    import re
+
+    text = summary_text
+
+    # Queues of validated codes (in order)
+    snomed_queue = [d.snomed_code for d in diagnoses if d.snomed_code]
+    icd10_queue  = [d.icd10_code  for d in diagnoses if d.icd10_code]
+    atc_queue    = [m.atc_code    for m in medications if m.atc_code]
+
+    # --- SNOMED CT ---
+    def replace_snomed(m):
+        current = m.group(1).strip().strip('[]')
+        if not re.match(r'^\d{6,18}$', current) and snomed_queue:
+            return f"{m.group(0).split(':')[0]}: {snomed_queue.pop(0)}"
+        return m.group(0)
+
+    text = re.sub(
+        r'(?:Codi\s+SNOMED\s+CT|Código\s+SNOMED\s+CT|SNOMED\s+CT)\s*:\s*(.+?)(?=\n|$)',
+        replace_snomed, text, flags=re.IGNORECASE
+    )
+
+    # --- ICD-10 ---
+    def replace_icd10(m):
+        current = m.group(1).strip().strip('[]')
+        if not re.match(r'^[A-Z]\d{2}(?:\.\d{1,2})?$', current) and icd10_queue:
+            return f"{m.group(0).split(':')[0]}: {icd10_queue.pop(0)}"
+        return m.group(0)
+
+    text = re.sub(
+        r'(?:Codi\s+ICD-10|Código\s+ICD-10|ICD-10)\s*:\s*(.+?)(?=\n|$)',
+        replace_icd10, text, flags=re.IGNORECASE
+    )
+
+    # --- ATC (inside parentheses like "(Codi ATC: C09AA02)") ---
+    def replace_atc(m):
+        current = m.group(1).strip().strip('[]')
+        if not re.match(r'^[A-Z]\d{2}[A-Z]{2}\d{2}$', current) and atc_queue:
+            return f"{m.group(0).split(':')[0]}: {atc_queue.pop(0)}{m.group(2)}"
+        return m.group(0)
+
+    text = re.sub(
+        r'(?:Codi\s+ATC|Código\s+ATC|ATC)\s*:\s*(.+?)(\)|\n|$)',
+        replace_atc, text, flags=re.IGNORECASE
+    )
+
+    return text
+
+
+# ============================================================================
 # ENDPOINT
 # ============================================================================
 
@@ -423,39 +533,74 @@ async def generate_discharge_summary(
         
         if coding_service:
             try:
-                logger.info("Enriching diagnoses and medications with automatic coding...")
+                logger.info("🔍 NOVA ARQUITECTURA: Enriching with semantic medical coding...")
                 
-                # Enrich diagnoses with missing codes
+                # Enrich diagnoses with missing codes (SEMANTIC APPROACH)
                 for diag in diagnoses:
                     # Only enrich if codes are missing
                     if not diag.snomed_code or not diag.icd10_code:
-                        coding_result = await coding_service.code_diagnosis(
-                            diagnosis_text=diag.description,
-                            min_confidence=0.6
-                        )
+                        # Clean up LLM-generated verbose descriptions before lookup
+                        clean_desc = _extract_diagnosis_name(diag.description)
+                        logger.debug(f"Semantic coding: '{diag.description[:60]}' → '{clean_desc}'")
                         
-                        # Update codes if found and not already present
-                        if coding_result.snomed_code and not diag.snomed_code:
-                            diag.snomed_code = coding_result.snomed_code.code
-                            logger.debug(f"Added SNOMED code {diag.snomed_code} for: {diag.description}")
+                        # Try SEMANTIC SNOMED coding first
+                        if not diag.snomed_code:
+                            snomed_code = await coding_service.get_snomed_code_semantic(clean_desc)
+                            if snomed_code and snomed_code.confidence >= 0.6:
+                                diag.snomed_code = snomed_code.code
+                                logger.info(f"✅ SNOMED ({snomed_code.source}): {diag.snomed_code} for '{clean_desc}'")
                         
-                        if coding_result.icd10_code and not diag.icd10_code:
-                            diag.icd10_code = coding_result.icd10_code.code
-                            logger.debug(f"Added ICD-10 code {diag.icd10_code} for: {diag.description}")
+                        # Try SEMANTIC ICD-10 coding
+                        if not diag.icd10_code:
+                            icd10_code = await coding_service.get_icd10_code_semantic(clean_desc)
+                            if icd10_code and icd10_code.confidence >= 0.6:
+                                diag.icd10_code = icd10_code.code
+                                logger.info(f"✅ ICD-10 ({icd10_code.source}): {diag.icd10_code} for '{clean_desc}'")
+                        
+                        # Fallback to legacy if semantic fails
+                        if not diag.snomed_code or not diag.icd10_code:
+                            logger.debug(f"Falling back to legacy coding for: {clean_desc}")
+                            legacy_result = await coding_service.code_diagnosis(
+                                diagnosis_text=clean_desc,
+                                min_confidence=0.6
+                            )
+                            
+                            if legacy_result.snomed_code and not diag.snomed_code:
+                                diag.snomed_code = legacy_result.snomed_code.code
+                                logger.info(f"⚠️ SNOMED (legacy): {diag.snomed_code} for '{clean_desc}'")
+                            
+                            if legacy_result.icd10_code and not diag.icd10_code:
+                                diag.icd10_code = legacy_result.icd10_code.code
+                                logger.info(f"⚠️ ICD-10 (legacy): {diag.icd10_code} for '{clean_desc}'")
                 
-                # Enrich medications with missing ATC codes
+                # Enrich medications with missing ATC codes (SEMANTIC APPROACH)
                 for med in medications:
                     if not med.atc_code:
-                        coding_result = await coding_service.code_medication(
-                            medication_text=med.name,
-                            min_confidence=0.6
-                        )
-                        
-                        if coding_result.atc_code:
-                            med.atc_code = coding_result.atc_code.code
-                            logger.debug(f"Added ATC code {med.atc_code} for: {med.name}")
+                        # Try SEMANTIC ATC coding first
+                        atc_code = await coding_service.get_atc_code_semantic(med.name)
+                        if atc_code and atc_code.confidence >= 0.6:
+                            med.atc_code = atc_code.code
+                            logger.info(f"✅ ATC ({atc_code.source}): {med.atc_code} for '{med.name}'")
+                        else:
+                            # Fallback to legacy
+                            logger.debug(f"Falling back to legacy ATC coding for: {med.name}")
+                            legacy_result = await coding_service.code_medication(
+                                medication_text=med.name,
+                                min_confidence=0.6
+                            )
+                            
+                            if legacy_result.atc_code:
+                                med.atc_code = legacy_result.atc_code.code
+                                logger.info(f"⚠️ ATC (legacy): {med.atc_code} for '{med.name}'")
                 
-                logger.info(f"Automatic coding completed: {len(diagnoses)} diagnoses, {len(medications)} medications")
+                logger.info(f"🎯 Semantic coding completed: {len(diagnoses)} diagnoses, {len(medications)} medications")
+                
+                # STEP 7.6: Inject validated BioPortal codes back into the summary text
+                # Replaces LLM-generated placeholders/wrong codes with real validated codes
+                generated_summary = _inject_codes_into_summary(
+                    generated_summary, diagnoses, medications
+                )
+                logger.debug("BioPortal codes injected into summary text")
             
             except Exception as e:
                 logger.warning(f"Automatic coding failed: {e}")

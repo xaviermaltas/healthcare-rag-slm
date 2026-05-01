@@ -41,48 +41,66 @@ class DischargeSummaryPrompt:
 
 INSTRUCCIONS CRÍTIQUES:
 1. Genera informes clínics professionals seguint protocols oficials del SAS
-2. Utilitza terminologia mèdica precisa i codis SNOMED CT / ICD-10 quan sigui possible
+2. Utilitza terminologia mèdica precisa i noms estàndard de malalties i medicaments
 3. Estructura l'informe amb les seccions obligatòries
 4. Sigues concís però complet - inclou tota la informació clínicament rellevant
 5. Utilitza llenguatge tècnic però comprensible
-6. **OBLIGATORI**: SEMPRE inclou codis mèdics en el format exacte especificat:
-   - SNOMED CT: número de 6-18 dígits (ex: 57054005, 59621000)
-   - ICD-10: lletra + 2 dígits + opcional .dígits (ex: I21.0, E11.10, J44.1)
-   - ATC: lletra + 2 dígits + 2 lletres + 2 dígits (ex: C09AA02, B01AC06, A10BA02)
-7. Basa't en els protocols i guies clíniques proporcionades
-8. Assegura't que les recomanacions de seguiment siguin específiques i accionables
+6. Basa't en els protocols i guies clíniques proporcionades
+7. Assegura't que les recomanacions de seguiment siguin específiques i accionables
+8. **DIAGNÒSTIC PRINCIPAL**: Ha de ser la condició que va causar l'ingrés (derivat dels símptomes d'ingrés, ECG, biomarcadors, imatge). MAI escriguis una comorbilitat preexistent com a diagnòstic principal.
+9. **NO generis codis mèdics** (SNOMED, ICD-10, ATC) - aquests s'assignaran automàticament després.
 
-EXEMPLES DE CODIS CORRECTES:
-- Infart agut de miocardi → SNOMED CT: 57054005, ICD-10: I21.0
-- Hipertensió arterial → SNOMED CT: 59621000, ICD-10: I10
-- Enalapril → ATC: C09AA02
-- Metformina → ATC: A10BA02
+EXEMPLE D'INFORME BEN ESTRUCTURAT:
 
-IMPORTANT: La resposta ha de ser un informe mèdic formal, no una conversa. CADA diagnòstic i medicació HA DE tenir el seu codi corresponent."""
+3. DIAGNÒSTIC PRINCIPAL
+Infart agut de miocardi amb elevació del segment ST (IAMEST) de localització anterior
+
+4. DIAGNÒSTICS SECUNDARIS
+- Hipertensió arterial
+- Dislipèmia mixta
+- Tabaquisme actiu
+
+6. TRACTAMENT I MEDICACIÓ A L'ALTA
+- Àcid acetilsalicílic 100mg cada 24 hores
+- Clopidogrel 75mg cada 24 hores
+- Atorvastatina 80mg cada 24 hores
+- Enalapril 10mg cada 12 hores
+- Bisoprolol 5mg cada 24 hores
+
+IMPORTANT: Utilitza noms estàndard de malalties i medicaments. NO incloguis codis mèdics."""
         
         else:  # es
             return """Eres un asistente médico especializado en la generación de informes de alta hospitalaria.
 
 INSTRUCCIONES CRÍTICAS:
 1. Genera informes clínicos profesionales siguiendo protocolos oficiales del SAS
-2. Utiliza terminología médica precisa y códigos SNOMED CT / ICD-10 cuando sea posible
+2. Utiliza terminología médica precisa y nombres estándar de enfermedades y medicamentos
 3. Estructura el informe con las secciones obligatorias
 4. Sé conciso pero completo - incluye toda la información clínicamente relevante
 5. Utiliza lenguaje técnico pero comprensible
-6. **OBLIGATORIO**: SIEMPRE incluye códigos médicos en el formato exacto especificado:
-   - SNOMED CT: número de 6-18 dígitos (ej: 57054005, 59621000)
-   - ICD-10: letra + 2 dígitos + opcional .dígitos (ej: I21.0, E11.10, J44.1)
-   - ATC: letra + 2 dígitos + 2 letras + 2 dígitos (ej: C09AA02, B01AC06, A10BA02)
-7. Basa tu respuesta en los protocolos y guías clínicas proporcionadas
-8. Asegúrate de que las recomendaciones de seguimiento sean específicas y accionables
+6. Basa tu respuesta en los protocolos y guías clínicas proporcionadas
+7. Asegúrate de que las recomendaciones de seguimiento sean específicas y accionables
+8. **DIAGNÓSTICO PRINCIPAL**: Debe ser la condición que causó el ingreso (derivado de síntomas de ingreso, ECG, biomarcadores, imagen). NUNCA escribas una comorbilidad preexistente como diagnóstico principal.
+9. **NO generes códigos médicos** (SNOMED, ICD-10, ATC) - estos se asignarán automáticamente después.
 
-EJEMPLOS DE CÓDIGOS CORRECTOS:
-- Infarto agudo de miocardio → SNOMED CT: 57054005, ICD-10: I21.0
-- Hipertensión arterial → SNOMED CT: 59621000, ICD-10: I10
-- Enalapril → ATC: C09AA02
-- Metformina → ATC: A10BA02
+EJEMPLO DE INFORME BIEN ESTRUCTURADO:
 
-IMPORTANTE: La respuesta debe ser un informe médico formal, no una conversación. CADA diagnóstico y medicación DEBE tener su código correspondiente."""
+3. DIAGNÓSTICO PRINCIPAL
+Infarto agudo de miocardio con elevación del segmento ST (IAMEST) de localización anterior
+
+4. DIAGNÓSTICOS SECUNDARIOS
+- Hipertensión arterial
+- Dislipemia mixta
+- Tabaquismo activo
+
+6. TRATAMIENTO Y MEDICACIÓN AL ALTA
+- Ácido acetilsalicílico 100mg cada 24 horas
+- Clopidogrel 75mg cada 24 horas
+- Atorvastatina 80mg cada 24 horas
+- Enalapril 10mg cada 12 horas
+- Bisoprolol 5mg cada 24 horas
+
+IMPORTANTE: Utiliza nombres estándar de enfermedades y medicamentos. NO incluyas códigos médicos."""
     
     @staticmethod
     def get_template(language: str = "es") -> str:
@@ -105,24 +123,19 @@ IMPORTANTE: La respuesta debe ser un informe médico formal, no una conversació
 {admission_reason}
 
 3. DIAGNÒSTIC PRINCIPAL
-[Descripció completa del diagnòstic principal]
-- Codi SNOMED CT: [número de 6-18 dígits, exemple: 57054005]
-- Codi ICD-10: [lletra + 2 dígits, exemple: I21.0]
+[Descripció completa del diagnòstic principal derivat del motiu d'ingrés]
 
 4. DIAGNÒSTICS SECUNDARIS
 - [Diagnòstic secundari 1]
-  - Codi SNOMED CT: [número, exemple: 59621000]
-  - Codi ICD-10: [codi, exemple: I10]
 - [Diagnòstic secundari 2]
-  - Codi SNOMED CT: [número, exemple: 370992007]
-  - Codi ICD-10: [codi, exemple: E78.2]
+- [Diagnòstic secundari 3 si escau]
 
 5. PROCEDIMENTS REALITZATS
 {procedures}
 
 6. TRACTAMENT I MEDICACIÓ A L'ALTA
-- [Nom medicament] [dosi]mg cada [freqüència] (Codi ATC: [exemple: C09AA02])
-- [Nom medicament] [dosi]mg cada [freqüència] (Codi ATC: [exemple: B01AC06])
+- [Nom medicament] [dosi]mg cada [freqüència]
+- [Nom medicament] [dosi]mg cada [freqüència]
 {medications}
 
 7. EVOLUCIÓ CLÍNICA
@@ -153,24 +166,19 @@ FONTS CONSULTADES:
 {admission_reason}
 
 3. DIAGNÓSTICO PRINCIPAL
-[Descripción completa del diagnóstico principal]
-- Código SNOMED CT: [número de 6-18 dígitos, ejemplo: 57054005]
-- Código ICD-10: [letra + 2 dígitos, ejemplo: I21.0]
+[Descripción completa del diagnóstico principal derivado del motivo de ingreso]
 
 4. DIAGNÓSTICOS SECUNDARIOS
 - [Diagnóstico secundario 1]
-  - Código SNOMED CT: [número, ejemplo: 59621000]
-  - Código ICD-10: [código, ejemplo: I10]
 - [Diagnóstico secundario 2]
-  - Código SNOMED CT: [número, ejemplo: 370992007]
-  - Código ICD-10: [código, ejemplo: E78.2]
+- [Diagnóstico secundario 3 si procede]
 
 5. PROCEDIMIENTOS REALIZADOS
 {procedures}
 
 6. TRATAMIENTO Y MEDICACIÓN AL ALTA
-- [Nombre medicamento] [dosis]mg cada [frecuencia] (Código ATC: [ejemplo: C09AA02])
-- [Nombre medicamento] [dosis]mg cada [frecuencia] (Código ATC: [ejemplo: B01AC06])
+- [Nombre medicamento] [dosis]mg cada [frecuencia]
+- [Nombre medicamento] [dosis]mg cada [frecuencia]
 {medications}
 
 7. EVOLUCIÓN CLÍNICA
@@ -261,21 +269,11 @@ Genera un informe d'alta hospitalària professional seguint aquesta estructura:
 
 {filled_template}
 
-RECORDATORI CRÍTIC - FORMAT DE CODIS:
-✓ CADA diagnòstic HA DE tenir:
-  - Codi SNOMED CT: número de 6-18 dígits (exemple: 57054005)
-  - Codi ICD-10: format lletra+dígits (exemple: I21.0)
-
-✓ CADA medicació HA DE tenir:
-  - Codi ATC: format exacte lletra+2dígits+2lletres+2dígits (exemple: C09AA02)
-
-✓ Exemples de codis vàlids:
-  - Infart agut de miocardi: SNOMED 57054005, ICD-10 I21.0
-  - Hipertensió arterial: SNOMED 59621000, ICD-10 I10
-  - Enalapril: ATC C09AA02
-  - Metformina: ATC A10BA02
-
-NO utilitzis placeholders com [codi] o [número]. Utilitza codis reals basant-te en els protocols."""
+RECORDATORI CRÍTIC:
+✓ Utilitza noms estàndard de malalties i medicaments
+✓ Sigues precís amb diagnòstics (basat en símptomes, proves, biomarcadors)
+✓ NO incloguis codis mèdics (SNOMED, ICD-10, ATC) - s'assignaran automàticament
+✓ Enfoca't en la qualitat clínica del contingut"""
         else:
             final_prompt = f"""{context_text}
 
@@ -283,21 +281,11 @@ Genera un informe de alta hospitalaria profesional siguiendo esta estructura:
 
 {filled_template}
 
-RECORDATORIO CRÍTICO - FORMATO DE CÓDIGOS:
-✓ CADA diagnóstico DEBE tener:
-  - Código SNOMED CT: número de 6-18 dígitos (ejemplo: 57054005)
-  - Código ICD-10: formato letra+dígitos (ejemplo: I21.0)
-
-✓ CADA medicación DEBE tener:
-  - Código ATC: formato exacto letra+2dígitos+2letras+2dígitos (ejemplo: C09AA02)
-
-✓ Ejemplos de códigos válidos:
-  - Infarto agudo de miocardio: SNOMED 57054005, ICD-10 I21.0
-  - Hipertensión arterial: SNOMED 59621000, ICD-10 I10
-  - Enalapril: ATC C09AA02
-  - Metformina: ATC A10BA02
-
-NO uses placeholders como [código] o [número]. Utiliza códigos reales basándote en los protocolos."""
+RECORDATORIO CRÍTICO:
+✓ Utiliza nombres estándar de enfermedades y medicamentos
+✓ Sé preciso con diagnósticos (basado en síntomas, pruebas, biomarcadores)
+✓ NO incluyas códigos médicos (SNOMED, ICD-10, ATC) - se asignarán automáticamente
+✓ Enfócate en la calidad clínica del contenido"""
         
         return final_prompt
     
