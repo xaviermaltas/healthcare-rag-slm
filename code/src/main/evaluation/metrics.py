@@ -109,15 +109,16 @@ class DischargeSummaryMetrics:
     
     # Code patterns - More specific to avoid false positives
     # Match codes only when preceded by the code label
-    SNOMED_PATTERN = r'(?:SNOMED|Codi\s+SNOMED|Código\s+SNOMED|SNOMED\s+CT)[\s:]*(\d{6,18})'
-    ICD10_PATTERN = r'(?:ICD-10|ICD10|Codi\s+ICD-10|Código\s+ICD-10|Codi\s+ICD|Código\s+ICD)[\s:]*([A-Z]\d{2}(?:\.\d{1,2})?)'
-    ATC_PATTERN = r'(?:ATC|Codi\s+ATC|Código\s+ATC)[\s:]*([A-Z]\d{2}[A-Z]{2}\d{2})'
+    SNOMED_PATTERN = r'(?:SNOMED|Codi\s+SNOMED|Código\s+SNOMED|SNOMED\s+CT)\s*(?:és|es|is)?\s*:?\s*(\d{6,18})'
+    ICD10_PATTERN = r'(?:ICD-10|ICD10|Codi\s+ICD-10|Código\s+ICD-10|Codi\s+ICD|Código\s+ICD)\s*(?:és|es|is)?\s*:?\s*([A-Z]\d{2}(?:\.\d{1,2})?)'
+    ATC_PATTERN = r'(?:ATC|Codi\s+ATC|Código\s+ATC)\s*(?:és|es|is)?\s*:?\s*([A-Z]\d{2}[A-Z]{2}\d{2})'
     
     @classmethod
     def evaluate(cls,
                 generated_text: str,
                 reference_text: str,
-                case_metadata: Dict[str, Any]) -> EvaluationResult:
+                case_metadata: Dict[str, Any],
+                structured_codes: Optional[Dict[str, Set[str]]] = None) -> EvaluationResult:
         """
         Evaluate a generated discharge summary against reference
         
@@ -125,6 +126,8 @@ class DischargeSummaryMetrics:
             generated_text: Generated discharge summary
             reference_text: Gold standard reference
             case_metadata: Metadata with expected codes and counts
+            structured_codes: Pre-extracted codes from API structured response
+                              (more reliable than text regex). Keys: snomed, icd10, atc
             
         Returns:
             EvaluationResult with all metrics
@@ -152,12 +155,31 @@ class DischargeSummaryMetrics:
         result.completeness_score = len(sections_present) / len(cls.EXPECTED_SECTIONS)
         
         # 3. Code accuracy
-        generated_codes = cls._extract_codes(generated_text)
+        # Use structured codes from API response when available (more reliable than text regex)
+        # Fall back to text extraction when not provided
+        text_extracted = cls._extract_codes(generated_text)
         expected_codes = case_metadata.get('expected_codes', {})
+        
+        def _merge(text_set: Set[str], struct_set: Set[str]) -> Set[str]:
+            """Merge text-extracted and structured codes, preferring structured ones."""
+            return struct_set if struct_set else text_set
+        
+        final_snomed = _merge(
+            text_extracted['snomed'],
+            structured_codes.get('snomed', set()) if structured_codes else set()
+        )
+        final_icd10 = _merge(
+            text_extracted['icd10'],
+            structured_codes.get('icd10', set()) if structured_codes else set()
+        )
+        final_atc = _merge(
+            text_extracted['atc'],
+            structured_codes.get('atc', set()) if structured_codes else set()
+        )
         
         # SNOMED codes
         snomed_metrics = cls._calculate_code_metrics(
-            generated_codes['snomed'],
+            final_snomed,
             set(expected_codes.get('snomed', []))
         )
         result.snomed_precision = snomed_metrics['precision']
@@ -166,7 +188,7 @@ class DischargeSummaryMetrics:
         
         # ICD-10 codes
         icd10_metrics = cls._calculate_code_metrics(
-            generated_codes['icd10'],
+            final_icd10,
             set(expected_codes.get('icd10', []))
         )
         result.icd10_precision = icd10_metrics['precision']
@@ -175,7 +197,7 @@ class DischargeSummaryMetrics:
         
         # ATC codes
         atc_metrics = cls._calculate_code_metrics(
-            generated_codes['atc'],
+            final_atc,
             set(expected_codes.get('atc', []))
         )
         result.atc_precision = atc_metrics['precision']
@@ -183,8 +205,8 @@ class DischargeSummaryMetrics:
         result.atc_f1 = atc_metrics['f1']
         
         # 4. Clinical content counts
-        result.diagnoses_count = len(generated_codes['snomed']) + len(generated_codes['icd10'])
-        result.medications_count = len(generated_codes['atc'])
+        result.diagnoses_count = len(final_snomed) + len(final_icd10)
+        result.medications_count = len(final_atc)
         result.expected_diagnoses_count = case_metadata.get('expected_diagnoses_count', 0)
         result.expected_medications_count = case_metadata.get('expected_medications_count', 0)
         
@@ -223,22 +245,49 @@ class DischargeSummaryMetrics:
     def _calculate_code_metrics(cls, 
                                 generated: Set[str], 
                                 expected: Set[str]) -> Dict[str, float]:
-        """Calculate precision, recall, F1 for codes"""
+        """Calculate precision, recall, F1 for codes.
+        
+        Supports both exact and prefix matching.
+        Prefix match (e.g. 'I63' vs 'I63.4') gives 0.75 credit.
+        """
         if not expected:
             return {'precision': 0.0, 'recall': 0.0, 'f1': 0.0}
         
         if not generated:
             return {'precision': 0.0, 'recall': 0.0, 'f1': 0.0}
         
-        true_positives = len(generated & expected)
-        precision = true_positives / len(generated) if generated else 0.0
-        recall = true_positives / len(expected) if expected else 0.0
-        f1 = 2 * (precision * recall) / (precision + recall) if (precision + recall) > 0 else 0.0
+        # Exact matches
+        exact = generated & expected
+        
+        # Prefix matches on remaining codes: I63 matches I63.4 (0.75 credit)
+        unmatched_gen = generated - exact
+        unmatched_exp = expected - exact
+        prefix_gen: Set[str] = set()
+        for gen in unmatched_gen:
+            for exp in unmatched_exp:
+                if len(gen) >= 3 and (exp.startswith(gen) or gen.startswith(exp)):
+                    prefix_gen.add(gen)
+                    break
+        
+        # Base code matches: E11.9 and E11.10 share base E11 (0.50 credit)
+        still_unmatched = unmatched_gen - prefix_gen
+        base_gen: Set[str] = set()
+        for gen in still_unmatched:
+            gen_base = gen[:3]
+            for exp in unmatched_exp:
+                if exp[:3] == gen_base and len(gen_base) == 3:
+                    base_gen.add(gen)
+                    break
+        
+        tp = len(exact) + 0.75 * len(prefix_gen) + 0.50 * len(base_gen)
+        precision = tp / len(generated)
+        recall    = tp / len(expected)
+        f1 = 2 * precision * recall / (precision + recall) if (precision + recall) > 0 else 0.0
         
         return {
-            'precision': precision,
-            'recall': recall,
-            'f1': f1
+            'precision': round(precision, 4),
+            'recall':    round(recall,    4),
+            'f1':        round(f1,        4)
         }
     
     @classmethod

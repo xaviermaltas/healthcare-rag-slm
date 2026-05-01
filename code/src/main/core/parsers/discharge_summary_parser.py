@@ -47,10 +47,10 @@ class DischargeSummaryParser:
     - Validació de format de codis
     """
     
-    # Patterns per codis mèdics (més flexibles per capturar diferents formats)
-    SNOMED_PATTERN = r'(?:SNOMED|Codi\s+SNOMED|Código\s+SNOMED|SNOMED\s+CT)[\s:]*(\d{6,18})'
-    ICD10_PATTERN = r'(?:ICD-10|ICD10|Codi\s+ICD-10|Código\s+ICD-10|Codi\s+ICD|Código\s+ICD)[\s:]*([A-Z]\d{2}(?:\.\d{1,2})?)'
-    ATC_PATTERN = r'(?:ATC|Codi\s+ATC|Código\s+ATC)[\s:]*([A-Z]\d{2}[A-Z]{2}\d{2})'
+    # Patterns per codis mèdics (accepten ':' o 'és'/'es'/'is' com a separadors)
+    SNOMED_PATTERN = r'(?:SNOMED|Codi\s+SNOMED|Código\s+SNOMED|SNOMED\s+CT)\s*(?:és|es|is)?\s*:?\s*(\d{6,18})'
+    ICD10_PATTERN = r'(?:ICD-10|ICD10|Codi\s+ICD-10|Código\s+ICD-10|Codi\s+ICD|Código\s+ICD)\s*(?:és|es|is)?\s*:?\s*([A-Z]\d{2}(?:\.\d{1,2})?)'
+    ATC_PATTERN = r'(?:ATC|Codi\s+ATC|Código\s+ATC)\s*(?:és|es|is)?\s*:?\s*([A-Z]\d{2}[A-Z]{2}\d{2})'
     
     # Patterns alternatius (codis solts en el text)
     SNOMED_LOOSE_PATTERN = r'\b(\d{6,18})\b'
@@ -143,7 +143,16 @@ class DischargeSummaryParser:
                     description_lines.append(line)
                 else:
                     break
-            description = ' '.join(description_lines).strip()
+            raw_description = ' '.join(description_lines).strip()
+            # Strip inline code references from description
+            description = re.sub(
+                r'\s*[Cc]odi\s+(?:SNOMED(?:\s+CT)?|ICD-10|ATC)\s*(?:és|es|is)?\s*:?\s*[\w.]+',
+                '', raw_description
+            ).strip()
+            description = re.sub(
+                r'(?:SNOMED(?:\s+CT)?|ICD-10)\s*(?:és|es|is)?\s*:?\s*[\w.]+',
+                '', description, flags=re.IGNORECASE
+            ).strip()
             
             # Extreure codis de tota la secció
             snomed_match = re.search(cls.SNOMED_PATTERN, diag_section, re.IGNORECASE)

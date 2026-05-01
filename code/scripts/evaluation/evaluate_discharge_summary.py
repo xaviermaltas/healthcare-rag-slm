@@ -102,12 +102,36 @@ def evaluate_case(case_file: Path) -> EvaluationResult:
     
     generated_text = generated_response.get('summary', '')
     
+    # Extract structured codes from API response (diagnoses + medications)
+    # These are more reliable than text regex extraction
+    structured_codes = {
+        'snomed': set(),
+        'icd10': set(),
+        'atc': set()
+    }
+    for diag in generated_response.get('diagnoses', []):
+        if diag.get('snomed_code'):
+            structured_codes['snomed'].add(diag['snomed_code'])
+        if diag.get('icd10_code'):
+            structured_codes['icd10'].add(diag['icd10_code'])
+    for med in generated_response.get('medications', []):
+        if med.get('atc_code'):
+            structured_codes['atc'].add(med['atc_code'])
+    
+    logger.info(f"Structured codes from response - SNOMED: {structured_codes['snomed']}, "
+                f"ICD-10: {structured_codes['icd10']}, ATC: {structured_codes['atc']}")
+    
+    # Build metadata with case_id included (needed for EvaluationResult labeling)
+    case_metadata = case_data.get('metadata', {})
+    case_metadata['case_id'] = case_id
+    
     # Evaluate
     logger.info("Calculating metrics...")
     result = DischargeSummaryMetrics.evaluate(
         generated_text=generated_text,
         reference_text=reference_text,
-        case_metadata=case_data.get('metadata', {})
+        case_metadata=case_metadata,
+        structured_codes=structured_codes
     )
     
     # Print results
