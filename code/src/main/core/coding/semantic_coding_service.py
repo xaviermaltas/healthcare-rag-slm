@@ -29,13 +29,14 @@ class SemanticCodingService:
     Arquitectura: NER → Semantic Retrieval → Fallback → API
     """
     
-    def __init__(self, qdrant_client, bioportal_client=None):
+    def __init__(self, qdrant_client, embeddings_model=None, bioportal_client=None):
         """
         Args:
             qdrant_client: Client Qdrant per retrieval semàntic
+            embeddings_model: Model d'embeddings (BGE-M3) per generar query vectors
             bioportal_client: Client BioPortal com a fallback final
         """
-        self.ontology_retriever = OntologyRetriever(qdrant_client)
+        self.ontology_retriever = OntologyRetriever(qdrant_client, embeddings_model)
         self.bioportal_client = bioportal_client
         self.min_confidence = 0.7  # Threshold mínim per acceptar resultats
     

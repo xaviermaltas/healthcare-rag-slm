@@ -47,18 +47,43 @@ INSTRUCCIONS CRÍTIQUES:
 5. Utilitza llenguatge tècnic però comprensible
 6. Basa't en els protocols i guies clíniques proporcionades
 7. Assegura't que les recomanacions de seguiment siguin específiques i accionables
-8. **DIAGNÒSTIC PRINCIPAL**: Ha de ser la condició que va causar l'ingrés (derivat dels símptomes d'ingrés, ECG, biomarcadors, imatge). MAI escriguis una comorbilitat preexistent com a diagnòstic principal.
-9. **NO generis codis mèdics** (SNOMED, ICD-10, ATC) - aquests s'assignaran automàticament després.
 
-EXEMPLE D'INFORME BEN ESTRUCTURAT:
+🚨 REGLES ANTI-AL·LUCINACIÓ (CRÍTIQUES):
+8. **USA NOMÉS DADES PROPORCIONADES**: NO inventis diagnòstics, símptomes o dades que no estiguin explícitament en el motiu d'ingrés o context del pacient
+9. **DIAGNÒSTIC PRINCIPAL**: Extreu-lo DIRECTAMENT del motiu d'ingrés. Si el motiu diu "infart agut de miocardi", el diagnòstic principal HA DE SER "infart agut de miocardi", NO "insuficiència cardíaca" ni cap altra condició
+10. **DIAGNÒSTICS SECUNDARIS**: Només dels antecedents del pacient (context), MAI del motiu d'ingrés
+11. **MEDICACIONS**: Usa EXACTAMENT els noms proporcionats, NO canviïs noms comercials per genèrics ni viceversa
+12. **NO generis codis mèdics** (SNOMED, ICD-10, ATC) - aquests s'assignaran automàticament després.
+
+📚 EXEMPLES D'EXTRACCIÓ CORRECTA DE DIAGNÒSTIC:
+
+EXEMPLE 1 - Cardiologia:
+Motiu d'ingrés: "Dolor toràcic opressiu... ECG amb elevació del segment ST en derivacions anteriors, elevació de troponines"
+→ Diagnòstic principal: Infart agut de miocardi amb elevació del segment ST (IAMEST)
+✅ CORRECTE: Usa la terminologia mèdica estàndard basada en els símptomes + proves
+❌ INCORRECTE: "Insuficiència cardíaca" (això és una complicació, no el diagnòstic d'ingrés)
+
+EXEMPLE 2 - Pneumologia:
+Motiu d'ingrés: "Febre, tos productiva, dispnea... Radiografia de tòrax amb infiltrat alveolar"
+→ Diagnòstic principal: Pneumònia adquirida a la comunitat
+✅ CORRECTE: Diagnòstic específic basat en clínica + imatge
+❌ INCORRECTE: "Infecció respiratòria aguda" (massa genèric)
+
+EXEMPLE 3 - Neurologia:
+Motiu d'ingrés: "Hemiparèsia dreta d'inici sobtat... TC cranial amb hipodensitat en territori ACM esquerra"
+→ Diagnòstic principal: Accident cerebrovascular isquèmic (ACVI)
+✅ CORRECTE: Diagnòstic precís segons clínica + imatge
+❌ INCORRECTE: "Ictus" (terme col·loquial, usa terminologia mèdica estàndard)
+
+ESTRUCTURA CORRECTA:
 
 3. DIAGNÒSTIC PRINCIPAL
-Infart agut de miocardi amb elevació del segment ST (IAMEST) de localització anterior
+[Diagnòstic específic derivat del motiu d'ingrés amb terminologia mèdica estàndard]
 
 4. DIAGNÒSTICS SECUNDARIS
-- Hipertensió arterial
-- Dislipèmia mixta
-- Tabaquisme actiu
+- [Antecedent 1 del context del pacient]
+- [Antecedent 2 del context del pacient]
+- [Antecedent 3 del context del pacient]
 
 6. TRACTAMENT I MEDICACIÓ A L'ALTA
 - Àcid acetilsalicílic 100mg cada 24 hores
@@ -80,18 +105,43 @@ INSTRUCCIONES CRÍTICAS:
 5. Utiliza lenguaje técnico pero comprensible
 6. Basa tu respuesta en los protocolos y guías clínicas proporcionadas
 7. Asegúrate de que las recomendaciones de seguimiento sean específicas y accionables
-8. **DIAGNÓSTICO PRINCIPAL**: Debe ser la condición que causó el ingreso (derivado de síntomas de ingreso, ECG, biomarcadores, imagen). NUNCA escribas una comorbilidad preexistente como diagnóstico principal.
-9. **NO generes códigos médicos** (SNOMED, ICD-10, ATC) - estos se asignarán automáticamente después.
 
-EJEMPLO DE INFORME BIEN ESTRUCTURADO:
+🚨 REGLAS ANTI-ALUCINACIÓN (CRÍTICAS):
+8. **USA SOLO DATOS PROPORCIONADOS**: NO inventes diagnósticos, síntomas o datos que no estén explícitamente en el motivo de ingreso o contexto del paciente
+9. **DIAGNÓSTICO PRINCIPAL**: Extráelo DIRECTAMENTE del motivo de ingreso. Si el motivo dice "infarto agudo de miocardio", el diagnóstico principal DEBE SER "infarto agudo de miocardio", NO "insuficiencia cardíaca" ni ninguna otra condición
+10. **DIAGNÓSTICOS SECUNDARIOS**: Solo de los antecedentes del paciente (contexto), NUNCA del motivo de ingreso
+11. **MEDICACIONES**: Usa EXACTAMENTE los nombres proporcionados, NO cambies nombres comerciales por genéricos ni viceversa
+12. **NO generes códigos médicos** (SNOMED, ICD-10, ATC) - estos se asignarán automáticamente después.
+
+📚 EJEMPLOS DE EXTRACCIÓN CORRECTA DE DIAGNÓSTICO:
+
+EJEMPLO 1 - Cardiología:
+Motivo de ingreso: "Dolor torácico opresivo... ECG con elevación del segmento ST en derivaciones anteriores, elevación de troponinas"
+→ Diagnóstico principal: Infarto agudo de miocardio con elevación del segmento ST (IAMEST)
+✅ CORRECTO: Usa la terminología médica estándar basada en los síntomas + pruebas
+❌ INCORRECTO: "Insuficiencia cardíaca" (esto es una complicación, no el diagnóstico de ingreso)
+
+EJEMPLO 2 - Neumología:
+Motivo de ingreso: "Fiebre, tos productiva, disnea... Radiografía de tórax con infiltrado alveolar"
+→ Diagnóstico principal: Neumonía adquirida en la comunidad
+✅ CORRECTO: Diagnóstico específico basado en clínica + imagen
+❌ INCORRECTO: "Infección respiratoria aguda" (demasiado genérico)
+
+EJEMPLO 3 - Neurología:
+Motivo de ingreso: "Hemiparesia derecha de inicio súbito... TC craneal con hipodensidad en territorio ACM izquierda"
+→ Diagnóstico principal: Accidente cerebrovascular isquémico (ACVI)
+✅ CORRECTO: Diagnóstico preciso según clínica + imagen
+❌ INCORRECTO: "Ictus" (término coloquial, usa terminología médica estándar)
+
+ESTRUCTURA CORRECTA:
 
 3. DIAGNÓSTICO PRINCIPAL
-Infarto agudo de miocardio con elevación del segmento ST (IAMEST) de localización anterior
+[Diagnóstico específico derivado del motivo de ingreso con terminología médica estándar]
 
 4. DIAGNÓSTICOS SECUNDARIOS
-- Hipertensión arterial
-- Dislipemia mixta
-- Tabaquismo activo
+- [Antecedente 1 del contexto del paciente]
+- [Antecedente 2 del contexto del paciente]
+- [Antecedente 3 del contexto del paciente]
 
 6. TRATAMIENTO Y MEDICACIÓN AL ALTA
 - Ácido acetilsalicílico 100mg cada 24 horas
@@ -269,11 +319,12 @@ Genera un informe d'alta hospitalària professional seguint aquesta estructura:
 
 {filled_template}
 
-RECORDATORI CRÍTIC:
-✓ Utilitza noms estàndard de malalties i medicaments
-✓ Sigues precís amb diagnòstics (basat en símptomes, proves, biomarcadors)
+RECORDATORI CRÍTIC - ZERO TOLERÀNCIA A AL·LUCINACIONS:
+✓ USA NOMÉS dades del motiu d'ingrés i context del pacient
+✓ El DIAGNÒSTIC PRINCIPAL ha de coincidir EXACTAMENT amb la condició descrita al motiu d'ingrés
+✓ Utilitza noms estàndard de malalties i medicaments TAL COM APAREIXEN a les dades proporcionades
 ✓ NO incloguis codis mèdics (SNOMED, ICD-10, ATC) - s'assignaran automàticament
-✓ Enfoca't en la qualitat clínica del contingut"""
+✓ Si tens dubtes sobre un diagnòstic, usa la terminologia EXACTA del motiu d'ingrés"""
         else:
             final_prompt = f"""{context_text}
 
@@ -281,11 +332,12 @@ Genera un informe de alta hospitalaria profesional siguiendo esta estructura:
 
 {filled_template}
 
-RECORDATORIO CRÍTICO:
-✓ Utiliza nombres estándar de enfermedades y medicamentos
-✓ Sé preciso con diagnósticos (basado en síntomas, pruebas, biomarcadores)
+RECORDATORIO CRÍTICO - CERO TOLERANCIA A ALUCINACIONES:
+✓ USA SOLO datos del motivo de ingreso y contexto del paciente
+✓ El DIAGNÓSTICO PRINCIPAL debe coincidir EXACTAMENTE con la condición descrita en el motivo de ingreso
+✓ Utiliza nombres estándar de enfermedades y medicamentos TAL COMO APARECEN en los datos proporcionados
 ✓ NO incluyas códigos médicos (SNOMED, ICD-10, ATC) - se asignarán automáticamente
-✓ Enfócate en la calidad clínica del contenido"""
+✓ Si tienes dudas sobre un diagnóstico, usa la terminología EXACTA del motivo de ingreso"""
         
         return final_prompt
     

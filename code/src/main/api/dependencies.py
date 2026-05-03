@@ -155,6 +155,9 @@ async def get_medical_coding_service() -> Optional[MedicalCodingService]:
         # Get Qdrant client for semantic retrieval
         qdrant_client = await get_qdrant_client()
         
+        # Get embeddings model for semantic search
+        embeddings_model = await get_embeddings_model()
+        
         # Legacy clients (for compatibility and fallback)
         snomed_client = None
         ontology_manager = None
@@ -169,6 +172,7 @@ async def get_medical_coding_service() -> Optional[MedicalCodingService]:
         # Initialize with NEW semantic architecture
         _medical_coding_service = MedicalCodingService(
             qdrant_client=qdrant_client,  # NEW: Semantic retrieval
+            embeddings_model=embeddings_model,  # NEW: Embeddings for query vectors
             ner_service=None,  # TODO: Add NER service when available
             # Legacy compatibility
             snomed_client=snomed_client,

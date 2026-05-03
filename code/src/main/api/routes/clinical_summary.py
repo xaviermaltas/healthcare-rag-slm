@@ -61,7 +61,7 @@ class ClinicalSummaryRequest(BaseModel):
     language: str = Field(
         default="ca",
         description="Response language",
-        regex="^(ca|es|en)$"
+        pattern="^(ca|es|en)$"
     )
 
 

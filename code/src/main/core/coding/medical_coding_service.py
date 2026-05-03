@@ -78,6 +78,7 @@ class MedicalCodingService:
     
     def __init__(self, 
                  qdrant_client=None,
+                 embeddings_model=None,
                  ner_service=None,
                  # Legacy compatibility
                  snomed_client: Optional[SNOMEDClient] = None,
@@ -87,13 +88,14 @@ class MedicalCodingService:
         
         Args:
             qdrant_client: Client Qdrant per retrieval semàntic
+            embeddings_model: Model d'embeddings (BGE-M3)
             ner_service: Servei NER per extracció d'entitats
             snomed_client: Legacy SNOMED CT client (compatibility)
             ontology_manager: Legacy ontology manager (compatibility)
         """
         # Nova arquitectura semàntica
         if qdrant_client:
-            self.semantic_coding = SemanticCodingService(qdrant_client, snomed_client)
+            self.semantic_coding = SemanticCodingService(qdrant_client, embeddings_model, snomed_client)
             if ner_service:
                 self.coding_pipeline = CodingPipeline(ner_service, self.semantic_coding)
             else:
