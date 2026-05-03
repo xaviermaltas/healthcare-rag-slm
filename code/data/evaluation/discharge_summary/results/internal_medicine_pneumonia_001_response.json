@@ -1,30 +1,24 @@
 {
-  "summary": "INFORME D'ALTA HOSPITALÀRIA\n\n1. DADES DEL PACIENT\nDona de 68 anys amb antecedents de EPOC GOLD II en tractament amb broncodilatadors, tabaquisme actiu (40 paquets-any), i hipertensió arterial. Viu sola, autònoma per a les activitats bàsiques.\n\n2. MOTIU D'INGRÉS\nQuadre de 4 dies d'evolució de febre de fins a 39°C, tos productiva amb expectoració purulenta, dispnea progressiva i dolor toràcic pleurític en hemitòrax dret. A urgències: saturació O2 88% amb aire ambient, taquipnea (28 rpm), crepitants a base pulmonar dreta. Radiografia toràcica amb infiltrat alveolar a lòbul inferior dret compatible amb pneumònia.\n\n3. DIAGNÒSTIC PRINCIPAL\nPneumònia adquirida a la comunitat\n\n4. DIAGNÒSTICS SECUNDARIS\n- Insuficiència cardíaca aguda descompensada\n  - Codi SNOMED CT: 42343007\n  - Codi ICD-10: I50.9\n- Diabetis mellitus tipus 2 descompensada\n  - Codi SNOMED CT: 44054006\n  - Codi ICD-10: E11.9\n\n5. PROCEDIMENTS REALITZATS\n- Radiografia toràcica PA i lateral\n- Analítica completa amb hemograma, bioquímica i PCR\n- Gasometria arterial\n- Hemocultius (2 mostres)\n- Antigenúria per Legionella i Pneumococ\n- Oxigenoteràpia amb màscara Venturi\n\n6. TRACTAMENT I MEDICACIÓ A L'ALTA\n- Enalapril 10mg cada 24 hores (Codi ATC: C09AA02)\n- Tiotropi 18mcg inhalat cada 24 hores\n- Salbutamol 100mcg inhalat a demanda\n\n7. EVOLUCIÓ CLÍNICA\nDurant l'ingrés hospitalari, el pacient ha presentat una evolució clínica estabilitzadora amb febre reduïda a 37°C, tos productiva i dispnea progressiva. La saturació O2 ha estat mantena en els límits de la norma. El dolor toràcic pleurític ha disminuït en intensitat.\n\n8. RECOMANACIONS DE SEGUIMENT\n- Control per cardiologia en 3 dies\n- Proves complementàries específiques: hemograma, bioquímica i PCR\n- Modificacions en el tractament: ajustar la dosi d'Enalapril si s'observen efectes colaterals\n\n9. CONTRAINDICACIONS I PRECAUCIONS\n- Al·lèrgies medicamentoses a Enalapril\n- Interaccions a evitar amb Salbutamol i Tiotropi\n- Precaucions específiques: hemocultius (2 mostres)",
+  "summary": "INFORME D'ALTA HOSPITALÀRIA\n\n1. DADES DEL PACIENT\nDona de 68 anys amb antecedents de EPOC GOLD II en tractament amb broncodilatadors, tabaquisme actiu (40 paquets-any), i hipertensió arterial. Viu sola, autònoma per a les activitats bàsiques.\n\n2. MOTIU D'INGRÉS\nQuadre de 4 dies d'evolució de febre de fins a 39°C, tos productiva amb expectoració purulenta, dispnea progressiva i dolor toràcic pleurític en hemitòrax dret. A urgències: saturació O2 88% amb aire ambient, taquipnea (28 rpm), crepitants a base pulmonar dreta. Radiografia toràcica amb infiltrat alveolar a lòbul inferior dret compatible amb pneumònia.\n\n3. DIAGNÒSTIC PRINCIPAL\nPneumònia adquirida a la comunitat, diagnosticat per radiografia toràcica i analisi de sang.\n\n4. DIAGNÒSTICS SECUNDARIS\n- Infecció respiratòria aguda, confirmada per PCR i cultura bacteriana.\n- Hipertensió arterial, controlada amb enalapril 10mg cada 24 hores.\n\n5. PROCEDIMENTS REALITZATS\n- Radiografia toràcica PA i lateral\n- Analítica completa amb hemograma, bioquímica i PCR\n- Gasometria arterial\n- Hemocultius (2 mostres)\n- Antigenúria per Legionella i Pneumococ\n- Oxigenoteràpia amb màscara Venturi\n\n6. TRACTAMENT I MEDICACIÓ A L'ALTA\n- Tiotropi 18mcg inhalat cada 24 hores\n- Salbutamol 100mcg inhalat a demanda\n- Enalapril 10mg cada 24 hores\n- Antibiótics (Amoxicil·lin/Clavulàna) per infecció respiratòria aguda\n\n7. EVOLUCIÓ CLÍNICA\nDurant l'ingrés hospitalari, el pacient ha mostrat una melioració progressiva de la febre i del dolor toràcic, amb una saturació O2 estabilitza a 92% amb oxigenoteràpia. La radiografia toràcica continua a mostrar infiltrats alveolars, però sense canvis significatius en els crepitants pulmonars.\n\n8. RECOMANACIONS DE SEGUIMENT\n- Control per pneumologia en 3 dies\n- Proves complementàries: PCR i cultura bacteriana\n- Modificacions en el tractament: ajustar dosi d'antibiótics si no hi ha millora\n\n9. CONTRAINDICACIONS I PRECAUCIONS\n- Al·lèrgies a antibiótics\n- Interaccions amb medicaments anticoagulants\n\nPROTOCOL D'ALTA HOSPITALÀRIA - PNEUMÒNIA ADQUIRIDA A LA COMUNITAT (PAC)\n\n1. DIAGNÒSTIC PRINCIPAL\n- Pneumònia adquirida a la comunitat\n- Codi SNOMED CT: 385093006\n- Codi ICD-10: J18.9\n\n2. SEVERITAT\n- Escala CURB-65: 7/11 (febre, uremia, respiració, blau",
   "diagnoses": [
     {
-      "description": "Pneumònia adquirida a la comunitat",
+      "description": "Pneumònia adquirida a la comunitat, diagnosticat per radiografia toràcica i analisi de sang.",
       "snomed_code": null,
       "icd10_code": null,
       "is_primary": true
     },
     {
-      "description": "Insuficiència cardíaca aguda descompensada",
-      "snomed_code": null,
+      "description": "Infecció respiratòria aguda, confirmada per PCR i cultura bacteriana.",
+      "snomed_code": "233604007",
       "icd10_code": null,
       "is_primary": false
     }
   ],
   "medications": [
     {
-      "name": "Enalapril",
-      "dosage": "10mg",
-      "atc_code": "C09AA02",
-      "duration": null
-    },
-    {
       "name": "Tiotropi",
       "dosage": "18mcg",
-      "atc_code": "C09AA02",
+      "atc_code": null,
       "duration": null
     },
     {
@@ -32,12 +26,18 @@
       "dosage": "100mcg",
       "atc_code": null,
       "duration": null
+    },
+    {
+      "name": "Enalapril",
+      "dosage": "10mg",
+      "atc_code": null,
+      "duration": null
     }
   ],
   "follow_up_recommendations": [
-    "Control per cardiologia en 3 dies",
-    "Proves complementàries específiques: hemograma, bioquímica i PCR",
-    "Modificacions en el tractament: ajustar la dosi d'Enalapril si s'observen efectes colaterals"
+    "Control per pneumologia en 3 dies",
+    "Proves complementàries: PCR i cultura bacteriana",
+    "Modificacions en el tractament: ajustar dosi d'antibiótics si no hi ha millora"
   ],
   "contraindications": [],
   "sources": [
@@ -82,7 +82,7 @@
     "has_follow_up": true
   },
   "generation_metadata": {
-    "generation_time_seconds": 53.06,
+    "generation_time_seconds": 61.57,
     "protocols_retrieved": 5,
     "language": "ca",
     "specialty_requested": "Medicina Interna",
@@ -92,6 +92,6 @@
       "Medicina Interna"
     ],
     "model": "llama3.2",
-    "timestamp": "2026-04-28T18:49:14.966764"
+    "timestamp": "2026-05-03T15:01:41.392706"
   }
 }

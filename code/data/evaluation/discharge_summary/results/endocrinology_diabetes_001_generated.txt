@@ -7,43 +7,33 @@ Dona de 58 anys amb antecedents d'obesitat (IMC 34 kg/m²), hipertensió arteria
 Quadre de poliúria, polidipsia i pèrdua de pes de 8 kg en les últimes 3 setmanes. A urgències: glucèmia capilar de 485 mg/dL, gasometria arterial amb pH 7.28, HCO3 15 mEq/L, cetonúria positiva (+++). Diagnòstic de cetoacidosi diabètica.
 
 3. DIAGNÒSTIC PRINCIPAL
-Cetoacidosi diabètica descompensada
-
-- Codi SNOMED CT: 44054006
-- Codi ICD-10: E11.9
+La dona presenta una cetoacidosi diabètica descompensada, caracteritzada per una glucèmia capilar elevada, gasometria arterial anormal i cetonúria positiva. Aquesta condició requereix un tractament immediat amb insulina ràpida en bomba i reposició hidroelectrolítica.
 
 4. DIAGNÒSTICS SECUNDARIS
-- Hiperglucèmia severa (>400 mg/dL)
-  - Codi SNOMED CT: 59621000
-  - Codi ICD-10: E11.0
-- Estat hiperosmolar hiperglucèmic
-  - Codi SNOMED CT: 370992007
-  - Codi ICD-10: E12.9
+- Anàlisis de sang complet amb glucèmia, HbA1c, funció renal i hepàtica.
+- Gasometria arterial seriada per determinar la pH i l'acidositat sanguínia.
+- Monitorització contínua de glucosa per ajustar el tractament.
 
 5. PROCEDIMENTS REALITZATS
-- Analítica completa amb glucèmia, HbA1c, funció renal i hepàtica
-- Gasometria arterial seriada
-- Monitorització contínua de glucosa
-- Perfusió d'insulina ràpida en bomba
-- Reposició hidroelectrolítica
-- Educació diabetològica
+- Perfusió d'insulina ràpida en bomba per controlar la glucèmia.
+- Reposició hidroelectrolítica per rehidratar la dona.
+- Educació diabetològica per informar la dona sobre el seu diagnòstic i el tractament.
 
 6. TRACTAMENT I MEDICACIÓ A L'ALTA
-- Metformina 850mg/12h (Codi ATC: A10BA02)
-- Insulina basal (Glargina/Degludec)
-  * Glargina 20 UI/24h (Codi ATC: A10AE04)
-- Enalapril 10mg cada 24 hores
-- Hidroclorotiazida 25mg cada 24 hores
+- Insulina ràpida en bomba (Humalog) 10 UI/24h.
+- Insulina basal (Glargina/Degludec) 20 UI/24h.
+- Enalapril 10mg cada 24 hores per controlar la pressió arterial.
+- Hidroclorotiazida 25mg cada 24 hores per controlar l'electrolitisme.
 
 7. EVOLUCIÓ CLÍNICA
-La dona es va estabilitzant en els últims 48 hores, amb una glucèmia capilar de 420 mg/dL i un pH arterial de 7.32. La cetonúria ha disminuït a -++, i la funció renal s'ha millorat.
+La dona ha mostrat una melioració significativa en els seus símptomes i signes vitals des de la seva admissió hospitalària. La glucèmia capilar ha disminuït a 420 mg/dL, i la gasometria arterial ha mostrat una milloració en la pH i l'acidositat sanguínia.
 
 8. RECOMANACIONS DE SEGUIMENT
-- Control per endocrinologia en 1 setmana
-- Proves complementàries específiques: glucèmia capilar, gasometria arterial i monitorització contínua de glucosa
-- Modificacions en el tractament: ajustar la dosi de metformina i insulina basal segons les necessitats
+- Control per endocrinologia en 1 setmana.
+- Proves complementàries específiques: glucèmia, HbA1c, funció renal i hepàtica.
+- Modificacions en el tractament si s'observen canvis significatius en la condició del pacient.
 
 9. CONTRAINDICACIONS I PRECAUCIONS
-- Al·lèrgies medicamentoses: hipersensibilitat a metformina o insulina
-- Interaccions a evitar: hidroclorotiazida amb diurètics
-- Precaucions específiques: monitoritzar la glucèmia capilar i ajustar la dosi de metformina segons les necessit
+- Al·lèrgies a insulina o medicaments hipoglucemients.
+- Interaccions amb altres medicaments, com anticoagulants o antihipertensius.
+- Precaucions específiques: monitor

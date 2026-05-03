@@ -1,30 +1,43 @@
 {
-  "summary": "INFORME D'ALTA HOSPITALÀRIA\n\n1. DADES DEL PACIENT\nEl pacient és un home de 65 anys amb antecedents de hipertensió arterial en tractament amb IECA, dislipèmia en tractament amb estatines, i tabaquisme actiu (20 cigarrets/dia durant 40 anys). Sense antecedents de diabetis mellitus ni cardiopatia isquèmica prèvia.\n\n2. MOTIU D'INGRÉS\nEl pacient presentà un dolor toràcic opressiu d'inici sobtat mentre feia exercici físic moderat, irradiat a braç esquerre i mandíbula, acompanyat de sudoració freda i dispnea. Durada de 45 minuts sense alleujament amb repòs. A urgències: ECG amb elevació del segment ST en derivacions anteriors (V1-V4), elevació de troponines (12.5 ng/mL, VN <0.04).\n\n3. DIAGNÒSTIC PRINCIPAL\nEl pacient presenta insuficiència cardíaca aguda descompensada.\n\n* Codi SNOMED CT: 42343007\n* Codi ICD-10: I50.9\n\n4. DIAGNÒSTICS SECUNDARIS\nEl pacient també presenta una elevació del segment ST en derivacions anteriors (V1-V4) i elevació de troponines, indicant un infart agut de miocardi amb elevació del segment ST (IAMCEST).\n\n* Codi SNOMED CT: 401303003\n* Codi ICD-10: I21.9\n\n5. PROCEDIMENTS REALITZATS\nEl pacient ha realitzat els següents procediments:\n\n* ECG de 12 derivacions seriats\n* Analítica completa amb enzims cardíacs (troponines, CK-MB)\n* Ecocardiografia transtorácica\n* Coronariografia urgent per cateterisme cardíac\n* Angioplastia primària amb implantació de stent farmacoactiu en artèria descendent anterior\n* Monitorització contínua en Unitat Coronària\n\n6. TRACTAMENT I MEDICACIÓ A L'ALTA\nEl pacient ha rebut els següents medicaments:\n\n* Enalapril 10mg cada 12 hores (Codi ATC: C09AA02)\n* Atorvastatina 40mg cada 24 hores (Codi ATC: B01AC06)\n* Àcid acetilsalicílic 100mg cada 24 hores\n\n7. EVOLUCIÓ CLÍNICA\nDurant l'ingrés hospitalari, el pacient ha presentat una milloria en la seva condició clínica, amb reducció de les sintomes i millora del seu estat general.\n\n8. RECOMANACIONS DE SEGUIMENT\nEl pacient ha de ser controlat per un especialista cardíac en els 30 dies següents.\n\n* Proves complementàries específiques: ecocardiografia transtorácica a les 7 dies i 14 dies\n* Modificacions en el tractament: ajustar la dosi d'Enalapril si es necessari\n\n9. CONTRAINDICACIONS I PRECAUCIONS\nEl pacient ha de ser conscientitzat sobre les següents precaucions:\n\n* Al·lèrgies medicamentoses: no han",
+  "summary": "INFORME D'ALTA HOSPITALÀRIA\n\n1. DADES DEL PACIENT\nEl pacient és home de 65 anys amb antecedents de hipertensió arterial en tractament amb IECA, dislipèmia en tractament amb estatines, i tabaquisme actiu (20 cigarrets/dia durant 40 anys). Sense antecedents de diabetis mellitus ni cardiopatia isquèmica prèvia.\n\n2. MOTIU D'INGRÉS\nEl dolor toràcic opressiu d'inici sobtat mentre feia exercici físic moderat, irradiat a braç esquerre i mandíbula, acompanyat de sudoració freda i dispnea. Durada de 45 minuts sense alleujament amb repòs.\n\n3. DIAGNÒSTIC PRINCIPAL\nEl pacient presenta insuficiència cardíaca aguda descompensada, caracteritzada per una reducció significativa de la fracció d'ejecció (FE) i una elevació del segment ST en les derivacions anteriors (V1-V4) en l'ECG. A més, es troba amb un nivell elevat de troponines (12.5 ng/mL), indicant un infart agut de miocardi.\n\n4. DIAGNÒSTICS SECUNDARIS\n- No s'han identificat altres diagnòstics secundaris que no estiguin relacionats amb l'infart agut de miocardi o insuficiència cardíaca aguda.\n\n5. PROCEDIMENTS REALITZATS\n- ECG de 12 derivacions seriats\n- Analítica completa amb enzims cardíacs (troponines, CK-MB)\n- Ecocardiografia transtorácica\n- Coronariografia urgent per cateterisme cardíac\n- Angioplastia primària amb implantació de stent farmacoactiu en artèria descendent anterior\n- Monitorització contínua en Unitat Coronària\n\n6. TRACTAMENT I MEDICACIÓ A L'ALTA\n- Aspirina 100mg cada 24 hores\n- Clopidogrel/Ticagrelor 75mg cada 12 hores\n- Enalapril 10mg cada 12 hores\n- Atorvastatina 40mg cada 24 hores\n\n7. EVOLUCIÓ CLÍNICA\nDurant l'ingrés hospitalari, el pacient ha mostrat una millora significativa en la seva condició, amb una reducció de la fracció d'ejecció i un disminució del nivell de troponines. A més, s'ha observat una millora en la seva funció cardíaca general.\n\n8. RECOMANACIONS DE SEGUIMENT\n- Control per cardiologia en 7 dies\n- Proves complementàries específiques: ecocardiografia transtorácica en 14 dies\n- Modificacions en el tractament: ajustar la dosi de Clopidogrel/Ticagrelor si s'observa efecte advers\n\n9. CONTRAINDICACIONS I PRECAUCIONS\n- Al·lèrgies medicamentoses: no s'han identificat al·lèrgies medicamentoses relacionades amb el tractament actual.\n- Interaccions a evitar: no s'han identificat interaccions a evitar amb els medicaments actius.\n- Precaucions específiques",
   "diagnoses": [
     {
-      "description": "El pacient presenta insuficiència cardíaca aguda descompensada.",
-      "snomed_code": null,
-      "icd10_code": null,
+      "description": "El pacient presenta insuficiència cardíaca aguda descompensada, caracteritzada per una reducció significativa de la fracció d'ejecció (FE) i una elevació del segment ST en les derivacions anteriors (V1-V4) en l'ECG. A més, es troba amb un nivell elevat de troponines (12.5 ng/mL), indicant un infart agut de miocardi.",
+      "snomed_code": "42343007",
+      "icd10_code": "I50.9",
       "is_primary": true
+    },
+    {
+      "description": "No s'han identificat altres diagnòstics secundaris que no estiguin relacionats amb l'infart agut de miocardi o insuficiència cardíaca aguda.",
+      "snomed_code": null,
+      "icd10_code": "I21.9",
+      "is_primary": false
     }
   ],
   "medications": [
     {
+      "name": "Aspirina",
+      "dosage": "100mg",
+      "atc_code": null,
+      "duration": null
+    },
+    {
       "name": "Enalapril",
       "dosage": "10mg",
-      "atc_code": "C09AA02",
+      "atc_code": null,
       "duration": null
     },
     {
       "name": "Atorvastatina",
       "dosage": "40mg",
-      "atc_code": "C09AA02",
+      "atc_code": null,
       "duration": null
     }
   ],
   "follow_up_recommendations": [
-    "Proves complementàries específiques: ecocardiografia transtorácica a les 7 dies i 14 dies",
-    "Modificacions en el tractament: ajustar la dosi d'Enalapril si es necessari"
+    "Control per cardiologia en 7 dies",
+    "Proves complementàries específiques: ecocardiografia transtorácica en 14 dies",
+    "Modificacions en el tractament: ajustar la dosi de Clopidogrel/Ticagrelor si s'observa efecte advers"
   ],
   "contraindications": [],
   "sources": [
@@ -51,7 +64,7 @@
     "has_follow_up": true
   },
   "generation_metadata": {
-    "generation_time_seconds": 55.18,
+    "generation_time_seconds": 58.91,
     "protocols_retrieved": 2,
     "language": "ca",
     "specialty_requested": "Cardiologia",
@@ -61,6 +74,6 @@
       "Cardiologia"
     ],
     "model": "llama3.2",
-    "timestamp": "2026-04-28T18:47:25.082218"
+    "timestamp": "2026-05-03T14:59:36.461602"
   }
 }

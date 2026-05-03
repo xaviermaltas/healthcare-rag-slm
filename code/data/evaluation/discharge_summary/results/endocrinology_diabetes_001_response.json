@@ -1,14 +1,14 @@
 {
-  "summary": "INFORME D'ALTA HOSPITALÀRIA\n\n1. DADES DEL PACIENT\nDona de 58 anys amb antecedents d'obesitat (IMC 34 kg/m²), hipertensió arterial i antecedents familiars de diabetis mellitus tipus 2 (mare i germà). Sense seguiment mèdic regular els últims 5 anys.\n\n2. MOTIU D'INGRÉS\nQuadre de poliúria, polidipsia i pèrdua de pes de 8 kg en les últimes 3 setmanes. A urgències: glucèmia capilar de 485 mg/dL, gasometria arterial amb pH 7.28, HCO3 15 mEq/L, cetonúria positiva (+++). Diagnòstic de cetoacidosi diabètica.\n\n3. DIAGNÒSTIC PRINCIPAL\nCetoacidosi diabètica descompensada\n\n- Codi SNOMED CT: 44054006\n- Codi ICD-10: E11.9\n\n4. DIAGNÒSTICS SECUNDARIS\n- Hiperglucèmia severa (>400 mg/dL)\n  - Codi SNOMED CT: 59621000\n  - Codi ICD-10: E11.0\n- Estat hiperosmolar hiperglucèmic\n  - Codi SNOMED CT: 370992007\n  - Codi ICD-10: E12.9\n\n5. PROCEDIMENTS REALITZATS\n- Analítica completa amb glucèmia, HbA1c, funció renal i hepàtica\n- Gasometria arterial seriada\n- Monitorització contínua de glucosa\n- Perfusió d'insulina ràpida en bomba\n- Reposició hidroelectrolítica\n- Educació diabetològica\n\n6. TRACTAMENT I MEDICACIÓ A L'ALTA\n- Metformina 850mg/12h (Codi ATC: A10BA02)\n- Insulina basal (Glargina/Degludec)\n  * Glargina 20 UI/24h (Codi ATC: A10AE04)\n- Enalapril 10mg cada 24 hores\n- Hidroclorotiazida 25mg cada 24 hores\n\n7. EVOLUCIÓ CLÍNICA\nLa dona es va estabilitzant en els últims 48 hores, amb una glucèmia capilar de 420 mg/dL i un pH arterial de 7.32. La cetonúria ha disminuït a -++, i la funció renal s'ha millorat.\n\n8. RECOMANACIONS DE SEGUIMENT\n- Control per endocrinologia en 1 setmana\n- Proves complementàries específiques: glucèmia capilar, gasometria arterial i monitorització contínua de glucosa\n- Modificacions en el tractament: ajustar la dosi de metformina i insulina basal segons les necessitats\n\n9. CONTRAINDICACIONS I PRECAUCIONS\n- Al·lèrgies medicamentoses: hipersensibilitat a metformina o insulina\n- Interaccions a evitar: hidroclorotiazida amb diurètics\n- Precaucions específiques: monitoritzar la glucèmia capilar i ajustar la dosi de metformina segons les necessit",
+  "summary": "INFORME D'ALTA HOSPITALÀRIA\n\n1. DADES DEL PACIENT\nDona de 58 anys amb antecedents d'obesitat (IMC 34 kg/m²), hipertensió arterial i antecedents familiars de diabetis mellitus tipus 2 (mare i germà). Sense seguiment mèdic regular els últims 5 anys.\n\n2. MOTIU D'INGRÉS\nQuadre de poliúria, polidipsia i pèrdua de pes de 8 kg en les últimes 3 setmanes. A urgències: glucèmia capilar de 485 mg/dL, gasometria arterial amb pH 7.28, HCO3 15 mEq/L, cetonúria positiva (+++). Diagnòstic de cetoacidosi diabètica.\n\n3. DIAGNÒSTIC PRINCIPAL\nLa dona presenta una cetoacidosi diabètica descompensada, caracteritzada per una glucèmia capilar elevada, gasometria arterial anormal i cetonúria positiva. Aquesta condició requereix un tractament immediat amb insulina ràpida en bomba i reposició hidroelectrolítica.\n\n4. DIAGNÒSTICS SECUNDARIS\n- Anàlisis de sang complet amb glucèmia, HbA1c, funció renal i hepàtica.\n- Gasometria arterial seriada per determinar la pH i l'acidositat sanguínia.\n- Monitorització contínua de glucosa per ajustar el tractament.\n\n5. PROCEDIMENTS REALITZATS\n- Perfusió d'insulina ràpida en bomba per controlar la glucèmia.\n- Reposició hidroelectrolítica per rehidratar la dona.\n- Educació diabetològica per informar la dona sobre el seu diagnòstic i el tractament.\n\n6. TRACTAMENT I MEDICACIÓ A L'ALTA\n- Insulina ràpida en bomba (Humalog) 10 UI/24h.\n- Insulina basal (Glargina/Degludec) 20 UI/24h.\n- Enalapril 10mg cada 24 hores per controlar la pressió arterial.\n- Hidroclorotiazida 25mg cada 24 hores per controlar l'electrolitisme.\n\n7. EVOLUCIÓ CLÍNICA\nLa dona ha mostrat una melioració significativa en els seus símptomes i signes vitals des de la seva admissió hospitalària. La glucèmia capilar ha disminuït a 420 mg/dL, i la gasometria arterial ha mostrat una milloració en la pH i l'acidositat sanguínia.\n\n8. RECOMANACIONS DE SEGUIMENT\n- Control per endocrinologia en 1 setmana.\n- Proves complementàries específiques: glucèmia, HbA1c, funció renal i hepàtica.\n- Modificacions en el tractament si s'observen canvis significatius en la condició del pacient.\n\n9. CONTRAINDICACIONS I PRECAUCIONS\n- Al·lèrgies a insulina o medicaments hipoglucemients.\n- Interaccions amb altres medicaments, com anticoagulants o antihipertensius.\n- Precaucions específiques: monitor",
   "diagnoses": [
     {
-      "description": "Cetoacidosi diabètica descompensada",
+      "description": "La dona presenta una cetoacidosi diabètica descompensada, caracteritzada per una glucèmia capilar elevada, gasometria arterial anormal i cetonúria positiva. Aquesta condició requereix un tractament immediat amb insulina ràpida en bomba i reposició hidroelectrolítica.",
       "snomed_code": null,
       "icd10_code": null,
       "is_primary": true
     },
     {
-      "description": "Hiperglucèmia severa (>400 mg/dL)",
+      "description": "Anàlisis de sang complet amb glucèmia, HbA1c, funció renal i hepàtica.",
       "snomed_code": null,
       "icd10_code": null,
       "is_primary": false
@@ -16,34 +16,22 @@
   ],
   "medications": [
     {
-      "name": "Metformina",
-      "dosage": "850mg",
-      "atc_code": "A10BA02",
-      "duration": null
-    },
-    {
-      "name": "Glargina",
-      "dosage": "20UI",
-      "atc_code": "A10AE04",
-      "duration": null
-    },
-    {
       "name": "Enalapril",
       "dosage": "10mg",
-      "atc_code": "A10AE04",
+      "atc_code": "C09AA02",
       "duration": null
     },
     {
       "name": "Hidroclorotiazida",
       "dosage": "25mg",
-      "atc_code": "A10AE04",
+      "atc_code": null,
       "duration": null
     }
   ],
   "follow_up_recommendations": [
-    "Control per endocrinologia en 1 setmana",
-    "Proves complementàries específiques: glucèmia capilar, gasometria arterial i monitorització contínua de glucosa",
-    "Modificacions en el tractament: ajustar la dosi de metformina i insulina basal segons les necessitats"
+    "Control per endocrinologia en 1 setmana.",
+    "Proves complementàries específiques: glucèmia, HbA1c, funció renal i hepàtica.",
+    "Modificacions en el tractament si s'observen canvis significatius en la condició del pacient."
   ],
   "contraindications": [],
   "sources": [
@@ -88,7 +76,7 @@
     "has_follow_up": true
   },
   "generation_metadata": {
-    "generation_time_seconds": 54.92,
+    "generation_time_seconds": 61.59,
     "protocols_retrieved": 5,
     "language": "ca",
     "specialty_requested": "Endocrinologia",
@@ -98,6 +86,6 @@
       "Endocrinologia"
     ],
     "model": "llama3.2",
-    "timestamp": "2026-04-28T18:48:21.833390"
+    "timestamp": "2026-05-03T15:00:39.739374"
   }
 }
