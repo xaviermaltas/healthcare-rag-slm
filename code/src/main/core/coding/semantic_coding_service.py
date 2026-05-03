@@ -229,22 +229,196 @@ class SemanticCodingService:
         return clean.strip()
     
     async def _search_bioportal_snomed(self, term: str) -> Optional[MedicalCode]:
-        """Cerca SNOMED a BioPortal API com a fallback"""
-        try:
-            # TODO: Implementar cerca a BioPortal
-            # result = await self.bioportal_client.search_snomed(term)
+        """Cerca SNOMED CT a BioPortal API com a fallback"""
+        if not self.bioportal_client:
             return None
+            
+        try:
+            import aiohttp
+            import os
+            
+            api_key = os.getenv('BIOPORTAL_API_KEY')
+            if not api_key:
+                logger.warning("BIOPORTAL_API_KEY not configured")
+                return None
+            
+            base_url = "https://data.bioontology.org"
+            headers = {'Authorization': f'apikey token={api_key}'}
+            
+            async with aiohttp.ClientSession(headers=headers) as session:
+                params = {
+                    'q': term,
+                    'ontologies': 'SNOMEDCT',
+                    'pagesize': 5,
+                    'suggest': 'true'
+                }
+                
+                async with session.get(f"{base_url}/search", params=params) as response:
+                    if response.status != 200:
+                        logger.error(f"BioPortal API error: {response.status}")
+                        return None
+                    
+                    data = await response.json()
+                    collection = data.get('collection', [])
+                    
+                    if not collection:
+                        return None
+                    
+                    # Agafar el primer resultat (millor match)
+                    best_match = collection[0]
+                    
+                    # Extreure codi SNOMED del notation o prefLabel
+                    code = best_match.get('notation', '')
+                    if not code:
+                        # Intentar extreure del @id
+                        concept_id = best_match.get('@id', '')
+                        code = concept_id.split('/')[-1] if concept_id else ''
+                    
+                    display = best_match.get('prefLabel', term)
+                    
+                    if code:
+                        logger.info(f"BioPortal SNOMED fallback: {term} → {code}")
+                        return MedicalCode(
+                            code=code,
+                            system='SNOMED_CT',
+                            display=display,
+                            confidence=0.6,  # Confiança baixa per fallback
+                            source='bioportal_api'
+                        )
+                    
+                    return None
+                    
         except Exception as e:
             logger.error(f"BioPortal SNOMED search error: {e}")
             return None
     
     async def _search_bioportal_icd10(self, term: str) -> Optional[MedicalCode]:
         """Cerca ICD-10 a BioPortal API com a fallback"""
-        try:
-            # TODO: Implementar cerca a BioPortal
+        if not self.bioportal_client:
             return None
+            
+        try:
+            import aiohttp
+            import os
+            
+            api_key = os.getenv('BIOPORTAL_API_KEY')
+            if not api_key:
+                logger.warning("BIOPORTAL_API_KEY not configured")
+                return None
+            
+            base_url = "https://data.bioontology.org"
+            headers = {'Authorization': f'apikey token={api_key}'}
+            
+            async with aiohttp.ClientSession(headers=headers) as session:
+                params = {
+                    'q': term,
+                    'ontologies': 'ICD10CM',
+                    'pagesize': 5,
+                    'suggest': 'true'
+                }
+                
+                async with session.get(f"{base_url}/search", params=params) as response:
+                    if response.status != 200:
+                        logger.error(f"BioPortal API error: {response.status}")
+                        return None
+                    
+                    data = await response.json()
+                    collection = data.get('collection', [])
+                    
+                    if not collection:
+                        return None
+                    
+                    # Agafar el primer resultat (millor match)
+                    best_match = collection[0]
+                    
+                    # Extreure codi ICD-10
+                    code = best_match.get('notation', '')
+                    if not code:
+                        concept_id = best_match.get('@id', '')
+                        code = concept_id.split('/')[-1] if concept_id else ''
+                    
+                    display = best_match.get('prefLabel', term)
+                    
+                    if code:
+                        logger.info(f"BioPortal ICD-10 fallback: {term} → {code}")
+                        return MedicalCode(
+                            code=code,
+                            system='ICD-10',
+                            display=display,
+                            confidence=0.6,
+                            source='bioportal_api'
+                        )
+                    
+                    return None
+                    
         except Exception as e:
             logger.error(f"BioPortal ICD-10 search error: {e}")
+            return None
+    
+    async def _search_bioportal_atc(self, medication_name: str) -> Optional[MedicalCode]:
+        """Cerca codi ATC a BioPortal API com a fallback"""
+        if not self.bioportal_client:
+            return None
+            
+        try:
+            import aiohttp
+            import os
+            
+            api_key = os.getenv('BIOPORTAL_API_KEY')
+            if not api_key:
+                logger.warning("BIOPORTAL_API_KEY not configured")
+                return None
+            
+            base_url = "https://data.bioontology.org"
+            headers = {'Authorization': f'apikey token={api_key}'}
+            
+            async with aiohttp.ClientSession(headers=headers) as session:
+                params = {
+                    'q': medication_name,
+                    'ontologies': 'ATC',
+                    'pagesize': 5,
+                    'suggest': 'true'
+                }
+                
+                async with session.get(f"{base_url}/search", params=params) as response:
+                    if response.status != 200:
+                        logger.error(f"BioPortal API error: {response.status}")
+                        return None
+                    
+                    data = await response.json()
+                    collection = data.get('collection', [])
+                    
+                    if not collection:
+                        logger.warning(f"No ATC code found in BioPortal for: {medication_name}")
+                        return None
+                    
+                    # Agafar el primer resultat (millor match)
+                    best_match = collection[0]
+                    
+                    # Extreure codi ATC del notation o @id
+                    code = best_match.get('notation', '')
+                    if not code:
+                        # Intentar extreure del @id
+                        concept_id = best_match.get('@id', '')
+                        code = concept_id.split('/')[-1] if concept_id else ''
+                    
+                    display = best_match.get('prefLabel', medication_name)
+                    
+                    if code:
+                        logger.info(f"BioPortal ATC fallback: {medication_name} → {code}")
+                        return MedicalCode(
+                            code=code,
+                            system='ATC',
+                            display=display,
+                            confidence=0.6,  # Confiança baixa per fallback API
+                            source='bioportal_api'
+                        )
+                    
+                    logger.warning(f"No valid ATC code extracted from BioPortal for: {medication_name}")
+                    return None
+                    
+        except Exception as e:
+            logger.error(f"BioPortal ATC search error: {e}")
             return None
 
 
