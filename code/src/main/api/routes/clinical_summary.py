@@ -137,10 +137,14 @@ async def generate_clinical_summary(
         # ====================================================================
         
         # Generate embeddings for search
-        query_embedding = await embeddings_client.embed_query(search_query)
+        query_result = await embeddings_client.encode_query(search_query)
+        query_embedding = query_result.get('dense', query_result.get('embedding', []))
         
         # Search Qdrant for relevant documents
-        qdrant_client = QdrantClient(host="localhost", port=6333)
+        qdrant_client = QdrantClient(
+            host=settings.QDRANT_HOST,
+            port=settings.QDRANT_PORT
+        )
         
         # Build specialty filter if specified
         search_filter = None
@@ -154,13 +158,13 @@ async def generate_clinical_summary(
                 ]
             )
         
-        search_results = qdrant_client.search(
-            collection_name="healthcare_rag",
-            query_vector=query_embedding,
+        search_results = qdrant_client.query_points(
+            collection_name=settings.QDRANT_COLLECTION,
+            query=query_embedding,
             query_filter=search_filter,
             limit=5,
             with_payload=True
-        )
+        ).points
         
         logger.info(f"Found {len(search_results)} relevant sources")
         
@@ -241,11 +245,13 @@ async def generate_clinical_summary(
         logger.info("🤖 Generating clinical summary with LLM...")
         
         # Generate with Ollama
-        generated_summary = await ollama_client.generate(
+        generation_response = await ollama_client.generate(
             prompt=prompt,
+            model=settings.OLLAMA_MODEL,
             max_tokens=1000,
             temperature=0.3
         )
+        generated_summary = generation_response.get('response', '') if isinstance(generation_response, dict) else str(generation_response)
         
         # ====================================================================
         # STEP 5: Build response
