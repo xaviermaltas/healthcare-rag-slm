@@ -10,6 +10,8 @@ from datetime import datetime
 import logging
 
 from src.main.core.prompts.clinical_summary_template import ClinicalSummaryPrompt
+from src.main.core.utils.output_cleaner import OutputCleaner
+from src.main.core.utils.code_injector import CodeInjector
 from src.main.infrastructure.embeddings.bge_m3 import BGEM3Embeddings
 from src.main.infrastructure.llm.ollama_client import OllamaClient
 from src.main.api.dependencies import get_ollama_client, get_embeddings_model, get_medical_coding_service
@@ -252,6 +254,43 @@ async def generate_clinical_summary(
             temperature=0.3
         )
         generated_summary = generation_response.get('response', '') if isinstance(generation_response, dict) else str(generation_response)
+        
+        # Clean output - remove internal instructions and unnecessary text
+        generated_summary = OutputCleaner.extract_main_content(generated_summary, language=request.language)
+        generated_summary = OutputCleaner.clean_clinical_summary(generated_summary, language=request.language)
+        
+        # Check if LLM generated codes (BEFORE injection)
+        import re
+        has_llm_codes = bool(re.search(r'\((?:SNOMED|ICD-10|ATC)', generated_summary, re.IGNORECASE))
+        if has_llm_codes:
+            logger.warning(f"⚠️ LLM GENERATED CODES (should not happen): {generated_summary[:500]}")
+        else:
+            logger.info(f"✅ LLM did NOT generate codes - clean text ready for injection")
+        
+        # Inject medical codes into summary text
+        conditions_for_injection = [
+            {
+                'description': c.condition if hasattr(c, 'condition') else c.get('condition', ''),
+                'snomed_code': c.snomed_code if hasattr(c, 'snomed_code') else c.get('snomed_code'),
+                'icd10_code': c.icd10_code if hasattr(c, 'icd10_code') else c.get('icd10_code')
+            }
+            for c in relevant_conditions
+        ]
+        
+        medications_for_injection = [
+            {
+                'name': m.medication if hasattr(m, 'medication') else m.get('medication', ''),
+                'atc_code': m.atc_code if hasattr(m, 'atc_code') else m.get('atc_code')
+            }
+            for m in coded_medications
+        ]
+        
+        generated_summary = CodeInjector.inject_all_codes(
+            generated_summary,
+            diagnoses=conditions_for_injection,
+            medications=medications_for_injection,
+            language=request.language
+        )
         
         # ====================================================================
         # STEP 5: Build response

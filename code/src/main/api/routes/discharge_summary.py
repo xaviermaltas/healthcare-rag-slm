@@ -8,9 +8,12 @@ from pydantic import BaseModel, Field, validator
 from typing import List, Dict, Optional, Any
 from datetime import datetime
 import logging
+import re
 
 from src.main.core.prompts.discharge_summary_template import DischargeSummaryPrompt
 from src.main.core.parsers.discharge_summary_parser import DischargeSummaryParser
+from src.main.core.utils.output_cleaner import OutputCleaner
+from src.main.core.utils.code_injector import CodeInjector
 from src.main.core.specialty_detector import SpecialtyDetector
 from src.main.infrastructure.embeddings.bge_m3 import BGEM3Embeddings
 from src.main.infrastructure.llm.ollama_client import OllamaClient
@@ -444,9 +447,13 @@ async def generate_discharge_summary(
         # STEP 5: Generate summary with Ollama
         # ====================================================================
         
+        # Get system prompt with critical instructions
+        system_prompt = DischargeSummaryPrompt.get_system_prompt(language=request.language)
+        
         generation_response = await ollama_client.generate(
             prompt=prompt,
             model=settings.OLLAMA_MODEL,
+            system_prompt=system_prompt,
             temperature=0.3,  # Low temperature for factual medical content
             max_tokens=800  # Reduced for faster generation on CPU
         )
@@ -459,7 +466,11 @@ async def generate_discharge_summary(
                 detail="Failed to generate summary - empty response from LLM"
             )
         
-        logger.info(f"Summary generated - Length: {len(generated_summary)} chars")
+        # Clean output - remove internal instructions and unnecessary text
+        generated_summary = OutputCleaner.extract_main_content(generated_summary, language=request.language)
+        generated_summary = OutputCleaner.clean_discharge_summary(generated_summary, language=request.language)
+        
+        logger.info(f"Summary generated and cleaned - Length: {len(generated_summary)} chars")
         
         # ====================================================================
         # STEP 6: Validate response structure
@@ -496,13 +507,30 @@ async def generate_discharge_summary(
             section_text=sections.get('main_diagnosis', '') + '\n' + sections.get('secondary_diagnoses', '')
         )
         
-        # Build diagnoses list
+        # Build diagnoses list with semantic coding
         diagnoses = []
         for extracted_diag in extracted_diagnoses:
+            # Get SNOMED CT code via semantic retrieval
+            snomed_code = None
+            icd10_code = None
+            
+            if coding_service and extracted_diag.description:
+                try:
+                    # Semantic coding for diagnosis
+                    snomed_result = await coding_service.get_snomed_code_semantic(extracted_diag.description)
+                    if snomed_result:
+                        snomed_code = snomed_result.code
+                    
+                    icd10_result = await coding_service.get_icd10_code_semantic(extracted_diag.description)
+                    if icd10_result:
+                        icd10_code = icd10_result.code
+                except Exception as e:
+                    logger.warning(f"Failed to code diagnosis '{extracted_diag.description}': {e}")
+            
             diagnoses.append(DiagnosisInfo(
                 description=extracted_diag.description,
-                snomed_code=extracted_diag.snomed_code,
-                icd10_code=extracted_diag.icd10_code,
+                snomed_code=snomed_code,
+                icd10_code=icd10_code,
                 is_primary=extracted_diag.is_primary
             ))
         
@@ -512,15 +540,27 @@ async def generate_discharge_summary(
             section_text=sections.get('treatment', '')
         )
         
-        # Build medications list
+        # Build medications list with semantic coding
         medications = []
         for extracted_med in extracted_medications:
+            # Get ATC code via semantic retrieval
+            atc_code = extracted_med.atc_code
+            
+            if coding_service and extracted_med.name and not atc_code:
+                try:
+                    # Semantic coding for medication
+                    atc_result = await coding_service.get_atc_code_semantic(extracted_med.name)
+                    if atc_result:
+                        atc_code = atc_result.code
+                except Exception as e:
+                    logger.warning(f"Failed to code medication '{extracted_med.name}': {e}")
+            
             medications.append(MedicationInfo(
                 name=extracted_med.name,
                 dosage=extracted_med.dosage or "See summary",
                 frequency=extracted_med.frequency,
                 route=extracted_med.route,
-                atc_code=extracted_med.atc_code
+                atc_code=atc_code
             ))
         
         # Update validation status
@@ -630,6 +670,46 @@ async def generate_discharge_summary(
         
         end_time = datetime.now()
         generation_time = (end_time - start_time).total_seconds()
+        
+        # ====================================================================
+        # STEP 8.5: Inject medical codes into the summary text
+        # ====================================================================
+        
+        # Prepare diagnoses for code injection
+        diagnoses_for_injection = [
+            {
+                'description': d.description if hasattr(d, 'description') else d.get('description', ''),
+                'snomed_code': d.snomed_code if hasattr(d, 'snomed_code') else d.get('snomed_code'),
+                'icd10_code': d.icd10_code if hasattr(d, 'icd10_code') else d.get('icd10_code')
+            }
+            for d in diagnoses
+        ]
+        
+        # Prepare medications for code injection
+        medications_for_injection = [
+            {
+                'name': m.name if hasattr(m, 'name') else m.get('name', ''),
+                'atc_code': m.atc_code if hasattr(m, 'atc_code') else m.get('atc_code')
+            }
+            for m in medications
+        ]
+        
+        # Check if LLM generated codes (BEFORE injection)
+        has_llm_codes = bool(re.search(r'\((?:SNOMED|ICD-10|ATC)', generated_summary, re.IGNORECASE))
+        if has_llm_codes:
+            logger.warning(f"⚠️ LLM GENERATED CODES (should not happen): {generated_summary[:500]}")
+        else:
+            logger.info(f"✅ LLM did NOT generate codes - clean text ready for injection")
+        
+        # Inject codes into summary text
+        generated_summary = CodeInjector.inject_all_codes(
+            generated_summary,
+            diagnoses=diagnoses_for_injection,
+            medications=medications_for_injection,
+            language=request.language
+        )
+        
+        logger.info(f"Medical codes injected into summary - Length: {len(generated_summary)} chars")
         
         response = DischargeSummaryResponse(
             summary=generated_summary,

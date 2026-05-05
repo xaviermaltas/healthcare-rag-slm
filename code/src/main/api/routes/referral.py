@@ -13,6 +13,8 @@ from pydantic import BaseModel, Field
 from src.main.infrastructure.llm.ollama_client import OllamaClient
 from src.main.infrastructure.vector_db.qdrant_client import HealthcareQdrantClient
 from src.main.core.prompts.referral_template import ReferralPrompt
+from src.main.core.utils.output_cleaner import OutputCleaner
+from src.main.core.utils.code_injector import CodeInjector
 from src.main.core.coding.medical_coding_service import MedicalCodingService
 from src.main.api.dependencies import get_ollama_client, get_qdrant_client, get_medical_coding_service
 
@@ -288,13 +290,45 @@ async def generate_referral(
                 detail="Failed to generate referral - empty or too short response from LLM"
             )
         
-        logger.info(f"Referral document generated - Length: {len(referral_document)} chars")
+        # Clean output - remove internal instructions and unnecessary text
+        referral_document = OutputCleaner.extract_main_content(referral_document, language=request.language)
+        referral_document = OutputCleaner.clean_referral_report(referral_document, language=request.language)
+        
+        # Check if LLM generated codes (BEFORE injection)
+        import re
+        has_llm_codes = bool(re.search(r'\((?:SNOMED|ICD-10|ATC)', referral_document, re.IGNORECASE))
+        if has_llm_codes:
+            logger.warning(f"⚠️ LLM GENERATED CODES (should not happen): {referral_document[:500]}")
+        else:
+            logger.info(f"✅ LLM did NOT generate codes - clean text ready for injection")
+        
+        logger.info(f"Referral document generated and cleaned - Length: {len(referral_document)} chars")
         
         # STEP 6: Codificar motiu de derivació amb SNOMED CT
         logger.info("Coding referral reason with SNOMED CT...")
         referral_reason_codes = await _code_referral_reason(
             request.referral_reason,
             coding_service
+        )
+        
+        # Inject medical codes into referral document
+        # Prepare referral reason for code injection
+        referral_reason_for_injection = []
+        if referral_reason_codes and len(referral_reason_codes) > 0:
+            # referral_reason_codes is a list of ReferralReasonCode objects
+            first_code = referral_reason_codes[0]
+            referral_reason_for_injection = [
+                {
+                    'description': request.referral_reason,
+                    'snomed_code': first_code.snomed_code,
+                    'icd10_code': None  # ReferralReasonCode doesn't have icd10_code
+                }
+            ]
+        
+        referral_document = CodeInjector.inject_all_codes(
+            referral_document,
+            diagnoses=referral_reason_for_injection,
+            language=request.language
         )
         
         # STEP 7: Construir resposta

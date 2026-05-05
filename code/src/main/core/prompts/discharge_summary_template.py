@@ -53,7 +53,19 @@ INSTRUCCIONS CRÍTIQUES:
 9. **DIAGNÒSTIC PRINCIPAL**: Extreu-lo DIRECTAMENT del motiu d'ingrés. Si el motiu diu "infart agut de miocardi", el diagnòstic principal HA DE SER "infart agut de miocardi", NO "insuficiència cardíaca" ni cap altra condició
 10. **DIAGNÒSTICS SECUNDARIS**: Només dels antecedents del pacient (context), MAI del motiu d'ingrés
 11. **MEDICACIONS**: Usa EXACTAMENT els noms proporcionats, NO canviïs noms comercials per genèrics ni viceversa
-12. **NO generis codis mèdics** (SNOMED, ICD-10, ATC) - aquests s'assignaran automàticament després.
+
+⛔ INSTRUCCIÓ CRÍTICA SOBRE CODIS MÈDICS:
+12. **ZERO CODIS MÈDICS EN EL TEXT**: 
+    - ❌ NO escriguis SNOMED, ICD-10, ATC, o cap altre codi mèdic dins del text
+    - ❌ NO incloguis parèntesis amb codis com "(SNOMED: ...)" o "(ICD-10: ...)"
+    - ❌ NO generes cap codi - ni tan sols intents
+    - ✅ Els codis mèdics s'assignaran AUTOMÀTICAMENT pel sistema DESPRÉS de la teva generació
+    - ✅ Tu NOMÉS generes el text clínic en llenguatge natural, sense codis
+    
+EXEMPLE CORRECTE:
+❌ INCORRECTE: "Diabetis mellitus tipus 2 descompensada (SNOMED: 44054006, ICD-10: E11)"
+✅ CORRECTE: "Diabetis mellitus tipus 2 descompensada"
+(Els codis es afegiran automàticament: SNOMED: 44054006, ICD-10: E11)
 
 📚 EXEMPLES D'EXTRACCIÓ CORRECTA DE DIAGNÒSTIC:
 
@@ -111,7 +123,19 @@ INSTRUCCIONES CRÍTICAS:
 9. **DIAGNÓSTICO PRINCIPAL**: Extráelo DIRECTAMENTE del motivo de ingreso. Si el motivo dice "infarto agudo de miocardio", el diagnóstico principal DEBE SER "infarto agudo de miocardio", NO "insuficiencia cardíaca" ni ninguna otra condición
 10. **DIAGNÓSTICOS SECUNDARIOS**: Solo de los antecedentes del paciente (contexto), NUNCA del motivo de ingreso
 11. **MEDICACIONES**: Usa EXACTAMENTE los nombres proporcionados, NO cambies nombres comerciales por genéricos ni viceversa
-12. **NO generes códigos médicos** (SNOMED, ICD-10, ATC) - estos se asignarán automáticamente después.
+
+⛔ INSTRUCCIÓN CRÍTICA SOBRE CÓDIGOS MÉDICOS:
+12. **CERO CÓDIGOS MÉDICOS EN EL TEXTO**: 
+    - ❌ NO escribas SNOMED, ICD-10, ATC, o ningún otro código médico dentro del texto
+    - ❌ NO incluyas paréntesis con códigos como "(SNOMED: ...)" o "(ICD-10: ...)"
+    - ❌ NO generes ningún código - ni siquiera lo intentes
+    - ✅ Los códigos médicos se asignarán AUTOMÁTICAMENTE por el sistema DESPUÉS de tu generación
+    - ✅ TÚ SOLO generas el texto clínico en lenguaje natural, sin códigos
+    
+EJEMPLO CORRECTO:
+❌ INCORRECTO: "Diabetes mellitus tipo 2 descompensada (SNOMED: 44054006, ICD-10: E11)"
+✅ CORRECTO: "Diabetes mellitus tipo 2 descompensada"
+(Los códigos se añadirán automáticamente: SNOMED: 44054006, ICD-10: E11)
 
 📚 EJEMPLOS DE EXTRACCIÓN CORRECTA DE DIAGNÓSTICO:
 
@@ -290,6 +314,34 @@ FUENTES CONSULTADAS:
         
         # Get template
         template = DischargeSummaryPrompt.get_template(language)
+        
+        # Build coding instructions (SYSTEM PROMPT - no visible al output)
+        if language == "ca":
+            coding_instructions = """
+INSTRUCCIONS INTERNES (NO INCLOURE AL DOCUMENT):
+1. Quan menciones un diagnòstic, afegeix els codis entre parèntesis:
+   Format: [diagnòstic] (SNOMED: XXXXX, ICD-10: XXX.X)
+   Exemple: Pneumònia adquirida a la comunitat (SNOMED: 385093006, ICD-10: J18.9)
+
+2. Quan menciones un medicament, afegeix el codi ATC:
+   Format: [medicament] [dosi] (ATC: XXXXX)
+   Exemple: Azitromicina 500mg (ATC: J01FA10)
+
+3. Utilitza els codis SNOMED CT i ICD-10 de forma coherent al llarg del document.
+"""
+        else:
+            coding_instructions = """
+INSTRUCCIONES INTERNAS (NO INCLUIR EN EL DOCUMENTO):
+1. Cuando menciones un diagnóstico, añade los códigos entre paréntesis:
+   Formato: [diagnóstico] (SNOMED: XXXXX, ICD-10: XXX.X)
+   Ejemplo: Neumonía adquirida en la comunidad (SNOMED: 385093006, ICD-10: J18.9)
+
+2. Cuando menciones un medicamento, añade el código ATC:
+   Formato: [medicamento] [dosis] (ATC: XXXXX)
+   Ejemplo: Azitromicina 500mg (ATC: J01FA10)
+
+3. Utiliza los códigos SNOMED CT e ICD-10 de forma coherente en todo el documento.
+"""
         
         # Fill template
         filled_template = template.format(

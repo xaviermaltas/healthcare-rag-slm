@@ -55,8 +55,15 @@ INSTRUCCIONS CRÍTIQUES:
 4. Sigues concís però complet - inclou només informació rellevant per l'especialista
 5. Assegura't que el motiu de derivació sigui clar i específic
 6. Inclou només antecedents i proves rellevants per la consulta
-7. **NO generis codis mèdics** (SNOMED CT) - s'assignaran automàticament després
 8. **ESPECIALITAT DESTÍ**: Ha de ser coherent amb el motiu de derivació
+
+⛔ INSTRUCCIÓ CRÍTICA SOBRE CODIS MÈDICS:
+7. **ZERO CODIS MÈDICS EN EL TEXT**: 
+   - ❌ NO escriguis SNOMED, ICD-10, ATC, o cap altre codi mèdic dins del text
+   - ❌ NO incloguis parèntesis amb codis com "(SNOMED: ...)" o "(ICD-10: ...)"
+   - ❌ NO generes cap codi - ni tan sols intents
+   - ✅ Els codis mèdics s'assignaran AUTOMÀTICAMENT pel sistema DESPRÉS de la teva generació
+   - ✅ Tu NOMÉS generes el text clínic en llenguatge natural, sense codis
 
 EXEMPLE D'INFORME BEN ESTRUCTURAT:
 
@@ -92,8 +99,15 @@ INSTRUCCIONES CRÍTICAS:
 4. Sé conciso pero completo - incluye solo información relevante para el especialista
 5. Asegúrate de que el motivo de derivación sea claro y específico
 6. Incluye solo antecedentes y pruebas relevantes para la consulta
-7. **NO generes códigos médicos** (SNOMED CT) - se asignarán automáticamente después
 8. **ESPECIALIDAD DESTINO**: Debe ser coherente con el motivo de derivación
+
+⛔ INSTRUCCIÓN CRÍTICA SOBRE CÓDIGOS MÉDICOS:
+7. **CERO CÓDIGOS MÉDICOS EN EL TEXTO**: 
+   - ❌ NO escribas SNOMED, ICD-10, ATC, o ningún otro código médico dentro del texto
+   - ❌ NO incluyas paréntesis con códigos como "(SNOMED: ...)" o "(ICD-10: ...)"
+   - ❌ NO generes ningún código - ni siquiera lo intentes
+   - ✅ Los códigos médicos se asignarán AUTOMÁTICAMENTE por el sistema DESPUÉS de tu generación
+   - ✅ TÚ SOLO generas el texto clínico en lenguaje natural, sin códigos
 
 EJEMPLO DE INFORME BIEN ESTRUCTURADO:
 

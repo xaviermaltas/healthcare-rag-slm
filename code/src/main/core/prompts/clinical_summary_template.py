@@ -90,46 +90,56 @@ class ClinicalSummaryPrompt:
         # Build specialty context
         specialty_context = f"\nEspecialitat destí: {specialty.upper()}\n" if specialty else ""
         
-        # Build complete prompt
-        prompt = f"""
-{lang['title']}
-{'=' * 80}
+        # Build complete prompt with clear separation of instructions
+        if language == "ca":
+            prompt = f"""{lang['title']}
 
-{lang['instruction']}.
-{specialty_context}
+Pacient: {patient_context}
+Símptomes: {', '.join(current_symptoms)}
+Medicacions: {medications_text}
+{specialty_context.strip()}
 
-CONTEXT CLÍNIC RELLEVANT (Protocols i guies):
-{context}
+Genera un resum clínic professional amb aquestes seccions:
 
-INFORMACIÓ DEL PACIENT:
+1. ANTECEDENTS RELLEVANTS
+2. MOTIU DE CONSULTA
+3. TRACTAMENT ACTUAL
+4. VALORACIÓ CLÍNICA
+5. RECOMANACIONS
 
-{lang['sections']['antecedents']}:
-{patient_context}
+Sigues concís, utilitza terminologia mèdica precisa i basa't en els protocols proporcionats.
 
-Condicions codificades:
-{coded_conditions_text if coded_conditions_text else "No s'han identificat condicions codificades"}
+⛔ INSTRUCCIÓ CRÍTICA SOBRE CODIS MÈDICS:
+- ❌ NO escriguis SNOMED, ICD-10, ATC, o cap altre codi mèdic dins del text
+- ❌ NO incloguis parèntesis amb codis com "(SNOMED: ...)" o "(ICD-10: ...)"
+- ❌ NO generes cap codi - ni tan sols intents
+- ✅ Els codis mèdics s'assignaran AUTOMÀTICAMENT pel sistema DESPRÉS de la teva generació
+- ✅ Tu NOMÉS generes el text clínic en llenguatge natural, sense codis
+"""
+        else:  # es
+            prompt = f"""{lang['title']}
 
-{lang['sections']['symptoms']}:
-{chr(10).join([f"- {symptom}" for symptom in current_symptoms])}
+Paciente: {patient_context}
+Síntomas: {', '.join(current_symptoms)}
+Medicaciones: {medications_text}
+{specialty_context.strip()}
 
-{lang['sections']['medications']}:
-{medications_text}
+Genera un resumen clínico profesional con estas secciones:
 
-INSTRUCCIONS:
-1. Genera un resum clínic concís (màxim 500 paraules)
-2. Estructura el resum amb les següents seccions:
-   - {lang['sections']['antecedents']}
-   - {lang['sections']['symptoms']}
-   - {lang['sections']['medications']}
-   - {lang['sections']['assessment']}
-   - {lang['sections']['recommendations']}
-3. Utilitza terminologia mèdica precisa
-4. Inclou els codis SNOMED CT i ICD-10 quan estiguin disponibles
-5. Basa't en els protocols clínics proporcionats al context
-6. Sigues concís però complet
-7. Prioritza la informació rellevant per a l'especialitat destí
+1. ANTECEDENTES RELEVANTES
+2. MOTIVO DE CONSULTA
+3. TRATAMIENTO ACTUAL
+4. VALORACIÓN CLÍNICA
+5. RECOMENDACIONES
 
-RESUM CLÍNIC:
+Sé conciso, utiliza terminología médica precisa y basa en los protocolos proporcionados.
+
+⛔ INSTRUCCIÓN CRÍTICA SOBRE CÓDIGOS MÉDICOS:
+- ❌ NO escribas SNOMED, ICD-10, ATC, o ningún otro código médico dentro del texto
+- ❌ NO incluyas paréntesis con códigos como "(SNOMED: ...)" o "(ICD-10: ...)"
+- ❌ NO generes ningún código - ni siquiera lo intentes
+- ✅ Los códigos médicos se asignarán AUTOMÁTICAMENTE por el sistema DESPUÉS de tu generación
+- ✅ TÚ SOLO generas el texto clínico en lenguaje natural, sin códigos
 """
         
         return prompt
