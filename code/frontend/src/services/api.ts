@@ -6,6 +6,7 @@ import type {
   ClinicalSummaryRequest,
   GenerationResult 
 } from '../types';
+import { logger } from './logger';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
@@ -17,10 +18,7 @@ class ApiService {
   ): Promise<GenerationResult> {
     const startTime = Date.now();
     
-    console.log(`🚀 API Request: ${method} ${endpoint}`);
-    if (body) {
-      console.log('📦 Request body:', body);
-    }
+    logger.request(method, endpoint, body);
     
     try {
       const response = await fetch(`${API_BASE_URL}${endpoint}`, {
@@ -34,11 +32,10 @@ class ApiService {
       const data = await response.json();
       const generationTime = (Date.now() - startTime) / 1000;
 
-      console.log(`✅ API Response (${response.status}):`, data);
-      console.log(`⏱️ Generation time: ${generationTime.toFixed(2)}s`);
+      logger.response(method, endpoint, response.status, Date.now() - startTime);
 
       if (!response.ok) {
-        console.error('❌ API Error:', data);
+        logger.error(`API Error: ${response.status}`, data);
         let errorMsg = 'Error en la petició';
         if (Array.isArray(data.detail)) {
           // Pydantic validation errors
@@ -61,7 +58,7 @@ class ApiService {
         generationTime,
       };
     } catch (error) {
-      console.error('❌ Request failed:', error);
+      logger.error(`Request failed: ${endpoint}`, error);
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Error desconegut',

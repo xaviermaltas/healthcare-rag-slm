@@ -182,3 +182,129 @@
     border-right-color: var(--border);
   }
 }
+
+/* Markdown Rendering Styles */
+.prose {
+  h1 {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #111827;
+    margin-top: 2.5rem;
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 3px solid #3b82f6;
+  }
+
+  h2 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #1f2937;
+    margin-top: 2rem;
+    margin-bottom: 1.25rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid #e5e7eb;
+  }
+
+  h3 {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #374151;
+    margin-top: 1.5rem;
+    margin-bottom: 1rem;
+  }
+
+  p {
+    color: #374151;
+    line-height: 1.8;
+    margin-bottom: 1.25rem;
+    font-size: 1rem;
+  }
+
+  ul {
+    list-style-type: disc;
+    margin-left: 2rem;
+    margin-top: 1.25rem;
+    margin-bottom: 1.25rem;
+    padding-left: 0;
+  }
+
+  ul li {
+    color: #374151;
+    margin-bottom: 0.75rem;
+    line-height: 1.7;
+    font-size: 1rem;
+  }
+
+  ol {
+    list-style-type: decimal;
+    margin-left: 2rem;
+    margin-top: 1.25rem;
+    margin-bottom: 1.25rem;
+    padding-left: 0;
+  }
+
+  ol li {
+    color: #374151;
+    margin-bottom: 0.75rem;
+    line-height: 1.7;
+    font-size: 1rem;
+  }
+
+  code {
+    background-color: #f3f4f6;
+    color: #dc2626;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+    font-size: 0.875rem;
+    font-family: 'Monaco', 'Courier New', monospace;
+  }
+
+  pre {
+    background-color: #111827;
+    color: #4ade80;
+    padding: 1.25rem;
+    border-radius: 0.5rem;
+    overflow-x: auto;
+    font-size: 0.875rem;
+    font-family: 'Monaco', 'Courier New', monospace;
+    margin-top: 1.5rem;
+    margin-bottom: 1.5rem;
+    line-height: 1.6;
+  }
+
+  strong {
+    font-weight: 700;
+    color: #111827;
+  }
+
+  em {
+    font-style: italic;
+    color: #374151;
+  }
+
+  blockquote {
+    border-left: 4px solid #3b82f6;
+    padding-left: 1.25rem;
+    padding-top: 0.75rem;
+    padding-bottom: 0.75rem;
+    margin-top: 1.5rem;
+    margin-bottom: 1.5rem;
+    background-color: #eff6ff;
+    color: #374151;
+  }
+
+  hr {
+    margin-top: 2rem;
+    margin-bottom: 2rem;
+    border-top: 2px solid #d1d5db;
+  }
+}
+
+/* Button Styles */
+.btn-primary {
+  @apply px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium;
+}
+
+.btn-secondary {
+  @apply px-4 py-2 bg-gray-200 text-gray-900 rounded-lg hover:bg-gray-300 transition-colors font-medium;
+}

@@ -1,4 +1,7 @@
-import { X, CheckCircle, XCircle, Clock, Code } from 'lucide-react';
+import { X, CheckCircle, XCircle, Clock, Copy, Check } from 'lucide-react';
+import { useState } from 'react';
+import { MarkdownRenderer } from './MarkdownRenderer';
+import { CodedConditionsPanel } from './CodedConditionsPanel';
 import type { GenerationResult } from '../types';
 
 interface ResultModalProps {
@@ -9,7 +12,52 @@ interface ResultModalProps {
 }
 
 export function ResultModal({ isOpen, onClose, result, useCase }: ResultModalProps) {
+  const [copiedJson, setCopiedJson] = useState(false);
+  const [copiedDocument, setCopiedDocument] = useState(false);
+
   if (!isOpen || !result) return null;
+
+  const getDocumentTitle = (useCase: string): string => {
+    const titles: Record<string, string> = {
+      'discharge': 'Informe d\'Alta Hospitalària',
+      'discharge-summary': 'Informe d\'Alta Hospitalària',
+      'referral': 'Informe de Derivació a Especialista',
+      'clinical-summary': 'Resum Clínic Previ a Consulta',
+    };
+    return titles[useCase] || 'Document Generat';
+  };
+
+  const getDocumentContent = (): string => {
+    if (!result.data) return '';
+    return (
+      result.data.discharge_document ||
+      result.data.referral_document ||
+      result.data.discharge_summary ||
+      result.data.referral_summary ||
+      result.data.summary ||
+      result.data.clinical_summary ||
+      result.data.generated_text ||
+      result.data.text ||
+      ''
+    );
+  };
+
+  const copyDocumentToClipboard = async () => {
+    const content = getDocumentContent();
+    if (content) {
+      await navigator.clipboard.writeText(content);
+      setCopiedDocument(true);
+      setTimeout(() => setCopiedDocument(false), 2000);
+    }
+  };
+
+  const copyToClipboard = async () => {
+    if (result.data) {
+      await navigator.clipboard.writeText(JSON.stringify(result.data, null, 2));
+      setCopiedJson(true);
+      setTimeout(() => setCopiedJson(false), 2000);
+    }
+  };
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
@@ -26,7 +74,7 @@ export function ResultModal({ isOpen, onClose, result, useCase }: ResultModalPro
               <h2 className="text-xl font-semibold text-gray-900">
                 {result.success ? 'Document generat' : 'Error en la generació'}
               </h2>
-              <p className="text-sm text-gray-500">{useCase}</p>
+              <p className="text-sm text-gray-500">{getDocumentTitle(useCase)}</p>
             </div>
           </div>
           <button
@@ -47,28 +95,49 @@ export function ResultModal({ isOpen, onClose, result, useCase }: ResultModalPro
                 <span>Temps de generació: {result.generationTime?.toFixed(2)}s</span>
               </div>
 
-              {/* ALWAYS SHOW: Document Text */}
+              {/* ALWAYS SHOW: Document Text - Rendered as Markdown */}
               <div>
-                <h3 className="text-lg font-bold text-gray-900 mb-3">📄 Document Generat</h3>
-                <div className="bg-gray-50 border border-gray-300 rounded-lg p-6">
-                  <div className="text-gray-900 leading-relaxed whitespace-pre-wrap text-base">
-                    {result.data.discharge_document ||
-                     result.data.referral_document ||
-                     result.data.discharge_summary || 
-                     result.data.referral_summary || 
-                     result.data.summary ||
-                     result.data.clinical_summary ||
-                     result.data.generated_text ||
-                     result.data.text ||
-                     'No s\'ha generat cap text'}
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <h3 className="text-lg font-bold text-gray-900">📄 {getDocumentTitle(useCase)}</h3>
+                    <p className="text-sm text-gray-500 mt-1">Document generat automàticament pel sistema RAG</p>
                   </div>
+                  <button
+                    onClick={copyDocumentToClipboard}
+                    className="flex items-center gap-2 px-3 py-2 text-sm bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-lg transition-colors"
+                  >
+                    {copiedDocument ? (
+                      <>
+                        <Check className="w-4 h-4" />
+                        Copiat!
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="w-4 h-4" />
+                        Copiar text
+                      </>
+                    )}
+                  </button>
+                </div>
+                <div className="bg-white border border-gray-300 rounded-lg p-8 shadow-sm">
+                  <MarkdownRenderer
+                    content={getDocumentContent() || 'No s\'ha generat cap text'}
+                  />
                 </div>
               </div>
 
-              {/* Medical Codes */}
+              {/* Coded Conditions and Medications */}
+              {(result.data.relevant_conditions || result.data.coded_medications) && (
+                <CodedConditionsPanel
+                  conditions={result.data.relevant_conditions}
+                  medications={result.data.coded_medications}
+                />
+              )}
+
+              {/* Medical Codes (Legacy) */}
               {result.data.medical_codes && (
                 <div>
-                  <h3 className="text-lg font-bold text-gray-900 mb-3">🏥 Codis Mèdics</h3>
+                  <h3 className="text-lg font-bold text-gray-900 mb-3">🏥 Codis Mèdics (Legacy)</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {result.data.medical_codes.snomed && result.data.medical_codes.snomed.length > 0 && (
                       <div className="bg-white border-2 border-blue-200 rounded-lg p-4 shadow-sm">
@@ -137,9 +206,27 @@ export function ResultModal({ isOpen, onClose, result, useCase }: ResultModalPro
 
               {/* ALWAYS SHOW: Raw JSON */}
               <div>
-                <h3 className="text-lg font-bold text-gray-900 mb-3">👨‍💻 Resposta JSON (Desenvolupadors)</h3>
-                <div className="bg-gray-900 border border-gray-700 rounded-lg p-4">
-                  <pre className="text-xs text-green-400 overflow-x-auto font-mono">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-lg font-bold text-gray-900">👨‍💻 Resposta JSON (Desenvolupadors)</h3>
+                  <button
+                    onClick={copyToClipboard}
+                    className="flex items-center gap-2 px-3 py-1 text-sm bg-gray-200 hover:bg-gray-300 rounded-lg transition-colors"
+                  >
+                    {copiedJson ? (
+                      <>
+                        <Check className="w-4 h-4" />
+                        Copiat!
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="w-4 h-4" />
+                        Copiar
+                      </>
+                    )}
+                  </button>
+                </div>
+                <div className="bg-gray-900 border border-gray-700 rounded-lg p-4 overflow-hidden">
+                  <pre className="text-xs text-green-400 overflow-x-auto font-mono max-h-96">
                     {JSON.stringify(result.data, null, 2)}
                   </pre>
                 </div>

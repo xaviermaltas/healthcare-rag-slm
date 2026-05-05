@@ -4,6 +4,7 @@ import { PatientCard } from './components/PatientCard';
 import { ResultModal } from './components/ResultModal';
 import { EXAMPLE_PATIENTS } from './data/patients';
 import { apiService } from './services/api';
+import { logger } from './services/logger';
 import type { GenerationResult } from './types';
 
 function App() {
@@ -15,8 +16,14 @@ function App() {
 
   // Check API health on mount
   useState(() => {
+    logger.info('Frontend inicialized');
     apiService.healthCheck().then((isOnline) => {
       setApiStatus(isOnline ? 'online' : 'offline');
+      if (isOnline) {
+        logger.success('Backend API is online');
+      } else {
+        logger.warning('Backend API is offline');
+      }
     });
   });
 
@@ -24,21 +31,21 @@ function App() {
     patientId: string,
     useCase: 'discharge' | 'referral' | 'clinical-summary'
   ) => {
-    console.log('🎯 handleGenerate called:', { patientId, useCase });
+    logger.info(`Generation requested: ${useCase} for patient ${patientId}`);
     
     const patient = EXAMPLE_PATIENTS.find((p) => p.id === patientId);
     if (!patient) {
-      console.error('❌ Patient not found:', patientId);
+      logger.error(`Patient not found: ${patientId}`);
       return;
     }
 
-    console.log('👤 Patient found:', patient.name);
+    logger.info(`Patient found: ${patient.name}`);
     setIsLoading(true);
     setCurrentUseCase(useCase);
 
     try {
       let response: GenerationResult;
-      console.log(`📝 Generating ${useCase}...`);
+      logger.info(`Generating ${useCase} document...`);
 
       if (useCase === 'discharge') {
         response = await apiService.generateDischargeSummary({
@@ -76,7 +83,13 @@ function App() {
 
       setResult(response);
       setShowModal(true);
+      if (response.success) {
+        logger.success(`Document generated successfully (${response.generationTime?.toFixed(2)}s)`);
+      } else {
+        logger.error(`Generation failed: ${response.error}`);
+      }
     } catch (error) {
+      logger.error('Generation exception', error);
       setResult({
         success: false,
         error: error instanceof Error ? error.message : 'Error desconegut',
