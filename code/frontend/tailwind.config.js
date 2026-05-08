@@ -26,6 +26,15 @@ export default {
           info: '#3b82f6',
         }
       },
+      keyframes: {
+        progress: {
+          '0%': { width: '0%' },
+          '100%': { width: '100%' }
+        }
+      },
+      animation: {
+        progress: 'progress 30s linear infinite'
+      }
     },
   },
   plugins: [],

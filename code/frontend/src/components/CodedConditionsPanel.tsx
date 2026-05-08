@@ -1,4 +1,4 @@
-import { Activity, Pill } from 'lucide-react';
+import { Activity, Pill, ExternalLink } from 'lucide-react';
 
 interface CodedCondition {
   condition: string;
@@ -21,6 +21,21 @@ interface CodedConditionsPanelProps {
 }
 
 export function CodedConditionsPanel({ conditions = [], medications = [] }: CodedConditionsPanelProps) {
+  // Generate BioPortal URL for SNOMED CT
+  const getSnomedUrl = (code: string): string => {
+    return `https://bioportal.bioontology.org/ontologies/SNOMEDCT?p=classes&conceptid=${code}`;
+  };
+
+  // Generate BioPortal URL for ICD-10
+  const getIcd10Url = (code: string): string => {
+    return `https://bioportal.bioontology.org/ontologies/ICD10?p=classes&conceptid=${code}`;
+  };
+
+  // Generate BioPortal URL for ATC
+  const getAtcUrl = (code: string): string => {
+    return `https://bioportal.bioontology.org/ontologies/ATC?p=classes&conceptid=${code}`;
+  };
+
   return (
     <div className="space-y-6">
       {/* Conditions */}
@@ -44,6 +59,15 @@ export function CodedConditionsPanel({ conditions = [], medications = [] }: Code
                       <span className="text-gray-700">
                         <span className="font-mono font-bold text-blue-700">SNOMED:</span> {cond.snomed_code}
                       </span>
+                      <a
+                        href={getSnomedUrl(cond.snomed_code)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-600 hover:text-blue-800 transition-colors"
+                        title="Veure a BioPortal"
+                      >
+                        <ExternalLink className="w-3 h-3" />
+                      </a>
                     </div>
                   )}
                   {cond.icd10_code && (
@@ -52,6 +76,15 @@ export function CodedConditionsPanel({ conditions = [], medications = [] }: Code
                       <span className="text-gray-700">
                         <span className="font-mono font-bold text-blue-700">ICD-10:</span> {cond.icd10_code}
                       </span>
+                      <a
+                        href={getIcd10Url(cond.icd10_code)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-600 hover:text-blue-800 transition-colors"
+                        title="Veure a BioPortal"
+                      >
+                        <ExternalLink className="w-3 h-3" />
+                      </a>
                     </div>
                   )}
                   {cond.relevance && (
@@ -92,6 +125,15 @@ export function CodedConditionsPanel({ conditions = [], medications = [] }: Code
                       <span className="text-gray-700">
                         <span className="font-mono font-bold text-green-700">ATC:</span> {med.atc_code}
                       </span>
+                      <a
+                        href={getAtcUrl(med.atc_code)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-green-600 hover:text-green-800 transition-colors"
+                        title="Veure a BioPortal"
+                      >
+                        <ExternalLink className="w-3 h-3" />
+                      </a>
                     </div>
                   ) : (
                     <div className="flex items-center gap-2">

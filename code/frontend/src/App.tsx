@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { Activity, AlertCircle, Loader2 } from 'lucide-react';
+import { Activity, AlertCircle } from 'lucide-react';
 import { PatientCard } from './components/PatientCard';
 import { ResultModal } from './components/ResultModal';
+import { LoadingIndicator } from './components/LoadingIndicator';
 import { EXAMPLE_PATIENTS } from './data/patients';
 import { apiService } from './services/api';
 import { logger } from './services/logger';
@@ -160,22 +161,8 @@ function App() {
           </div>
         </div>
 
-        {/* Loading Overlay */}
-        {isLoading && (
-          <div className="mb-8 bg-primary-50 border border-primary-200 rounded-lg p-6">
-            <div className="flex items-center gap-3">
-              <Loader2 className="w-6 h-6 text-primary-600 animate-spin" />
-              <div>
-                <p className="text-sm font-medium text-primary-900">
-                  Generant document...
-                </p>
-                <p className="text-xs text-primary-700">
-                  Això pot trigar entre 30-60 segons
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
+        {/* Loading Indicator */}
+        {isLoading && <LoadingIndicator message="Generant document clínic..." />}
 
         {/* Patients Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

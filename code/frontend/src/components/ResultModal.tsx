@@ -2,6 +2,7 @@ import { X, CheckCircle, XCircle, Clock, Copy, Check } from 'lucide-react';
 import { useState } from 'react';
 import { MarkdownRenderer } from './MarkdownRenderer';
 import { CodedConditionsPanel } from './CodedConditionsPanel';
+import { SourcesPanel } from './SourcesPanel';
 import type { GenerationResult } from '../types';
 
 interface ResultModalProps {
@@ -132,6 +133,11 @@ export function ResultModal({ isOpen, onClose, result, useCase }: ResultModalPro
                   conditions={result.data.relevant_conditions}
                   medications={result.data.coded_medications}
                 />
+              )}
+
+              {/* Sources Panel - Protocols Retrieved */}
+              {result.data.sources && result.data.sources.length > 0 && (
+                <SourcesPanel sources={result.data.sources} />
               )}
 
               {/* Medical Codes (Legacy) */}
