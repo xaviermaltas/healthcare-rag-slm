@@ -1199,6 +1199,14 @@ El servei \textbf{Ollama} s'executa nativament al sistema operatiu per aprofitar
 
 Els serveis \textbf{Qdrant} (emmagatzematge vectorial) i l'\textbf{API FastAPI} (lògica de negoci) s'executen en contenidors Docker per garantir desplegament reproduïble (RNF-5) i aïllament de dependències. La contenidorització d'aquests serveis no impacta significativament el rendiment, ja que les operacions d'E/S i processament Python no són sensibles a la sobrecàrrega de contenidorització. Aquesta separació permet actualitzar i desplegar aquests components de manera independent sense afectar el servei LLM.
 
+Detalls tècnics del desplegament contenidoritzat:
+
+\begin{itemize}
+    \item \textbf{Qdrant:} Volum persistent (\texttt{./qdrant\_storage:/qdrant/storage}) que garanteix que les col·leccions indexades sobreviuen a reinicis del contenidor.
+    \item \textbf{API:} Accés a Qdrant via xarxa Docker i a Ollama via \texttt{host.docker.internal} (macOS/Windows) o \texttt{172.17.0.1} (Linux).
+    \item \textbf{Frontend:} Durant el desenvolupament, s'executa amb Vite (\texttt{npm run dev}) fora de Docker per facilitar el \textit{hot reload}. Per a producció, es pot construir i servir estàticament.
+\end{itemize}
+
 \paragraph{Comunicació entre capes.}
 
 La comunicació entre els tres serveis es realitza mitjançant \textbf{HTTP sobre \textit{localhost}}, utilitzant una arquitectura de microserveis desacoblada:
@@ -1222,6 +1230,186 @@ L'arquitectura permet també un \textbf{desplegament completament contenidoritza
 \end{itemize}
 
 Aquesta flexibilitat de desplegament garanteix que el sistema pugui adaptar-se a diferents entorns de producció, des de dispositius locals de sanitaris fins a infraestructures cloud centralitzades.
+
+\subsection{Estructura modular del codi font}
+
+L'organització del codi font segueix una separació estricta entre lògica de negoci, infraestructura i presentació, inspirada en el patró \textit{hexagonal architecture} (\textit{ports and adapters}). L'objectiu és garantir que la lògica de negoci del pipeline RAG no depengui directament de les implementacions concretes dels serveis externs (Ollama, Qdrant, BioPortal), sinó d'interfícies abstractes que poden ser substituïdes sense modificar el codi de negoci. Aquesta decisió respon directament al requisit RNF-4 (modularitat).
+
+L'estructura s'organitza en quatre mòduls principals:
+
+\paragraph{\texttt{api/} --- Interfície REST.}
+Implementa l'API REST amb FastAPI, exposant els endpoints per a cada cas d'ús clínic i els serveis auxiliars:
+
+\begin{itemize}
+    \item \textbf{Rutes:} Un fitxer per cada cas d'ús ---\texttt{discharge.py}, \texttt{referral.py}, \texttt{clinical\_summary.py}--- amb l'endpoint \texttt{POST /generate/<tipus>} i validació Pydantic. Rutes addicionals per a \textit{health checks} (\texttt{health.py}), gestió de documents (\texttt{documents.py}) i consultes genèriques (\texttt{query.py}).
+
+    \item \textbf{Dependències (\texttt{dependencies.py}):} Gestió d'instàncies \textit{singleton} dels serveis del pipeline ---client Ollama, client Qdrant, servei d'\textit{embeddings}, servei de codificació. Cada component s'inicialitza una sola vegada, evitant la sobrecàrrega de reinicialització del model BGE-M3 ($\sim$1,2~GB en memòria).
+
+    \item \textbf{\textit{Middleware}:} CORS, \textit{logging} estructurat amb \textit{request ID} per a traçabilitat, i gestió centralitzada d'excepcions.
+\end{itemize}
+
+\paragraph{\texttt{core/} --- Lògica de negoci.}
+Conté la lògica nuclear del pipeline RAG en quatre subdirectoris funcionals:
+
+\begin{itemize}
+    \item \textbf{\texttt{core/ingestion/}:} Connectors d'ingesta amb patró \textit{Strategy} ---\texttt{base\_connector.py} (classe base), \texttt{bioportal\_connector.py} (ontologies), \texttt{pubmed\_connector.py} (articles)---, \texttt{TextCleaner} per a normalització de text mèdic, i \texttt{MedicalChunker} per a fragmentació semàntica respectant fronteres clíniques (seccions, paràgrafs, llistes numerades).
+
+    \item \textbf{\texttt{core/retrieval/}:} \texttt{QueryProcessor} (construcció de la consulta semàntica a partir de dades del pacient), \texttt{MedicalNER} (detecció d'entitats clíniques: malalties, medicaments, anatomia, procediments), i servei de detecció d'especialitat amb diccionari de \textit{keywords} per a onze especialitats.
+
+    \item \textbf{\texttt{core/coding/}:} \texttt{SemanticCodingService} que implementa codificació en dues capes: cerca vectorial local a la col·lecció ontològica com a via primària, i \textit{fallback} a BioPortal API quan el \textit{score} local és inferior a 0,7.
+
+    \item \textbf{\texttt{core/prompts/}:} Plantilles de generació per a cada cas d'ús, amb \textit{system prompt} anti-al·lucinació, \textit{few-shot examples}, estructura de seccions obligatòries i suport trilingüe (català, castellà, anglès).
+\end{itemize}
+
+\paragraph{\texttt{infrastructure/} --- Adaptadors de serveis externs.}
+Implementa els clients per a tots els serveis externs, seguint el principi d'inversió de dependències:
+
+\begin{itemize}
+    \item \textbf{\texttt{llm/ollama\_client.py}:} Client per al servei Ollama. Gestiona connexió HTTP, paràmetres d'inferència (\textit{temperature}, \textit{max tokens}), \textit{timeout} i errors. Substituir Ollama per un altre servei (per exemple, \textit{llama.cpp} o \textit{vLLM}) requereix únicament reimplementar aquest client.
+
+    \item \textbf{\texttt{vector\_db/qdrant\_client.py}:} Client per a Qdrant amb operacions de cerca vectorial, inserció, eliminació i gestió de col·leccions. Configura paràmetres HNSW i proporciona mètodes de cerca amb filtres de metadades.
+
+    \item \textbf{\texttt{embeddings/bge\_m3.py}:} Servei d'\textit{embeddings} amb BGE-M3 de \texttt{sentence-transformers}. Implementa \textit{batch processing} (\texttt{batch\_size=32}), normalització L2 i \textit{cache} persistent per evitar recàlculs.
+
+    \item \textbf{\texttt{ontologies/}:} \texttt{snomed\_client.py} (client BioPortal per a SNOMED~CT) i \texttt{ontology\_manager.py} (gestor unificat que coordina la descàrrega i indexació de SNOMED~CT, ICD-10, MeSH i ATC).
+\end{itemize}
+
+\paragraph{\texttt{config/} --- Configuració centralitzada.}
+Utilitza \textit{Pydantic BaseSettings} per definir valors per defecte, validar tipus i carregar variables d'entorn des de \texttt{.env}. Paràmetres principals: connexions als serveis (Ollama al port 11434, Qdrant al 6333), model de llenguatge (\texttt{llama3.2}, \textit{temperature}~0,3), paràmetres de recuperació (\texttt{CHUNK\_SIZE=512}, \texttt{CHUNK\_OVERLAP=50}, \texttt{RETRIEVAL\_TOP\_K=10}), i claus API (BioPortal, NCBI).
+
+\paragraph{\texttt{scripts/} --- Scripts d'utilitat.}
+Conté scripts automatitzats per a la gestió del sistema: \texttt{start.sh} i \texttt{stop.sh} per aixecar i parar el sistema complet, \texttt{ingest\_medical\_knowledge.py} per a la ingesta massiva d'ontologies i articles de PubMed, i scripts d'avaluació (\texttt{evaluate\_*.py}) per calcular les mètriques de qualitat sobre els \textit{gold standards}.
+
+\paragraph{\texttt{deploy/} --- Configuració de desplegament.}
+Inclou els fitxers necessaris per al desplegament amb Docker: \texttt{docker-compose.yml} per a l'orquestració de contenidors (Qdrant, API) i \texttt{Dockerfile} per a la construcció de la imatge de l'API. Aquesta estructura facilita el desplegament en múltiples entorns (desenvolupament, proves, producció).
+
+\subsection{Flux de generació d'un document}
+\label{sec:flux-generacio}
+
+Aquesta secció presenta una visió temporal i quantitativa del pipeline descrit anteriorment, amb mètriques reals mesurades per a cada cas d'ús. El procés de generació d'un document clínic segueix una seqüència estructurada d'onze passos. Cada pas transforma o enriqueix la informació del pas anterior, formant un pipeline lineal amb un únic punt de bifurcació (el \textit{fallback} a BioPortal en la codificació). Els temps indicats corresponen a mesures reals per al cas d'informe d'alta hospitalària, el cas més complex:
+
+\begin{enumerate}
+    \item \textbf{Detecció d'especialitat} ($\sim$0,1~s): Anàlisi de \textit{keywords} clíniques sobre el context del pacient per determinar l'especialitat. El detector manté un diccionari de patrons per a onze especialitats i retorna l'especialitat detectada amb un nivell de confiança. S'utilitza com a filtre en la recuperació de protocols.
+
+    \item \textbf{Construcció de la consulta semàntica} ($\sim$0,05~s): Combinació estructurada del motiu d'ingrés, procediments i context de medicació en una cadena de text unificada optimitzada per a la cerca semàntica.
+
+    \item \textbf{\textit{Embedding} de la consulta} ($\sim$0,3~s): Transformació de la consulta en un vector de 1.024~dimensions amb BGE-M3 i normalització L2 per a compatibilitat amb la mètrica de \textit{cosine similarity} de Qdrant.
+
+    \item \textbf{Cerca semàntica a Qdrant} ($\sim$0,5~s): Recuperació dels cinc protocols més similars des de la col·lecció \texttt{healthcare\_rag}, amb filtratge per especialitat i \textit{score threshold} de 0,5. Cada resultat inclou text, metadades i \textit{score}.
+
+    \item \textbf{Construcció del \textit{prompt}} ($\sim$0,2~s): Composició amb quatre components: (a)~\textit{system prompt} anti-al·lucinació, (b)~\textit{few-shot examples}, (c)~context dels tres protocols més rellevants, i (d)~plantilla estructurada amb les dades del pacient.
+
+    \item \textbf{Generació amb el LLM} ($\sim$23--45~s): Invocació d'Ollama amb Llama~3.2, \textit{temperature}~0,3, \textit{streaming} desactivat. \textbf{Coll d'ampolla principal} del pipeline (75--87\% del temps total). La variabilitat depèn de la longitud de la sortida: l'informe d'alta ($\sim$2.000~tokens) és més lent que el resum clínic ($\sim$500~tokens).
+
+    \item \textbf{Extracció d'entitats clíniques} ($\sim$0,5~s): \textit{Parsing} de la sortida del model per extreure diagnòstic principal, diagnòstics secundaris i medicacions mitjançant expressions regulars adaptades al format esperat.
+
+    \item \textbf{Codificació SNOMED~CT} ($\sim$1,5~s): Per cada diagnòstic, \textit{embedding} del terme i cerca a \texttt{medical\_ontologies} amb filtre \texttt{ontology\_type=SNOMED\_CT}. Si el millor \textit{score} supera 0,7, s'assigna el codi amb \texttt{source=``semantic\_retrieval''}; en cas contrari, \textit{fallback} a BioPortal ($+$500--800~ms per consulta).
+
+    \item \textbf{Codificació ICD-10} ($\sim$1,5~s): Procés idèntic al de SNOMED~CT amb filtre \texttt{ontology\_type=ICD10}, permetent la classificació estadística del cas.
+
+    \item \textbf{Codificació ATC} ($\sim$2,5~s): Per cada medicació, neteja del nom (eliminació de dosis i formes farmacèutiques), \textit{embedding} i cerca ontològica. Generalment la codificació més lenta, ja que el nombre de medicacions sol ser superior al de diagnòstics.
+
+    \item \textbf{Construcció de la resposta} ($\sim$0,3~s): Estructuració del JSON final amb: text del document, diagnòstics codificats (SNOMED~CT, ICD-10), medicacions codificades (ATC), fonts amb \textit{score}, estat de validació, i metadades de generació (temps total i per component, especialitat, nombre de protocols recuperats, consultes a BioPortal).
+\end{enumerate}
+
+La Taula~\ref{tab:pipeline-timing} resumeix la distribució temporal del pipeline per als tres casos d'ús, evidenciant que la inferència del LLM domina el temps total en tots els escenaris.
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lccc}
+\hline
+\textbf{Component} & \textbf{Alta} & \textbf{Derivació} & \textbf{Resum clínic} \\
+\hline
+Preprocessament i cerca & $\sim$1,2~s & $\sim$1,1~s & $\sim$5,3~s \\
+Generació LLM & $\sim$23--45~s & $\sim$30--35~s & $\sim$25~s \\
+Codificació ontològica & $\sim$5,5~s & $\sim$0,7~s & $\sim$2,1~s \\
+Construcció resposta & $\sim$0,3~s & $\sim$0,2~s & $\sim$0,2~s \\
+\hline
+\textbf{Total} & $\sim$30--52~s & $\sim$32--37~s & $\sim$33~s \\
+\% LLM & 75--87\% & 87\% & 76\% \\
+\hline
+\end{tabular}
+\caption{Distribució temporal del pipeline per cas d'ús. La inferència del LLM domina el temps total en tots els casos.}
+\label{tab:pipeline-timing}
+\end{table}
+
+\section{Gestió de la configuració i entorn de desplegament}
+
+La reproductibilitat i la portabilitat del sistema entre entorns de desenvolupament i producció depenen críticament d'una gestió rigorosa de la configuració. Aquesta secció descriu l'estratègia adoptada per parametritzar tots els components del sistema, garantint que qualsevol desenvolupador o administrador pugui replicar l'entorn complet seguint la documentació proporcionada, complint així el requisit RNF-5.
+
+\subsection{Arquitectura de configuració}
+
+El sistema segueix el principi de \textbf{configuració declarativa}, separant estrictament el codi de la configuració i externalitzant tots els paràmetres variables en fitxers de configuració versionats. Aquesta separació permet modificar el comportament del sistema sense tocar el codi font, facilita el desplegament en múltiples entorns (desenvolupament, proves, producció) i redueix el risc d'errors per configuracions inconsistents.
+
+La configuració s'estructura en tres capes complementàries:
+
+\begin{itemize}
+    \item \textbf{Variables d'entorn (\texttt{.env}):} Fitxer de configuració sensible que conté credencials i paràmetres específics de l'entorn (API \textit{keys} de BioPortal i NCBI, URLs dels serveis, ports). Aquest fitxer \textbf{no es versiona} a Git (inclòs a \texttt{.gitignore}) per raons de seguretat. El repositori inclou una plantilla d'exemple que l'usuari ha d'adaptar amb les seves credencials.
+
+    \item \textbf{Configuració centralitzada (\texttt{config/settings.py}):} Mòdul Python que carrega les variables d'entorn mitjançant \texttt{pydantic-settings}, valida els tipus i proporciona valors per defecte raonables. Utilitza el patró \textit{Singleton} per garantir una única instància de configuració a tota l'aplicació, accessible mitjançant \texttt{from config.settings import settings}.
+
+    \item \textbf{Configuració de desplegament (\texttt{docker-compose.yml}):} Defineix l'orquestració dels contenidors (Qdrant, API) amb les seves dependències, volums persistents, xarxes i variables d'entorn. Permet aixecar tot l'entorn amb una sola comanda: \texttt{docker-compose up -d}.
+\end{itemize}
+
+\subsection{Paràmetres configurables principals}
+
+Aquesta secció detalla els paràmetres configurables que controlen el comportament de tots els components del sistema. Aquests paràmetres són essencials per a tres objectius: (1)~adaptar el sistema a diferents entorns de desplegament sense modificar el codi font, (2)~ajustar el rendiment i la qualitat de les respostes segons els recursos disponibles, i (3)~facilitar la reproductibilitat dels experiments i resultats. Cada paràmetre s'identifica amb un nom explícit en majúscules (per exemple, \texttt{OLLAMA\_MODEL}), seguint la convenció estàndard per a variables d'entorn, cosa que permet la seva sobrescriptura fàcil en diferents contextos (desenvolupament, proves, producció) i la seva documentació clara en fitxers de configuració.
+
+Els paràmetres més rellevants del sistema, agrupats per component, són:
+
+\paragraph{Model de llenguatge (Ollama).}
+\begin{itemize}
+    \item \texttt{OLLAMA\_BASE\_URL}: URL del servei Ollama (per defecte \texttt{http://localhost:11434})
+    \item \texttt{OLLAMA\_MODEL}: Nom del model a utilitzar (per defecte \texttt{llama3.2})
+    \item \texttt{OLLAMA\_TEMPERATURE}: Temperatura de generació (per defecte 0,3, equilibri entre creativitat i consistència)
+    \item \texttt{OLLAMA\_TIMEOUT}: Temps màxim d'espera per resposta (per defecte 120~s)
+\end{itemize}
+
+\paragraph{Model d'\textit{embeddings}.}
+\begin{itemize}
+    \item \texttt{EMBEDDING\_MODEL}: Model de \texttt{sentence-transformers} (per defecte \texttt{BAAI/bge-m3})
+    \item \texttt{EMBEDDING\_BATCH\_SIZE}: Mida del \textit{batch} per processament massiu (per defecte 32)
+    \item \texttt{EMBEDDING\_CACHE\_DIR}: Directori de \textit{cache} persistent (per defecte \texttt{.cache/embeddings})
+\end{itemize}
+
+\paragraph{Base de dades vectorial (Qdrant).}
+\begin{itemize}
+    \item \texttt{QDRANT\_URL}: URL del servei Qdrant (per defecte \texttt{http://localhost:6333})
+    \item \texttt{QDRANT\_COLLECTION\_NAME}: Nom de la col·lecció principal (per defecte \texttt{healthcare\_rag})
+    \item \texttt{QDRANT\_ONTOLOGY\_COLLECTION}: Nom de la col·lecció ontològica (per defecte \texttt{medical\_ontologies})
+    \item \texttt{QDRANT\_VECTOR\_SIZE}: Dimensió dels vectors (per defecte 1024, coherent amb BGE-M3)
+\end{itemize}
+
+\paragraph{Pipeline RAG.}
+\begin{itemize}
+    \item \texttt{CHUNK\_SIZE}: Mida dels \textit{chunks} en tokens (per defecte 512)
+    \item \texttt{CHUNK\_OVERLAP}: Solapament entre \textit{chunks} (per defecte 50~tokens)
+    \item \texttt{RETRIEVAL\_TOP\_K}: Nombre de documents recuperats (per defecte 10)
+    \item \texttt{RERANK\_TOP\_K}: Nombre de documents després del \textit{reranking} (per defecte 5)
+    \item \texttt{SEMANTIC\_THRESHOLD}: Llindar mínim de similitud (per defecte 0,5)
+\end{itemize}
+
+\paragraph{Serveis externs.}
+\begin{itemize}
+    \item \texttt{BIOPORTAL\_API\_KEY}: Clau d'API de BioPortal (obligatòria per a \textit{fallback} ontològic)
+    \item \texttt{NCBI\_API\_KEY}: Clau d'API de NCBI (opcional, millora el \textit{rate limit} de 3 a 10~req/s)
+    \item \texttt{BIOPORTAL\_RATE\_LIMIT}: Peticions per segon a BioPortal (per defecte 3)
+\end{itemize}
+
+\subsection{Reproductibilitat i versionat}
+
+Per garantir la reproductibilitat completa del sistema (RNF-5), tots els fitxers de configuració i dependències estan versionats:
+
+\begin{itemize}
+    \item \texttt{requirements.txt}: Dependències Python amb versions exactes (\texttt{fastapi==0.115.6})
+    \item \texttt{package-lock.json}: Dependències npm amb versions exactes
+    \item \texttt{docker-compose.yml}: Versions exactes de les imatges Docker (\texttt{qdrant/qdrant:v1.7.4})
+    \item \texttt{.env}: Fitxer de variables d'entorn amb credencials i configuració (no versionat, es proporciona plantilla d'exemple)
+    \item \texttt{SETUP.md}: Documentació pas a pas per replicar l'entorn
+\end{itemize}
+
+La documentació \texttt{SETUP.md} inclou instruccions detallades per a la instal·lació de prerequisits (Python~3.10+, Docker, Ollama), la configuració de les API \textit{keys}, l'aixecament del sistema (scripts automatitzats o manual) i la verificació del desplegament mitjançant els \textit{health checks} disponibles.
 
 \chapter{Glossari}
 
