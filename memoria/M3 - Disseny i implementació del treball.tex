@@ -1527,6 +1527,124 @@ La integració ontològica aporta beneficis específics en cadascuna de les etap
     \item \textbf{Interoperabilitat:} Permet la integració amb sistemes d'informació sanitària existents que operen amb codis SNOMED~CT, ICD-10 i ATC, facilitant un eventual desplegament en entorns clínics reals.
 \end{itemize}
 
+\section{Implementació dels casos d'ús clínics}
+
+El sistema implementa tres casos d'ús clínics prioritzats segons el seu impacte estimat al sistema sanitari públic, derivats directament dels requisits funcionals RF-1, RF-2 i RF-3. La priorització s'ha basat en tres criteris: (1)~el volum de documents generats anualment al sistema sanitari de referència, (2)~el temps mitjà de redacció manual i el potencial d'estalvi, i (3)~la complexitat tècnica del cas, que permet validar progressivament les capacitats del sistema. Cada cas d'ús s'implementa com un endpoint independent de l'API amb la seva pròpia plantilla de \textit{prompt}, estructura documental i lògica de codificació.
+
+\subsection{Cas d'ús 1: Informe d'alta hospitalària}
+
+\paragraph{Endpoint.} \texttt{POST /generate/discharge-summary}
+
+\paragraph{Justificació de la prioritat.} L'informe d'alta hospitalària és el cas d'ús de major impacte estimat als sistemes sanitaris públics. Segons la literatura, els informes d'alta representen un volum significatiu de documents generats anualment, amb un temps mitjà de redacció d'aproximadament 10~minuts per informe~\cite{chua2024discharge}. La reducció d'aquest temps mitjançant generació assistida podria representar un estalvi substancial en hores de treball clínic. A més, és el cas d'ús més complex ---amb triple codificació ontològica, nou seccions obligatòries i la major longitud de document---, cosa que el converteix en el banc de proves més exigent per al sistema.
+
+\paragraph{Estructura del document generat.} L'informe s'estructura en \textbf{nou seccions obligatòries}, cadascuna amb un contingut esperat ben definit: (1)~dades del pacient, (2)~motiu d'ingrés, (3)~diagnòstic principal amb codi SNOMED~CT, (4)~diagnòstics secundaris, (5)~procediments realitzats, (6)~tractament i medicació amb codificació ATC, (7)~evolució clínica durant l'ingrés, (8)~recomanacions de seguiment, i (9)~contraindicacions. La presència de totes les seccions es verifica automàticament mitjançant la mètrica de \textit{Completeness}.
+
+\paragraph{Codificació mèdica.} Triple codificació simultània: \textbf{SNOMED~CT} per a tots els diagnòstics (principal i secundaris), \textbf{ICD-10} per a la classificació estadística, i \textbf{ATC} per a cada medicació prescrita. Aquesta triple codificació és l'element més complex del cas d'ús i el que més temps consumeix en el pipeline de generació.
+
+\subsection{Cas d'ús 2: Informe de derivació a especialista}
+
+\paragraph{Endpoint.} \texttt{POST /generate/referral}
+
+\paragraph{Justificació de la prioritat.} L'informe de derivació és el segon cas d'ús en impacte, amb un volum estimat de derivacions significatiu als sistemes sanitaris públics. La seva complexitat tècnica és intermèdia: requereix la detecció automàtica de l'especialitat destí, la classificació d'urgència i la validació de coherència entre el motiu de derivació i l'especialitat, però la codificació ontològica és menys intensiva que en l'informe d'alta (només SNOMED~CT per al motiu de derivació, sense codificació ATC ni ICD-10 sistemàtica).
+
+\paragraph{Estructura del document generat.} Vuit seccions: (1)~dades del pacient, (2)~especialitat destí, (3)~classificació d'urgència ---\textit{normal} ($<$60~dies), \textit{preferent} ($<$30~dies), \textit{urgent} ($<$24~hores)---, (4)~motiu de derivació, (5)~antecedents rellevants, (6)~exploracions i proves, (7)~tractament actual, i (8)~informació addicional per a l'especialista. La classificació d'urgència es genera automàticament a partir del context clínic i es valida contra el motiu de derivació.
+
+\paragraph{Detecció automàtica d'especialitat.} El sistema utilitza un diccionari de \textit{keywords} clíniques amb cobertura d'onze especialitats principals. La detecció s'utilitza tant per filtrar els protocols recuperats com per validar la coherència entre el motiu clínic i l'especialitat destí.
+
+\subsection{Cas d'ús 3: Resum clínic previ a consulta}
+
+\paragraph{Endpoint.} \texttt{POST /generate/clinical-summary}
+
+\paragraph{Justificació de la prioritat.} El resum clínic previ a consulta és el tercer cas d'ús en prioritat. El seu objectiu és facilitar la preparació del professional sanitari abans de la visita, sintetitzant en un document breu tota la informació clínica rellevant del pacient. La seva complexitat tècnica és la menor dels tres casos, però incorpora una funcionalitat única: la \textbf{detecció automàtica d'interaccions medicamentoses} i la generació d'\textbf{alertes clíniques}.
+
+\paragraph{Estructura del document generat.} Síntesi concisa (objectiu de 150--200~paraules) que inclou: símptomes actuals, medicació habitual amb codificació ATC, antecedents rellevants, especialitat objectiu, recomanacions clíniques d'enfocament per a la consulta, i alertes d'interaccions medicamentoses classificades per severitat (crítica, moderada, baixa). El format breu està dissenyat per a la lectura ràpida en els minuts previs a la consulta.
+
+\paragraph{Característiques distintives.} A diferència dels altres dos casos, el resum clínic incorpora la \textbf{detecció automàtica d'interaccions}: interaccions fàrmac-fàrmac (p.~ex., anticoagulants amb antiinflamatoris), interaccions fàrmac-malaltia (p.~ex., betabloquejants amb asma), i condicions que requereixen atenció especial. Cada interacció detectada es classifica per severitat, amb un llindar d'alerta configurable. Addicionalment, el sistema suggereix proves complementàries recomanades segons l'especialitat i la patologia detectada.
+
+\section{Disseny de prompts i plantilles}
+
+El disseny dels \textit{prompts} és un dels elements més crítics del sistema, ja que condiciona directament la qualitat, l'estructura i la coherència dels documents generats. A diferència dels sistemes que utilitzen models de llenguatge amb \textit{prompts} genèrics, aquest projecte ha desenvolupat plantilles especialitzades per a cada cas d'ús, dissenyades seguint les guies clíniques oficials i validades experimentalment. Aquesta secció descriu l'estratègia d'enginyeria de \textit{prompts} adoptada, l'estructura de les plantilles i les decisions de disseny preses.
+
+\subsection{Principis d'enginyeria de prompts}
+
+El disseny dels \textit{prompts} segueix quatre principis fonamentals:
+
+\begin{enumerate}
+    \item \textbf{Especificitat clínica:} Cada \textit{prompt} inclou instruccions explícites sobre l'estructura documental esperada, la terminologia mèdica a utilitzar i els elements obligatoris del document. Per exemple, el \textit{prompt} de l'informe d'alta especifica les nou seccions obligatòries i proporciona exemples concrets de cada secció.
+
+    \item \textbf{Fonamentació en fonts:} Els \textit{prompts} instrueixen explícitament el model a basar la generació en els protocols recuperats, citant les fonts utilitzades i evitant informació no fonamentada. Aquesta instrucció redueix significativament el risc d'al·lucinacions.
+
+    \item \textbf{Format estructurat:} Tots els documents es generen en format Markdown amb una estructura jeràrquica clara (capçaleres H1, H2, llistes, negreta per a termes clau), facilitant tant la lectura humana com el \textit{parsing} automàtic per a l'extracció de metadades.
+
+    \item \textbf{Multilingüisme:} Els \textit{prompts} inclouen instruccions explícites sobre l'idioma de generació (català, castellà o anglès segons la petició), amb exemples de terminologia mèdica en cada idioma per guiar el model.
+\end{enumerate}
+
+\subsection{Estructura de les plantilles}
+
+Cada plantilla de \textit{prompt} segueix una estructura de cinc blocs:
+
+\paragraph{Bloc 1 --- Rol i context.}
+Defineix el rol que el model ha d'adoptar (``Ets un assistent mèdic especialitzat en la generació de documentació clínica'') i el context de la tasca (``Has de generar un informe d'alta hospitalària basat en les dades del pacient i els protocols clínics recuperats'').
+
+\paragraph{Bloc 2 --- Dades d'entrada.}
+Proporciona les dades estructurades del pacient: dades demogràfiques, motiu d'ingrés/consulta, diagnòstics, medicació, antecedents, exploracions i signes vitals. Aquestes dades s'integren directament al template del document, facilitant que el model identifiqui clarament cada element d'informació.
+
+\paragraph{Bloc 3 --- Protocols recuperats.}
+Inclou els fragments de protocols clínics recuperats pel sistema RAG amb la font d'origen. El sistema recupera els protocols més rellevants (top~3 per al context, top~5 per a les fonts citades) i els proporciona com a base de coneixement per a la generació. El \textit{prompt} instrueix el model a basar-se en aquests protocols i a citar les fonts utilitzades.
+
+\paragraph{Bloc 4 --- Instruccions d'estructura.}
+Especifica l'estructura exacta del document a generar, amb les seccions obligatòries, l'ordre esperat i exemples concrets de contingut per a cada secció. Per exemple, per a l'informe d'alta:
+
+\begin{verbatim}
+## Estructura obligatòria:
+1. **Dades del pacient**: Nom, edat, sexe, número d'història
+2. **Motiu d'ingrés**: Descripció breu del motiu
+3. **Diagnòstic principal**: Diagnòstic amb codi SNOMED CT
+4. **Diagnòstics secundaris**: Llista de diagnòstics addicionals
+5. **Procediments realitzats**: Intervencions durant l'ingrés
+6. **Tractament i medicació**: Medicacions amb dosi i via
+7. **Evolució clínica**: Resum de l'evolució
+8. **Recomanacions de seguiment**: Indicacions post-alta
+9. **Contraindicacions**: Medicaments o activitats a evitar
+\end{verbatim}
+
+\paragraph{Bloc 5 --- Restriccions i validacions.}
+Estableix les restriccions crítiques que el model ha de respectar: prohibició estricta d'inventar informació no present a les dades d'entrada ni als protocols (regles anti-al·lucinació), obligació d'extreure el diagnòstic principal directament del motiu d'ingrés, prohibició d'incloure codis mèdics al text (s'assignen automàticament després), i obligació de citar les fonts utilitzades. El format de sortida és Markdown amb estructura jeràrquica clara.
+
+\subsection{Paràmetres de generació}
+
+Els paràmetres de generació controlen el comportament del model de llenguatge durant la generació de text, determinant aspectes com la creativitat, la longitud i la consistència de la sortida. En el context mèdic, aquests paràmetres són crítics per garantir que els documents generats siguin precisos, coherents i reproduïbles, minimitzant la variabilitat no desitjada que podria introduir errors clínics. Els paràmetres s'han ajustat experimentalment per equilibrar qualitat i consistència:
+
+\begin{itemize}
+    \item \textbf{Temperatura (0,3):} Valor baix per prioritzar coherència i precisió sobre creativitat. En el domini mèdic, la variabilitat excessiva és un risc, i es prefereix una generació més determinista.
+
+    \item \textbf{\textit{Top-p} (0,9):} Mostreig de nucli que considera el 90\% de la massa de probabilitat, permetent certa variabilitat dins d'un rang controlat.
+
+    \item \textbf{\textit{Max tokens} (2048):} Límit suficient per generar documents complets sense truncaments, però no excessiu per evitar divagacions.
+
+    \item \textbf{\textit{Stop sequences}:} Seqüències que indiquen el final de la generació, com ara \texttt{[END]}, \texttt{---FIN---}, evitant que el model continuï generant text més enllà del document.
+\end{itemize}
+
+\subsection{Validació i iteració}
+
+El disseny dels \textit{prompts} ha seguit un procés iteratiu de validació:
+
+\begin{enumerate}
+    \item \textbf{Versió inicial:} Basada en les guies clíniques oficials i exemples de documents reals anonimitzats.
+
+    \item \textbf{Proves pilot:} Generació de documents per a casos de prova representatius, avaluació manual de la qualitat i identificació de deficiències (seccions omeses, terminologia incorrecta, format inconsistent).
+
+    \item \textbf{Refinament:} Modificació dels \textit{prompts} per corregir les deficiències identificades, afegint instruccions més explícites, exemples concrets i restriccions addicionals.
+
+    \item \textbf{Validació final:} Avaluació quantitativa amb les mètriques definides (BLEU, ROUGE-L, \textit{Completeness}, F1~ontològic) i validació qualitativa per verificar l'adherència a les guies clíniques.
+\end{enumerate}
+
+Aquest procés iteratiu ha permès millorar progressivament la qualitat dels documents generats, passant d'un \textit{Overall Score} inicial del 42\% (versió 1 dels \textit{prompts}) al 51,3\% actual per a l'informe d'alta i al 73,0\% per a la derivació.
+
+\subsection{Gestió de les plantilles}
+
+Les plantilles de \textit{prompts} s'emmagatzemen com a fitxers de text independent al directori \texttt{core/prompts/}, amb una plantilla per cas d'ús i idioma. Aquesta externalització facilita la modificació i el versionat de les plantilles sense tocar el codi font, i permet la col·laboració amb professionals sanitaris per al refinament de les instruccions clíniques.
+
 \chapter{Glossari}
 
 \begin{description}
