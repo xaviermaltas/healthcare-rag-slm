@@ -799,6 +799,346 @@ La Figura~\ref{fig:bloc2-flux} il·lustra el procés d'indexació, des dels \tex
 \label{fig:bloc2-flux}
 \end{figure}
 
+\subsubsection*{Bloc 3 --- Recuperació i generació}
+
+El Bloc~3 constitueix el \textbf{nucli operatiu del sistema RAG}, responsable de transformar les dades clíniques d'un pacient en documents mèdics estructurats i codificats. A diferència dels blocs anteriors que operen \textit{offline} durant la preparació de dades, aquest bloc s'executa en \textit{temps real} cada vegada que un professional sanitari sol·licita la generació d'un document clínic.
+
+El propòsit d'aquest bloc és doble: d'una banda, \textbf{recuperar el context clínic rellevant} de les col·leccions indexades (protocols, ontologies) mitjançant cerca semàntica; de l'altra, \textbf{generar el document final} combinant aquest context amb les dades del pacient a través d'un model de llenguatge especialitzat. El resultat és un document clínic que segueix els protocols oficials, inclou codificació mèdica estandarditzada (SNOMED~CT, ICD-10, ATC) i manté traçabilitat completa de les fonts utilitzades.
+
+Aquest bloc opera amb requisits estrictes de latència (RNF-2: $<$30~s) i precisió clínica, orquestrant un pipeline de 11~passos que van des de la detecció automàtica d'especialitat fins a la validació final del document generat. El temps total oscil·la entre 28~i 52~segons segons el cas d'ús, dominat en un 75--87\% pel temps d'inferència del LLM.
+
+\paragraph{Dades d'entrada i context clínic.}
+
+El bloc rep com a entrada un conjunt estructurat de dades clíniques del pacient, proporcionades pel professional sanitari mitjançant la interfície web. Aquestes dades es classifiquen en sis categories principals que conformen el context clínic necessari per a la generació del document:
+
+Les \textbf{dades demogràfiques i d'identificació} inclouen el nom complet del pacient, edat, sexe, número d'història clínica (NHC) i data d'ingrés o consulta. Aquestes dades permeten personalitzar el document i garantir la traçabilitat del cas clínic.
+
+El \textbf{motiu clínic principal} varia segons el tipus de document: motiu d'ingrés hospitalari per a informes d'alta, motiu de derivació per a informes de derivació, o símptomes actuals per a resums clínics. Aquest camp accepta descripció textual lliure que posteriorment és processada pel component \texttt{MedicalNER} per extreure entitats clíniques rellevants.
+
+Els \textbf{antecedents clínics} comprenen antecedents personals (malalties cròniques, cirurgies prèvies), antecedents familiars rellevants, al·lèrgies medicamentoses i hàbits tòxics com tabac o alcohol. Aquesta informació contextualitza la situació clínica actual del pacient.
+
+La \textbf{medicació actual} inclou la llista de medicaments amb nom comercial o principi actiu, dosi i freqüència (p.~ex., "Enalapril 10mg cada 24h"), i via d'administració. Aquesta informació és processada posteriorment per extreure el principi actiu i assignar codis ATC.
+
+Els \textbf{procediments i exploracions} realitzats durant l'ingrés (p.~ex., coronariografia, angioplastia) juntament amb proves complementàries (analítiques, imatge, ECG) i els seus resultats rellevants (elevació de troponines, alteracions ECG) proporcionen evidència clínica objectiva.
+
+Finalment, els \textbf{signes vitals i paràmetres clínics} com tensió arterial, freqüència cardíaca, temperatura, saturació d'oxigen, freqüència respiratòria, pes, alçada i IMC s'utilitzen per enriquir el context clínic del document.
+
+\vspace{0.5em}
+
+\paragraph{Validació de dades amb Pydantic.}
+
+Totes aquestes dades es validen automàticament mitjançant models Pydantic definits a \texttt{api/routes/discharge.py}, \texttt{referral.py} i \texttt{clinical\_summary.py}. Aquesta validació garanteix que cada camp compleix el tipus de dada esperat (cadena de text, número, data), que els camps obligatoris estan presents, i que els valors es troben dins dels rangs acceptables (p.~ex., edat entre 0 i 120 anys). Si la validació falla, l'API retorna un error descriptiu abans d'iniciar el processament, evitant errors en etapes posteriors del pipeline.
+
+\vspace{0.5em}
+
+\paragraph{Pipeline de processament en 11 passos.}
+
+Una vegada validades les dades d'entrada, el bloc executa un pipeline seqüencial de 11~passos que transforma el context clínic del pacient en un document estructurat i codificat. Cada pas està implementat com un component independent amb responsabilitats ben definides, permetent modularitat i mantenibilitat del sistema. El pipeline es divideix en tres fases principals: \textbf{preparació de la consulta} (passos 1--4), \textbf{recuperació i generació} (passos 5--8), i \textbf{codificació i validació} (passos 9--11). A continuació es detalla cada pas del pipeline:
+
+\textbf{Pas 1: Detecció automàtica d'especialitat} ($\sim$0,1~s)
+
+Component \texttt{SpecialtyDetector} (\texttt{core/retrieval/specialty\_detector.py}). Aquest component identifica automàticament l'especialitat mèdica més rellevant per al cas clínic, permetent filtrar els protocols recuperats durant la cerca semàntica i millorar la precisió del context proporcionat al model de llenguatge.
+
+\begin{itemize}
+    \setlength{\itemsep}{0.3em}
+    \item \textbf{Entrada:} Context clínic complet (motiu d'ingrés/consulta, antecedents, medicació)
+    \item \textbf{Processament:} Anàlisi de paraules clau mitjançant diccionari de patrons per a 11~especialitats (cardiologia, neurologia, endocrinologia, pneumologia, nefrologia, gastroenterologia, dermatologia, reumatologia, oncologia, psiquiatria, medicina interna)
+    \item \textbf{Sortida:} Especialitat detectada amb nivell de confiança (0--1)
+    \item \textbf{Exemple:} "Dolor toràcic amb elevació de troponines" $\rightarrow$ Cardiologia (confiança 0,95)
+\end{itemize}
+
+\vspace{0.4em}
+
+\textbf{Pas 2: Extracció d'entitats clíniques} ($\sim$0,3~s)
+
+Component \texttt{MedicalNER} (\texttt{core/retrieval/query\_processing/medical\_ner.py}). Aquest component extrau automàticament entitats mèdiques del text lliure proporcionat pel professional sanitari, estructurant la informació clínica per facilitar la construcció de consultes semàntiques precises.
+
+\begin{itemize}
+    \setlength{\itemsep}{0.3em}
+    \item \textbf{Entrada:} Text lliure del motiu clínic i antecedents
+    \item \textbf{Processament:} Detecció d'entitats amb diccionaris especialitzats i patrons regex per a 7~categories:
+    \begin{itemize}
+        \item Malalties (\texttt{DISEASE}), símptomes (\texttt{SYMPTOM}), medicaments (\texttt{MEDICATION})
+        \item Anatomia (\texttt{ANATOMY}), procediments (\texttt{PROCEDURE}), especialitats (\texttt{SPECIALTY}), signes vitals (\texttt{VITAL\_SIGN})
+    \end{itemize}
+    \item \textbf{Sortida:} Llista d'entitats amb tipus, text i confiança
+    \item \textbf{Exemple:} "Infart agut de miocardi" $\rightarrow$ \texttt{DISEASE}, "Dolor toràcic" $\rightarrow$ \texttt{SYMPTOM}
+\end{itemize}
+
+\vspace{0.4em}
+
+\textbf{Pas 3: Construcció de la consulta semàntica} ($\sim$0,05~s)
+
+Component \texttt{QueryProcessor} (\texttt{core/retrieval/query\_processing/query\_processor.py}). Aquest component transforma les entitats extretes i el context clínic en una consulta optimitzada per a la cerca semàntica, enriquint-la amb sinònims i termes relacionats per millorar la recuperació de protocols rellevants.
+
+\begin{itemize}
+    \setlength{\itemsep}{0.3em}
+    \item \textbf{Entrada:} Entitats extretes (Pas~2) + context clínic estructurat (motiu, procediments, medicació)
+    \item \textbf{Processament:} Combinació en cadena de text unificada amb expansió semàntica (sinònims i termes relacionats de les ontologies)
+    \item \textbf{Sortida:} Consulta enriquida (\textit{enhanced query})
+    \item \textbf{Exemple:} "Infart agut de miocardi, coronariografia, Enalapril" $\rightarrow$ "myocardial infarction STEMI coronary angiography ACE inhibitor enalapril"
+\end{itemize}
+
+\vspace{0.4em}
+
+\textbf{Pas 4: Generació d'\textit{embedding} de la consulta} ($\sim$0,3~s)
+
+Component \texttt{BGEM3Embeddings} (\texttt{infrastructure/embeddings/bge\_m3.py}). Aquest component transforma la consulta textual enriquida en una representació vectorial densa que permet la cerca semàntica per similitud en l'espai d'\textit{embeddings}.
+
+\begin{itemize}
+    \setlength{\itemsep}{0.3em}
+    \item \textbf{Entrada:} Consulta enriquida (Pas~3)
+    \item \textbf{Processament:} Transformació amb BGE-M3 en vector de 1.024~dimensions + normalització L2
+    \item \textbf{Sortida:} Vector normalitzat que representa semànticament la consulta
+    \item \textbf{Optimització:} \textit{Cache} de consultes freqüents per evitar recàlculs
+\end{itemize}
+
+\vspace{0.4em}
+
+\textbf{Pas 5: Cerca semàntica a Qdrant} ($\sim$0,5~s)
+
+Component \texttt{HealthcareQdrantClient} (\texttt{infrastructure/vector\_db/qdrant\_client.py}). Aquest component executa la cerca vectorial a la base de dades Qdrant per recuperar els protocols clínics més rellevants semànticament per al cas del pacient, constituint el nucli del sistema RAG.
+
+\begin{itemize}
+    \setlength{\itemsep}{0.3em}
+    \item \textbf{Entrada:} Vector de consulta (Pas~4) + filtres (especialitat, idioma)
+    \item \textbf{Processament:} Cerca vectorial a \texttt{healthcare\_rag} amb mètrica \textit{cosine similarity}:
+    \begin{itemize}
+        \item Recuperació dels 10~protocols més similars (\texttt{RETRIEVAL\_TOP\_K=10})
+        \item Filtratge per especialitat (Pas~1) i \textit{score threshold} de 0,5
+    \end{itemize}
+    \item \textbf{Sortida:} Llista ordenada de protocols amb text, metadades i \textit{score}
+    \item \textbf{Exemple:} 10~protocols sobre infart amb \textit{scores} entre 0,85 i 0,52
+\end{itemize}
+
+\vspace{0.4em}
+
+\textbf{Pas 6: Selecció dels millors protocols} ($\sim$0,1~s)
+
+Component \texttt{ProtocolSelector} (integrat a \texttt{QueryProcessor}). Aquest component selecciona els protocols més rellevants entre els recuperats, limitant el context proporcionat al model de llenguatge per evitar saturació i millorar la precisió de la generació.
+
+\begin{itemize}
+    \setlength{\itemsep}{0.3em}
+    \item \textbf{Entrada:} 10~protocols recuperats (Pas~5) amb \textit{scores}
+    \item \textbf{Processament:} Ordenació per \textit{score} decreixent i selecció dels 3~millors
+    \item \textbf{Sortida:} 3~protocols més rellevants amb text complet i metadades
+    \item \textbf{Justificació:} Més de 3~protocols incrementa soroll; menys de 3 limita context
+\end{itemize}
+
+\vspace{0.4em}
+
+\textbf{Pas 7: Composició del \textit{prompt}} ($\sim$0,2~s)
+
+Component \texttt{PromptBuilder} (\texttt{core/prompts/}). Aquest component construeix el \textit{prompt} complet que serà enviat al model de llenguatge, combinant les dades del pacient amb el context recuperat i instruccions específiques de format i comportament.
+
+\begin{itemize}
+    \setlength{\itemsep}{0.3em}
+    \item \textbf{Entrada:} Dades del pacient + 3~protocols seleccionats (Pas~6)
+    \item \textbf{Processament:} Composició amb quatre components:
+    \begin{enumerate}
+        \item \textit{System prompt} anti-al·lucinació ("Ets un assistent mèdic especialitzat...")
+        \item \textit{Few-shot examples} (exemples de documents ben formats)
+        \item Context dels 3~protocols amb les seves fonts (traçabilitat)
+        \item Plantilla estructurada amb dades del pacient i instruccions Markdown
+    \end{enumerate}
+    \item \textbf{Sortida:} \textit{Prompt} complet de $\sim$2.000--3.000~\textit{tokens}
+    \item \textbf{Referència:} Plantilles detallades a la Secció~\ref{sec:prompts}
+\end{itemize}
+
+\vspace{0.4em}
+
+\textbf{Pas 8: Generació amb el LLM} ($\sim$23--45~s)
+
+Component \texttt{OllamaClient} (\texttt{infrastructure/llm/ollama\_client.py}). Aquest component invoca el model de llenguatge Llama~3.2 per generar el document clínic final a partir del \textit{prompt} construït, constituint el coll d'ampolla principal del pipeline.
+
+\begin{itemize}
+    \setlength{\itemsep}{0.3em}
+    \item \textbf{Entrada:} \textit{Prompt} complet (Pas~7)
+    \item \textbf{Processament:} Invocació d'Ollama amb Llama~3.2:
+    \begin{itemize}
+        \item \texttt{temperature=0,3} (equilibri creativitat/consistència, redueix al·lucinacions)
+        \item \texttt{max\_tokens=2048} (limita longitud sortida)
+        \item \textit{Streaming} desactivat (document complet en una resposta)
+    \end{itemize}
+    \item \textbf{Sortida:} Document clínic en format Markdown amb estructura completa
+    \item \textbf{Coll d'ampolla:} 75--87\% del temps total (35--45~s per informe d'alta, 23--28~s per resum)
+\end{itemize}
+
+\vspace{0.4em}
+
+\textbf{Pas 9: Extracció d'entitats del document generat} ($\sim$0,5~s)
+
+Component \texttt{DocumentParser} (\texttt{core/retrieval/document\_parser.py}). Aquest component analitza el document generat pel LLM per extreure de forma estructurada els diagnòstics i medicacions, preparant-los per a la codificació ontològica posterior.
+
+\begin{itemize}
+    \setlength{\itemsep}{0.3em}
+    \item \textbf{Entrada:} Text del document generat (Pas~8) en format Markdown
+    \item \textbf{Processament:} \textit{Parsing} amb expressions regulars per extreure:
+    \begin{itemize}
+        \item Diagnòstic principal, diagnòstics secundaris, medicacions
+        \item Cerca de seccions Markdown amb capçaleres específiques
+    \end{itemize}
+    \item \textbf{Sortida:} Llista estructurada de diagnòstics i medicacions amb metadades
+    \item \textbf{Exemple:} "Diagnòstic principal: Infart agut de miocardi" $\rightarrow$ \texttt{\{"diagnosis": "Infart agut de miocardi", "is\_primary": true\}}
+\end{itemize}
+
+\vspace{0.4em}
+
+\textbf{Pas 10: Codificació ontològica} ($\sim$5,5~s)
+
+Component \texttt{SemanticCodingService} (\texttt{core/coding/semantic\_coding\_service.py}). Aquest component assigna codis ontològics estandarditzats (SNOMED~CT, ICD-10, ATC) als diagnòstics i medicacions extretes, garantint la interoperabilitat del document amb altres sistemes sanitaris.
+
+\begin{itemize}
+    \setlength{\itemsep}{0.3em}
+    \item \textbf{Entrada:} Diagnòstics i medicacions extretes (Pas~9)
+    \item \textbf{Processament:} Estratègia de codificació en dues capes per diagnòstic:
+    \begin{enumerate}
+        \item Generació d'\textit{embedding} amb BGE-M3 ($\sim$50~ms)
+        \item Cerca a \texttt{medical\_ontologies} (SNOMED~CT, ICD-10) ($\sim$200~ms)
+        \item Si \textit{score} $>$ 0,7: assignació amb \texttt{source="semantic\_retrieval"}
+        \item Si \textit{score} $\leq$ 0,7: \textit{fallback} a BioPortal API ($+$500--800~ms)
+    \end{enumerate}
+    Per medicacions: neteja del nom + cerca ATC a \texttt{medical\_ontologies}
+    \item \textbf{Sortida:} Diagnòstics amb codis SNOMED~CT i ICD-10, medicacions amb ATC, amb \textit{score} i font
+    \item \textbf{Temps:} $\sim$1,5~s (SNOMED~CT) + 1,5~s (ICD-10) + 2,5~s (ATC) = 5,5~s total
+    \item \textbf{Exemple:} "Infart agut de miocardi" $\rightarrow$ SNOMED~CT 22298006 (0,92), ICD-10 I21.9 (0,88)
+\end{itemize}
+
+\vspace{0.4em}
+
+\textbf{Pas 11: Construcció de la resposta final} ($\sim$0,3~s)
+
+Component \texttt{ResponseBuilder} (integrat a les rutes de l'API). Aquest component construeix la resposta JSON final que serà retornada a la interfície web, consolidant tota la informació generada durant el pipeline en un format estructurat i traçable.
+
+\begin{itemize}
+    \setlength{\itemsep}{0.3em}
+    \item \textbf{Entrada:} Document generat (Pas~8) + codis ontològics (Pas~10) + metadades del procés
+    \item \textbf{Processament:} Estructuració del JSON final amb:
+    \begin{itemize}
+        \item Text del document (Markdown), diagnòstics codificats (SNOMED~CT, ICD-10), medicacions (ATC)
+        \item Fonts recuperades amb \textit{scores}, estat de validació
+        \item Metadades: temps total/per component, especialitat, protocols, consultes BioPortal
+    \end{itemize}
+    \item \textbf{Sortida:} Resposta JSON completa per a la interfície web
+    \item \textbf{Traçabilitat:} Permet al professional verificar fonts i codis assignats
+\end{itemize}
+
+\paragraph{Classes i components clau del codi.}
+
+La implementació del Bloc~3 es distribueix en múltiples mòduls amb responsabilitats ben definides:
+
+\begin{itemize}
+    \item \texttt{core/retrieval/specialty\_detector.py}: Detecció d'especialitat amb diccionari de patrons
+    \item \texttt{core/retrieval/query\_processing/medical\_ner.py}: Extracció d'entitats clíniques
+    \item \texttt{core/retrieval/query\_processing/query\_processor.py}: Construcció i expansió de consultes
+    \item \texttt{infrastructure/embeddings/bge\_m3.py}: Generació d'\textit{embeddings}
+    \item \texttt{infrastructure/vector\_db/qdrant\_client.py}: Cerca vectorial a Qdrant
+    \item \texttt{core/prompts/}: Plantilles de generació per cas d'ús
+    \item \texttt{infrastructure/llm/ollama\_client.py}: Invocació del model de llenguatge
+    \item \texttt{core/coding/semantic\_coding\_service.py}: Codificació ontològica en dues capes
+    \item \texttt{infrastructure/ontologies/snomed\_client.py}: Client BioPortal per a \textit{fallback}
+\end{itemize}
+
+\paragraph{Diagrama de flux del Bloc 3.}
+
+La Figura~\ref{fig:bloc3-flux} il·lustra el flux complet del bloc de recuperació i generació, des de les dades clíniques d'entrada fins al document codificat final.
+
+\begin{figure}[H]
+\centering
+\resizebox{\textwidth}{!}{%
+\begin{tikzpicture}[
+    block/.style={rectangle, draw=blue!60, fill=blue!10, text width=9.5em, text centered, rounded corners, minimum height=4em, line width=0.8pt},
+    process/.style={rectangle, draw=orange!60, fill=orange!10, text width=9.5em, text centered, rounded corners, minimum height=4em, line width=0.8pt},
+    llm/.style={rectangle, draw=red!60, fill=red!10, text width=9.5em, text centered, rounded corners, minimum height=4em, line width=0.8pt},
+    output/.style={rectangle, draw=green!60, fill=green!10, text width=9.5em, text centered, rounded corners, minimum height=4em, line width=0.8pt},
+    phaselabel/.style={font=\bfseries, text width=10em, align=center},
+    arrow/.style={->, >=stealth, line width=1pt}]
+
+    % Input (top center, moved up)
+    \node [block] at (0, 1) (input) {Dades clíniques\\pacient};
+    
+    % FASE 1: Preparació consulta (columna esquerra)
+    \node [phaselabel] at (-10, -0.2) (phase1label) {Fase 1:\\Preparació consulta};
+    
+    \node [process] at (-10, -3.5) (specialty) {Detecció\\especialitat\\[0.15em]{\small\textit{SpecialtyDetector}}};
+    \node [process] at (-10, -7) (ner) {Extracció\\entitats\\[0.15em]{\small\textit{MedicalNER}}};
+    \node [process] at (-10, -10.5) (query) {Construcció\\consulta\\[0.15em]{\small\textit{QueryProcessor}}};
+    \node [process] at (-10, -14) (embedding) {Generació\\embedding\\[0.15em]{\small\textit{BGE-M3}}};
+    
+    % FASE 2: Recuperació i generació (columna central)
+    \node [phaselabel] at (0, -1.2) (phase2label) {Fase 2:\\Recuperació i generació};
+    
+    \node [process] at (0, -3.5) (search) {Cerca\\semàntica\\[0.15em]{\small\textit{QdrantClient}}};
+    \node [process] at (0, -7) (select) {Selecció\\protocols\\[0.15em]{\small\textit{ProtocolSelector}}};
+    \node [process] at (0, -10.5) (prompt) {Composició\\prompt\\[0.15em]{\small\textit{PromptBuilder}}};
+    \node [llm] at (0, -14) (llm) {Generació\\document\\[0.15em]{\small\textit{Llama 3.2}}};
+    
+    % FASE 3: Codificació i validació (columna dreta)
+    \node [phaselabel] at (10, -1.2) (phase3label) {Fase 3:\\Codificació i validació};
+    
+    \node [process] at (10, -3.5) (parse) {Extracció\\entitats\\[0.15em]{\small\textit{DocumentParser}}};
+    \node [process] at (10, -7) (coding) {Codificació\\ontològica\\[0.15em]{\small\textit{SemanticCoding}}};
+    
+    % Output
+    \node [output] at (10, -10.5) (output) {Document\\codificat};
+    
+    % Arrows within phases (straight)
+    \draw [arrow] (specialty) -- (ner);
+    \draw [arrow] (ner) -- (query);
+    \draw [arrow] (query) -- (embedding);
+    \draw [arrow] (search) -- (select);
+    \draw [arrow] (select) -- (prompt);
+    \draw [arrow] (prompt) -- (llm);
+    \draw [arrow] (parse) -- (coding);
+    \draw [arrow] (coding) -- (output);
+    
+    % Arrows between phases (curved, with more space)
+    \draw [arrow] (input) to[out=-150, in=90] (specialty);
+    \draw [arrow] (embedding.east) to[out=15, in=165] (search.west);
+    \draw [arrow] (llm.east) to[out=15, in=165] (parse.west);
+    
+\end{tikzpicture}
+}
+\caption{Flux del Bloc 3 --- Recuperació i generació. El pipeline seqüencial de 11~passos es divideix en tres fases: preparació de la consulta (passos 1--4), recuperació i generació (passos 5--8), i codificació i validació (passos 9--11). La generació LLM constitueix el coll d'ampolla principal (75--87\% del temps total).}
+\label{fig:bloc3-flux}
+\end{figure}
+
+\subsection{Arquitectura d'infraestructura híbrida}
+
+Un dels aspectes més rellevants del disseny és l'adopció d'una \textbf{infraestructura híbrida} que combina serveis natius amb serveis contenidoritzats. Aquesta decisió respon a una anàlisi empírica del rendiment i a la necessitat de flexibilitat en el desplegament.
+
+\paragraph{Capa de host (natiu).}
+
+El servei \textbf{Ollama} s'executa nativament al sistema operatiu per aprofitar l'acceleració de maquinari disponible i evitar la sobrecàrrega de virtualització. Les mesures empíriques mostren una degradació del 15--25\% quan Ollama s'executa dins de Docker, atesa la sobrecàrrega en operacions matricials intensives. En un sistema on la inferència del LLM consumeix el 75--87\% del temps total, aquesta degradació compromet el compliment de RNF-2 (latència $<$30~s). Per aquest motiu, es prioritza el rendiment mantenint Ollama natiu.
+
+\paragraph{Capa contenidoritzada (Docker Compose).}
+
+Els serveis \textbf{Qdrant} (emmagatzematge vectorial) i l'\textbf{API FastAPI} (lògica de negoci) s'executen en contenidors Docker per garantir desplegament reproduïble (RNF-5) i aïllament de dependències. La contenidorització d'aquests serveis no impacta significativament el rendiment, ja que les operacions d'E/S i processament Python no són sensibles a la sobrecàrrega de contenidorització. Aquesta separació permet actualitzar i desplegar aquests components de manera independent sense afectar el servei LLM.
+
+\paragraph{Comunicació entre capes.}
+
+La comunicació entre els tres serveis es realitza mitjançant \textbf{HTTP sobre \textit{localhost}}, utilitzant una arquitectura de microserveis desacoblada:
+
+\begin{itemize}
+    \item \textbf{API $\rightarrow$ Ollama:} L'API accedeix al servei Ollama natiu al port \texttt{11434} per a la generació de documents amb el LLM Llama~3.2.
+    \item \textbf{API $\rightarrow$ Qdrant:} L'API accedeix al contenidor Qdrant al port \texttt{6333} per a operacions de cerca vectorial semàntica.
+    \item \textbf{Frontend $\rightarrow$ API:} El frontend React accedeix a l'API FastAPI al port \texttt{8000} per a les peticions de generació de documents.
+\end{itemize}
+
+Aquest disseny permet que cada servei pugui ser substituït o escalar independentment sense modificar els altres components, complint amb el requisit de modularitat (RNF-4).
+
+\paragraph{Desplegament completament contenidoritzat (Kubernetes).}
+
+L'arquitectura permet també un \textbf{desplegament completament contenidoritzat} en entorns on la instal·lació nativa no sigui possible o desitjable, com ara clústers Kubernetes o servidors compartits. En aquest escenari:
+
+\begin{itemize}
+    \item \textbf{Ollama contenidoritzat:} El servei Ollama s'executa dins d'un contenidor Docker, acceptant una degradació de rendiment del 15--25\% com a \textit{trade-off} per la portabilitat.
+    \item \textbf{Orquestració amb Kubernetes:} Els tres serveis (Ollama, Qdrant, API) es poden desplegar com a \textit{pods} independents, amb \textit{services} per a la comunicació interna i \textit{ingress} per a l'accés extern.
+    \item \textbf{Escalabilitat horitzontal:} En un entorn Kubernetes, es poden escalar horitzontalment els serveis Qdrant i API segons la càrrega, mantenint Ollama com a servei únic per evitar duplicació del model LLM en memòria.
+\end{itemize}
+
+Aquesta flexibilitat de desplegament garanteix que el sistema pugui adaptar-se a diferents entorns de producció, des de dispositius locals de sanitaris fins a infraestructures cloud centralitzades.
+
 \chapter{Glossari}
 
 \begin{description}
