@@ -513,7 +513,91 @@ Restriccions del domini sanitari & RNF-1, RNF-3, RNF-6 \\
 
 El disseny de l'arquitectura del sistema \textit{Healthcare RAG-SLM} és el resultat d'un procés iteratiu guiat per tres principis fonamentals: la \textbf{separació de responsabilitats}, que aïlla cada component funcional en un mòdul independent amb interfícies ben definides; la \textbf{substitutibilitat}, que permet reemplaçar qualsevol component ---model de llenguatge, base de dades vectorial, model d'\textit{embeddings}--- sense afectar la resta del sistema; i l'\textbf{eficiència local}, que optimitza el rendiment per a infraestructures sense maquinari especialitzat. Aquests principis responen directament als requisits RNF-1, RNF-3 i RNF-4.
 
-L'arquitectura s'estructura en \textbf{tres blocs funcionals nuclears} ---ingesta, indexació i recuperació/generació--- complementats per una capa d'API REST i una capa de presentació web. Cada bloc encapsula una fase diferenciada del cicle de vida de la informació: l'adquisició i preparació de les fonts, la seva transformació en representacions vectorials indexables, i la seva explotació per a la generació contextualitzada de documents clínics.
+L'arquitectura s'estructura en \textbf{tres blocs funcionals nuclears} ---ingesta, indexació i recuperació/generació--- complementats per una capa d'API REST i una capa de presentació web. Cada bloc encapsula una fase diferenciada del cicle de vida de la informació: l'adquisició i preparació de les fonts, la seva transformació en representacions vectorials indexables, i la seva explotació per a la generació contextualitzada de documents clínics. La Figura~\ref{fig:system-blocks} il·lustra l'arquitectura global del sistema organitzada en tres blocs funcionals que operen de manera seqüencial durant la fase de preparació (\textit{offline}) i de manera integrada durant la fase d'explotació (\textit{online}).
+
+\begin{figure}[H]
+\centering
+\resizebox{\textwidth}{!}{%
+\begin{tikzpicture}[
+    block/.style={rectangle, draw=blue!60, fill=blue!10, text width=10em, align=left, rounded corners, minimum height=8em, line width=1pt},
+    api/.style={rectangle, draw=green!60, fill=green!10, text width=32em, text centered, rounded corners, minimum height=2.5em, line width=1pt},
+    arrow/.style={->, >=stealth, line width=1.2pt, draw=gray!60}]
+
+    % Títol del sistema
+    \node [font=\Large\bfseries] at (6, 6) {HEALTHCARE RAG SYSTEM};
+    
+    % Bloc 1: Ingesta
+    \node [block] at (0, 1) (bloc1) {
+        \textbf{BLOC 1}\\
+        \textbf{INGESTA}\\[0.4em]
+        {\small
+        • Connectors\\
+        • Processadors\\
+        • Chunking\\
+        • Enriquiment
+        }
+    };
+    
+    % Bloc 2: Indexació
+    \node [block] at (6, 1) (bloc2) {
+        \textbf{BLOC 2}\\
+        \textbf{INDEXACIÓ}\\[0.4em]
+        {\small
+        • Índex vectorial\\
+        • Índex lèxic\\
+        • Índex ontològic\\
+        • Embeddings
+        }
+    };
+    
+    % Bloc 3: Recuperació i Generació
+    \node [block] at (12, 1) (bloc3) {
+        \textbf{BLOC 3}\\
+        \textbf{RECUPERACIÓ \&}\\
+        \textbf{GENERACIÓ}\\[0.2em]
+        {\small
+        • Processament consulta\\
+        • Recuperació híbrida\\
+        • Reranking\\
+        • Generació LLM\\
+        • Codificació
+        }
+    };
+    
+    % Bloc offline (engloba Bloc 1 i 2)
+    \draw [draw=gray!40, line width=0.8pt, rounded corners, dashed] 
+        (-2.6, -2.6) rectangle (8.6, 4.6);
+    \node [font=\small\itshape, text=gray] at (3, 5) {offline};
+    
+    % Bloc online (engloba Bloc 3)
+    \draw [draw=gray!40, line width=0.8pt, rounded corners, dashed] 
+        (9.4, -2.6) rectangle (14.6, 4.6);
+    \node [font=\small\itshape, text=gray] at (12, 5) {online};
+    
+    % Bloc contenidor general (més gran, engloba tot)
+    \draw [draw=black!50, line width=1.2pt, rounded corners] 
+        (-3, -3.2) rectangle (15, 5.5);
+    
+    % Interfície REST (a sota del contenidor, més avall)
+    \node [api] at (6, -5) (api) {
+        \textbf{INTERFÍCIE REST}\\
+        {\small FastAPI + Pydantic + Async + Health Checks + Documentació}
+    };
+    
+    % Fletxes entre blocs
+    \draw [arrow] (bloc1.east) -- (bloc2.west);
+    \draw [arrow] (bloc2.east) -- (bloc3.west);
+    
+    % Fletxes dels blocs a l'API (més llargues)
+    \draw [arrow] (bloc1.south) -- ++(0,-2) -| (api.north west);
+    \draw [arrow] (bloc2.south) -- (api.north);
+    \draw [arrow] (bloc3.south) -- ++(0,-2) -| (api.north east);
+    
+\end{tikzpicture}
+}
+\caption{Arquitectura global del sistema organitzada en tres blocs funcionals. Els Blocs~1 i~2 operen \textit{offline} durant la preparació de dades, mentre que el Bloc~3 opera \textit{online} per a cada petició de generació. La interfície REST proporciona accés unificat a tots els blocs.}
+\label{fig:system-blocks}
+\end{figure}
 
 \subsection{Blocs funcionals del sistema}
 
