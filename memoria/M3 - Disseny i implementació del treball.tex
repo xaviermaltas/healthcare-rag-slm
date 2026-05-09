@@ -1411,6 +1411,122 @@ Per garantir la reproductibilitat completa del sistema (RNF-5), tots els fitxers
 
 La documentació \texttt{SETUP.md} inclou instruccions detallades per a la instal·lació de prerequisits (Python~3.10+, Docker, Ollama), la configuració de les API \textit{keys}, l'aixecament del sistema (scripts automatitzats o manual) i la verificació del desplegament mitjançant els \textit{health checks} disponibles.
 
+\section{Fonts d'informació i gestió de dades}
+\label{sec:fonts}
+
+En un sistema RAG, la qualitat de la sortida està directament condicionada per la qualitat, la rellevància i la cobertura de les fonts de coneixement que alimenten el corpus. A diferència dels LLM que operen exclusivament amb el seu coneixement intern ---susceptible d'al·lucinacions i desactualització---, l'enfocament RAG fonamenta cada generació en fonts externes verificades i actualitzables. Aquesta secció descriu les fonts seleccionades, els criteris de selecció, els connectors implementats per a la seva adquisició i l'estratègia de processament aplicada per convertir documents heterogenis en un corpus vectorial indexat.
+
+La selecció de les fonts ha estat guiada per tres criteris: (1)~\textbf{autoritat}, prioritzant organismes sanitaris reconeguts i revistes amb revisió per parells; (2)~\textbf{cobertura}, garantint que el corpus inclou tant coneixement general (ontologies) com específic (protocols clínics per especialitat); i (3)~\textbf{actualitat}, combinant fonts clàssiques d'alt impacte amb publicacions recents.
+
+\subsection{Tipologies de fonts integrades}
+
+El sistema integra quatre tipologies de fonts, cadascuna amb un rol diferent dins del pipeline:
+
+\begin{itemize}
+    \item \textbf{Ontologies biomèdiques mitjançant BioPortal:} Subgrafs rellevants de les tres ontologies principals utilitzades al sistema: \textbf{SNOMED~CT} ($>$350.000~conceptes de terminologia clínica), \textbf{ICD-10} (classificació internacional de malalties), i \textbf{ATC} (classificació anatòmica-terapèutica-química per a medicaments). Aquests conceptes s'indexen a la col·lecció separada \texttt{medical\_ontologies} i constitueixen la font més utilitzada del sistema, aplicant-se per a la codificació semàntica automàtica de diagnòstics i medicacions en cada document generat. BioPortal proporciona accés a altres ontologies biomèdiques (com MeSH, LOINC) que poden integrar-se en futures extensions del sistema.
+
+    \item \textbf{Protocols i guies clíniques oficials:} Documents publicats per organismes sanitaris reconeguts ---Servicio Andaluz de Salud (SAS), Generalitat de Catalunya (CatSalut), Ministerio de Sanidad, National Institute for Health and Care Excellence (NICE), American Academy of Family Physicians (AAFP)--- que estableixen les recomanacions de pràctica clínica basades en l'evidència. Aquests documents proporcionen el coneixement expert que el sistema utilitza per fonamentar la generació de documents clínics. S'indexen a la col·lecció \texttt{healthcare\_rag} amb metadades d'especialitat, organisme emissor i data de publicació.
+
+    \item \textbf{Articles científics indexats a PubMed/MEDLINE:} Articles biomèdics revisats per parells, seleccionats amb una estratègia mixta: el 50\% d'articles clàssics (més de 10~anys de publicació, més de 50~citacions, considerats referents en el seu camp) i el 50\% d'articles recents (últims 2~anys, que incorporen els avenços més recents). Aquesta combinació garanteix un corpus que reflecteix tant el coneixement consolidat com les novetats en el maneig clínic de les patologies cobertes.
+
+    \item \textbf{Plantilles documentals de referència:} Models estructurats d'informes d'alta, derivacions i resums clínics, elaborats a partir d'exemples reals anonimitzats i validats per professionals sanitaris. Aquests documents s'utilitzen com a \textit{few-shot examples} dins dels \textit{prompts}, proporcionant al model de llenguatge una referència concreta del format i l'estructura esperats.
+\end{itemize}
+
+\subsection{Connectors d'ingesta}
+
+Els connectors d'ingesta segueixen el patró \textit{Strategy} amb una interfície base comuna (\texttt{BaseConnector}) que defineix els mètodes \texttt{connect()}, \texttt{fetch\_documents()} i \texttt{disconnect()}, juntament amb gestió unificada d'errors, \textit{logging} i \textit{rate limiting} automàtic. Aquesta arquitectura permet afegir noves fonts sense modificar el codi existent.
+
+\paragraph{BioPortalConnector.}
+Implementa la descàrrega massiva de conceptes ontològics per a la indexació \textit{offline}. Suporta les APIs de SNOMED~CT, ICD-10 i ATC, amb funcionalitats de cerca per consulta, descàrrega de jerarquies (pares/fills), extracció de sinònims i definicions, i \textit{batch processing} per optimitzar el rendiment. Requereix una API \textit{key} de BioPortal (configurada a \texttt{.env}). Aquest connector s'executa exclusivament durant la fase d'ingesta inicial, no en \textit{runtime}, i processa els conceptes per generar els \textit{embeddings} que formaran la col·lecció \texttt{medical\_ontologies}.
+
+\paragraph{PubMedConnector.}
+Utilitza les APIs \textit{NCBI E-utilities} (\texttt{esearch} per a cerca, \texttt{efetch} per a descàrrega, \texttt{elink} per a relacions) per adquirir articles científics. Implementa filtratge per nombre de citacions ($>$50~cites com a llindar d'alt impacte), filtratge per data de publicació, i extracció completa de metadades (títol, abstracte, autors, termes MeSH, DOI, tipus d'estudi). El \textit{rate limiting} respecta estrictament els límits de NCBI: 3~peticions/s sense API \textit{key} i 10~peticions/s amb \textit{key}, evitant el bloqueig per excés de peticions.
+
+\subsection{Processament del corpus textual}
+
+El corpus textual es processa seguint un pipeline de sis etapes, dissenyat per transformar documents heterogenis en un corpus vectorial homogeni i optimitzat per a la cerca semàntica:
+
+\begin{enumerate}
+    \item \textbf{Adquisició:} Descàrrega dels documents en formats diversos (PDF, HTML, DOCX, text pla) des de les fonts oficials mitjançant els connectors descrits. Els scripts d'ingesta (\texttt{scripts/ingest\_*.py}) coordinen tot el procés de manera automatitzada.
+
+    \item \textbf{Conversió i neteja (\texttt{TextCleaner}):} Normalització de text mèdic que inclou: correcció d'errors d'\textit{encoding} (freqüents en documents PDF convertits), eliminació de capçaleres i peus de pàgina repetitius, preservació d'abreviatures mèdiques estàndard (p.~ex., ``mg'', ``ml'', ``bid''), i segmentació de frases respectant la puntuació mèdica.
+
+    \item \textbf{Fragmentació semàntica (\texttt{MedicalChunker}):} Divisió dels documents en \textit{chunks} respectant fronteres semàntiques ---seccions, paràgrafs, llistes numerades--- amb \texttt{chunk\_size=512}~\textit{tokens} i \texttt{chunk\_overlap=50}~\textit{tokens}. El solapament de 50~tokens garanteix la continuïtat contextual entre fragments consecutius, evitant la pèrdua d'informació en les fronteres. La mida de 512~tokens s'ha seleccionat empíricament com a equilibri entre la granularitat de la cerca i la riquesa contextual de cada fragment.
+
+    \item \textbf{Anotació de metadades:} Cada \textit{chunk} s'enriqueix amb metadades estructurades: títol del document d'origen, especialitat clínica, tipus de font (protocol, article, ontologia), data, idioma i posició dins del document. Aquestes metadades són fonamentals per al filtratge durant la recuperació.
+
+    \item \textbf{Generació d'\textit{embeddings}:} Cada \textit{chunk} es transforma en un vector de 1.024~dimensions mitjançant BGE-M3, amb \textit{batch processing} (\texttt{batch\_size=32}) per optimitzar el rendiment i \textit{cache} persistent per evitar recàlculs en re-execucions del pipeline d'ingesta.
+
+    \item \textbf{Indexació a Qdrant:} Els vectors i les metadades s'emmagatzemen a la col·lecció \texttt{healthcare\_rag} de Qdrant amb configuració optimitzada per al domini mèdic: \textit{cosine distance} com a mètrica de similitud, paràmetres HNSW ajustats (\texttt{m=16}, \texttt{ef\_construct=100}), i segments configurats per equilibrar memòria i velocitat de cerca.
+\end{enumerate}
+
+\section{Integració d'ontologies semàntiques en el pipeline RAG}
+
+La integració d'ontologies semàntiques constitueix l'\textbf{aportació diferencial} del sistema respecte a enfocaments RAG purament textuals. Mentre que un sistema RAG convencional es limita a recuperar fragments de text i generar una resposta basada en el context textual, la integració ontològica permet establir enllaços formals entre els conceptes clínics del document generat i les terminologies estandarditzades internacionals (SNOMED~CT, ICD-10, ATC). Aquesta capacitat és fonamental per a la interoperabilitat amb els sistemes d'informació sanitària existents ---historials clínics electrònics (HCE), sistemes d'informació hospitalària (HIS), registres estadístics--- i per garantir la traçabilitat terminològica requerida per la normativa sanitària (RF-6, RF-7).
+
+La integració ontològica del sistema opera en dues dimensions complementàries: una dimensió \textit{offline} (durant la fase d'ingesta, on es construeix la col·lecció d'\textit{embeddings} ontològics a Qdrant) i una dimensió \textit{online} (durant la generació, on es codifiquen les entitats clíniques del document generat). Aquesta dualitat permet combinar la velocitat de la cerca semàntica local amb l'amplitud de cobertura de BioPortal com a \textit{fallback}.
+
+\subsection{Arquitectura de codificació semàntica}
+
+El sistema implementa una arquitectura de codificació de \textbf{dues capes} complementàries, dissenyada per maximitzar la cobertura terminològica mantenint la latència dins dels límits acceptables (RNF-2):
+
+\begin{itemize}
+    \item \textbf{Capa primària --- \texttt{SemanticCodingService}:} Basada en cerca vectorial sobre la col·lecció \texttt{medical\_ontologies} de Qdrant. Per cada terme clínic extret del document generat, el servei genera l'\textit{embedding} amb BGE-M3 i recupera els tres conceptes ontològics més similars. Si el millor candidat supera el llindar de confiança de 0,7, s'assigna el codi amb la font \texttt{source=``semantic\_retrieval''}. Aquesta capa resol la majoria dels casos (més del 90\% de les codificacions) amb una latència inferior a 200~ms per terme, ja que opera íntegrament en local sense comunicació de xarxa externa.
+
+    \item \textbf{Capa de \textit{fallback} --- \texttt{MedicalCodingService} via BioPortal:} Quan la capa primària no aconsegueix un \textit{score} suficient (típicament per termes molt específics, acrònims no indexats o variacions lingüístiques no cobertes), el sistema consulta l'API REST de BioPortal~\cite{vendetti2025bioportal}. Aquesta consulta transmet únicament el terme clínic genèric (mai dades de pacients), respectant el requisit RNF-3 de privacitat. La latència típica és de 500--800~ms per consulta, i el resultat s'assigna amb \texttt{source=``bioportal\_api''} per permetre la distinció entre codificacions locals i externes a les metadades de traçabilitat.
+\end{itemize}
+
+\subsection{Punts d'integració del coneixement ontològic}
+
+El coneixement ontològic no s'aplica únicament al final del procés per codificar la sortida, sinó que intervé de manera transversal en múltiples etapes del pipeline RAG. Aquesta integració multi-punt permet aprofitar les ontologies tant per millorar la qualitat de la recuperació (preprocessament i cerca) com per garantir la traçabilitat de la generació (postprocessament). A continuació es descriuen els quatre punts d'intervenció ontològica al llarg del flux de processament:
+
+\begin{enumerate}
+    \item \textbf{Anotació de l'entrada (preprocessament):} El text d'entrada del professional es processa amb el component \texttt{MedicalNER}, que detecta entitats clíniques mitjançant diccionaris especialitzats i patrons regex. Les categories detectades inclouen: malalties (\texttt{DISEASE}), símptomes (\texttt{SYMPTOM}), medicaments (\texttt{MEDICATION}) amb dosis i vies d'administració, anatomia (\texttt{ANATOMY}), procediments (\texttt{PROCEDURE}), especialitats (\texttt{SPECIALTY}), i signes vitals (\texttt{VITAL\_SIGN}). Cada entitat detectada s'associa amb un nivell de confiança i serveix com a entrada per als passos següents.
+
+    \item \textbf{Expansió semàntica de la consulta:} Les entitats clíniques detectades s'utilitzen per enriquir la consulta semàntica amb sinònims, termes preferits i conceptes jeràrquicament relacionats. Per exemple, si el \texttt{MedicalNER} detecta ``atac de cor'', l'expansió semàntica afegeix els termes ``infart agut de miocardi'', ``IAMEST'' i ``myocardial infarction'', millorant la cobertura de la recuperació \textit{cross-lingual} i tolerant la diversitat d'expressions clíniques.
+
+    \item \textbf{Filtratge ontològic durant la recuperació:} La cerca vectorial a la col·lecció \texttt{healthcare\_rag} es complementa amb filtres basats en les metadades ontològiques dels \textit{chunks}. Per exemple, si l'especialitat detectada és ``Cardiologia'', la consulta a Qdrant inclou el filtre \texttt{specialty: ``Cardiologia''}, restringint els resultats als protocols rellevants. Aquest filtratge redueix el soroll en la recuperació i millora la precisió del context proporcionat al LLM.
+
+    \item \textbf{Anotació de la sortida (postprocessament):} Un cop generat el document, el sistema extreu les entitats clíniques del text generat (diagnòstics, medicacions) i les codifica amb les ontologies corresponents mitjançant l'arquitectura de dues capes descrita. Cada codi assignat inclou: el codi ontològic (p.~ex., \texttt{22298006}), el terme preferit (p.~ex., \textit{Myocardial infarction}), el \textit{score} de confiança (p.~ex., 0,89), i la font de la codificació (\texttt{semantic\_retrieval} o \texttt{bioportal\_api}).
+\end{enumerate}
+
+\subsection{Exemple de codificació semàntica}
+
+Per il·lustrar el funcionament concret del servei de codificació, es descriu el procés complet per al diagnòstic ``Insuficiència cardíaca aguda descompensada'':
+
+\begin{enumerate}
+    \item \textbf{Generació de l'\textit{embedding}:} BGE-M3 transforma el terme en un vector de 1.024~dimensions amb normalització L2 ($\sim$50~ms).
+
+    \item \textbf{Cerca a la col·lecció ontològica:} \texttt{query\_points()} sobre \texttt{medical\_ontologies} amb filtre \texttt{ontology\_type=SNOMED\_CT} retorna els tres millors candidats:
+    \begin{itemize}
+        \item \texttt{42343007} --- \textit{Acute decompensated heart failure} (score 0,89)
+        \item \texttt{84114007} --- \textit{Heart failure} (score 0,82)
+        \item \texttt{56675007} --- \textit{Acute heart failure} (score 0,78)
+    \end{itemize}
+
+    \item \textbf{Selecció:} El millor concepte (score 0,89 $>$ 0,7 llindar) s'assigna com a codi SNOMED~CT amb \texttt{source=``semantic\_retrieval''} i \texttt{confidence=0.89}.
+
+    \item \textbf{Cas de \textit{fallback}:} Si cap candidat superés el llindar de 0,7, el sistema consultaria BioPortal amb el terme original, afegint 500--800~ms a la latència total.
+\end{enumerate}
+
+El procés es repeteix per a la codificació ICD-10 (amb filtre \texttt{ontology\_type=ICD10}) i per a la codificació ATC de cada medicació detectada, generant un conjunt complet de codis ontològics per al document.
+
+\subsection{Beneficis de la integració ontològica}
+
+La integració ontològica aporta beneficis específics en cadascuna de les etapes del pipeline:
+
+\begin{itemize}
+    \item \textbf{Recuperació:} Permet superar les limitacions de la cerca vectorial pura davant la diversitat d'expressions clíniques (sinònims, acrònims, denominacions col·loquials, variacions idiomàtiques), ja que l'expansió semàntica de la consulta garanteix la cobertura de múltiples formes d'expressió del mateix concepte.
+
+    \item \textbf{Generació:} Fonamenta el model amb terminologia precisa i consistent, reduint el risc d'al·lucinacions terminològiques ---un problema especialment crític en el domini mèdic, on un terme incorrecte pot tenir conseqüències clíniques.
+
+    \item \textbf{Validació:} Facilita la detecció automatitzada d'incoherències terminològiques al document generat, per exemple verificant que el codi ICD-10 assignat és coherent amb el diagnòstic SNOMED~CT.
+
+    \item \textbf{Traçabilitat:} Proporciona una base sòlida per a l'auditoria clínica, ja que cada concepte del document queda traçat al seu codi ontològic estandarditzat amb un nivell de confiança i una font de codificació verificables.
+
+    \item \textbf{Interoperabilitat:} Permet la integració amb sistemes d'informació sanitària existents que operen amb codis SNOMED~CT, ICD-10 i ATC, facilitant un eventual desplegament en entorns clínics reals.
+\end{itemize}
+
 \chapter{Glossari}
 
 \begin{description}
