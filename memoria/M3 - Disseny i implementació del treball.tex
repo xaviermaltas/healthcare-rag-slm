@@ -5,6 +5,9 @@
 \usetikzlibrary{shapes.geometric, arrows.meta, positioning}
 \usepackage{float}
 
+% Paquet per a equacions matemàtiques
+\usepackage{amsmath}
+
 %Introducció de dades del treball
 \title{Exploració de models de llenguatge per l'optimització de processos en entorns sanitaris}
 \titcrt{Models de llenguatge per optimització sanitària} %Títol curt que apareixerà a la capçalera
@@ -506,6 +509,295 @@ Restriccions del domini sanitari & RNF-1, RNF-3, RNF-6 \\
 \label{tab:traceability}
 \end{table}
 
+\section{Disseny de l'arquitectura del sistema}
+
+El disseny de l'arquitectura del sistema \textit{Healthcare RAG-SLM} és el resultat d'un procés iteratiu guiat per tres principis fonamentals: la \textbf{separació de responsabilitats}, que aïlla cada component funcional en un mòdul independent amb interfícies ben definides; la \textbf{substitutibilitat}, que permet reemplaçar qualsevol component ---model de llenguatge, base de dades vectorial, model d'\textit{embeddings}--- sense afectar la resta del sistema; i l'\textbf{eficiència local}, que optimitza el rendiment per a infraestructures sense maquinari especialitzat. Aquests principis responen directament als requisits RNF-1, RNF-3 i RNF-4.
+
+L'arquitectura s'estructura en \textbf{tres blocs funcionals nuclears} ---ingesta, indexació i recuperació/generació--- complementats per una capa d'API REST i una capa de presentació web. Cada bloc encapsula una fase diferenciada del cicle de vida de la informació: l'adquisició i preparació de les fonts, la seva transformació en representacions vectorials indexables, i la seva explotació per a la generació contextualitzada de documents clínics.
+
+\subsection{Blocs funcionals del sistema}
+
+\subsubsection*{Bloc 1 --- Ingesta de coneixement}
+
+El bloc d'ingesta és responsable de l'adquisició, processament i preparació de totes les fonts de coneixement que alimentaran el sistema RAG. S'executa de manera \textit{offline} durant la fase de configuració inicial i pot ser re-executat periòdicament per actualitzar el corpus amb noves publicacions, protocols actualitzats o extensions ontològiques.
+
+\paragraph{Arquitectura basada en el patró Strategy.}
+
+El disseny del bloc d'ingesta segueix el \textbf{patró Strategy}, un patró de disseny de programari que permet definir una família d'algoritmes, encapsular-los i fer-los intercanviables. En el context d'aquest sistema, cada "algoritme" és un connector específic per a una font de dades externa (BioPortal, PubMed, protocols locals), i tots comparteixen una interfície comuna que garanteix la uniformitat del procés d'ingesta independentment de la font.
+
+L'aplicació d'aquest patró respon a tres necessitats concretes del sistema:
+
+\begin{enumerate}
+    \item \textbf{Extensibilitat:} Afegir un nou connector (per exemple, per a guies NICE o protocols de la Generalitat) requereix únicament implementar una interfície comuna (\texttt{BaseConnector}) sense modificar el codi existent del pipeline d'ingesta.
+    
+    \item \textbf{Mantenibilitat:} Cada connector encapsula la lògica específica de la seva font (autenticació, paginació, format de resposta), aïllant els canvis en l'API externa del resta del sistema.
+    
+    \item \textbf{Testabilitat:} Els connectors poden ser provats de manera independent i substituïts per \textit{mocks} durant els tests d'integració.
+\end{enumerate}
+
+Tots els connectors implementen elements transversals comuns: connexió i desconnexió amb la font de dades, descàrrega de documents amb paginació automàtica, gestió d'errors de xarxa amb reintentos automàtics, i normalització dels documents a un format estàndard per al processament posterior.
+
+\paragraph{Connectors implementats i fonts de dades.}
+
+El sistema integra tres connectors especialitzats, cadascun optimitzat per a les característiques de la seva font:
+
+\textbf{1. BioPortalConnector} (\texttt{bioportal\_connector.py})
+
+\begin{itemize}
+    \item \textbf{Propòsit:} Descàrrega massiva de conceptes ontològics per a la indexació \textit{offline} de terminologies mèdiques estandarditzades.
+    
+    \item \textbf{API utilitzada:} BioPortal REST API (\texttt{https://data.bioontology.org}), que proporciona accés a més de 900~ontologies biomèdiques.
+    
+    \item \textbf{Ontologies descarregades:}
+    \begin{itemize}
+        \item \textbf{SNOMED~CT:} $>$350.000~conceptes de terminologia clínica amb sinònims, definicions i relacions jeràrquiques. S'utilitza per a la codificació de diagnòstics.
+        \item \textbf{ICD-10:} Classificació internacional de malalties amb $\sim$70.000~codis. S'utilitza per a la classificació estadística dels casos clínics.
+        \item \textbf{ATC:} Classificació anatòmica-terapèutica-química amb $\sim$6.000~codis de medicaments. S'utilitza per a la codificació de medicacions.
+    \end{itemize}
+    
+    \item \textbf{Dades extretes per cada concepte:}
+    \begin{itemize}
+        \item Codi ontològic (p.~ex., \texttt{22298006} per a SNOMED~CT)
+        \item Terme preferit (\textit{preferred label})
+        \item Sinònims i termes alternatius
+        \item Definició textual del concepte
+        \item Relacions jeràrquiques (pares, fills, germans)
+        \item Metadades (data d'actualització, estat del concepte)
+    \end{itemize}
+    
+    \item \textbf{Estratègia de descàrrega:} Cerca per \textit{keywords} clíniques rellevants (p.~ex., "diabetes", "hypertension", "myocardial infarction") per limitar la descàrrega als conceptes més freqüents en la pràctica clínica, evitant la descàrrega completa de les ontologies (que superaria 1~TB de dades). El connector respecta els límits de l'API de BioPortal (3~peticions/segon per a comptes gratuïts) i implementa \textit{caching} per evitar consultes repetides.
+\end{itemize}
+
+\textbf{2. PubMedConnector} (\texttt{pubmed\_connector.py})
+
+\begin{itemize}
+    \item \textbf{Propòsit:} Adquisició d'articles científics biomèdics revisats per parells per enriquir el corpus amb evidència científica actualitzada.
+    
+    \item \textbf{API utilitzada:} NCBI E-utilities (\texttt{https://eutils.ncbi.nlm.nih.gov}), amb tres endpoints principals:
+    \begin{itemize}
+        \item \texttt{esearch}: Cerca d'articles per \textit{query} amb filtres (data, tipus d'estudi, idioma)
+        \item \texttt{efetch}: Descàrrega de metadades completes (títol, abstracte, autors, MeSH terms)
+        \item \texttt{elink}: Obtenció de citacions i articles relacionats
+    \end{itemize}
+    
+    \item \textbf{Estratègia de selecció:} Combinació de dos criteris per garantir un corpus equilibrat entre coneixement consolidat i novetats:
+    \begin{itemize}
+        \item \textbf{50\% articles clàssics:} Publicats fa més de 10~anys, amb més de 50~citacions, considerats referents en el seu camp.
+        \item \textbf{50\% articles recents:} Publicats en els últims 2~anys, que incorporen els avenços més recents en el maneig clínic.
+    \end{itemize}
+    
+    \item \textbf{Dades extretes per cada article:}
+    \begin{itemize}
+        \item Títol i abstracte (text complet)
+        \item Autors i afiliacions
+        \item Termes MeSH assignats (descriptors temàtics)
+        \item DOI i PMID (identificadors únics)
+        \item Data de publicació i revista
+        \item Nombre de citacions (obtingut via \texttt{elink})
+        \item Tipus d'estudi (assaig clínic, revisió sistemàtica, meta-anàlisi, etc.)
+    \end{itemize}
+    
+    \item \textbf{Filtres aplicats:} Idioma (anglès, espanyol, català), tipus de publicació (articles originals, revisions), disponibilitat d'abstracte complet. El connector respecta els límits de l'API de PubMed (3~peticions/segon sense API \textit{key}, 10~peticions/segon amb API \textit{key}).
+\end{itemize}
+
+\textbf{3. Connector de protocols locals} (\texttt{sas\_pdf.py})
+
+\begin{itemize}
+    \item \textbf{Propòsit:} Processament de protocols i guies clíniques oficials en format PDF, carregats mitjançant la interfície web del sistema o descarregats manualment.
+    
+    \item \textbf{Disseny i fonts:} El connector està dissenyat inicialment per processar protocols del Servicio Andaluz de Salud (SAS), però la seva implementació és genèrica i permet processar protocols de qualsevol font oficial de salut (CatSalut, Ministerio de Sanidad, NICE, AAFP). Aquesta flexibilitat permet adaptar el sistema a diferents contextos sanitaris sense modificar el codi del connector.
+    
+    \item \textbf{Processament:} Extracció de text dels PDFs amb preservació de l'estructura (pàgines, seccions), classificació automàtica del tipus de document (protocol, guia, procediment) basada en el nom del fitxer i el contingut, extracció de metadades del PDF (títol, autor, data de creació), i validació de qualitat (descart de documents sense text extractable).
+    
+    \item \textbf{Funcionalitat d'upload:} El sistema proporciona un \textit{endpoint} API (\texttt{/api/documents/upload}) que permet als professionals sanitaris carregar protocols locals en format PDF, que són processats automàticament i indexats al sistema.
+\end{itemize}
+
+\paragraph{Pipeline de processament.}
+
+Un cop descarregats, tots els documents passen per una cadena de processament unificada implementada a \texttt{core/ingestion/document\_processor.py}:
+
+\begin{enumerate}
+    \item \textbf{Neteja de text} (\texttt{TextCleaner}): Normalització de text mèdic amb correcció d'errors d'\textit{encoding}, eliminació de capçaleres i peus de pàgina repetitius, preservació d'abreviatures mèdiques estàndard (p.~ex., "mg", "ml", "bid"), i segmentació de frases respectant la puntuació mèdica.
+    
+    \item \textbf{Fragmentació semàntica} (\texttt{MedicalChunker}): Divisió dels documents en fragments de mida controlada (512~\textit{tokens}, aproximadament 350--400~paraules) amb solapament entre fragments consecutius (50~\textit{tokens}) per garantir que no es perdi informació en les fronteres. El procés respecta l'estructura natural del document (seccions, paràgrafs, llistes) per evitar partir frases o conceptes clínics a la meitat, mantenint així la coherència semàntica de cada fragment.
+    
+    \item \textbf{Anotació de metadades:} Enriquiment de cada \textit{chunk} amb: títol del document d'origen, especialitat clínica (detectada automàticament), tipus de font (protocol, article, ontologia), data de publicació, idioma, i posició dins del document.
+    
+    \item \textbf{Generació d'\textit{embeddings}:} Transformació de cada \textit{chunk} en un vector de 1.024~dimensions amb BGE-M3, amb \textit{batch processing} (\texttt{batch\_size=32}) per optimitzar el rendiment.
+\end{enumerate}
+
+\paragraph{Diagrama de flux del Bloc 1.}
+
+La Figura~\ref{fig:bloc1-flux} il·lustra el flux complet del bloc d'ingesta, des de les fonts externes fins a la indexació a Qdrant.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[node distance=1.5cm, auto,
+    block/.style={rectangle, draw, fill=blue!20, text width=5em, text centered, rounded corners, minimum height=3em},
+    source/.style={rectangle, draw, fill=green!20, text width=6em, text centered, rounded corners, minimum height=2.5em},
+    process/.style={rectangle, draw, fill=orange!20, text width=7em, text centered, rounded corners, minimum height=2.5em},
+    decision/.style={diamond, draw, fill=yellow!20, text width=4em, text centered, minimum height=2.5em},
+    arrow/.style={->, >=stealth, thick}]
+
+    % Sources
+    \node [source] (bioportal) {BioPortal API};
+    \node [source, below of=bioportal] (pubmed) {PubMed API};
+    \node [source, below of=pubmed] (local) {Protocols locals};
+    
+    % Connectors
+    \node [block, right of=bioportal, xshift=2cm] (conn1) {BioPortal Connector};
+    \node [block, right of=pubmed, xshift=2cm] (conn2) {PubMed Connector};
+    \node [block, right of=local, xshift=2cm] (conn3) {Local Connector};
+    
+    % Processing
+    \node [process, right of=conn2, xshift=3cm] (cleaner) {TextCleaner};
+    \node [process, right of=cleaner, xshift=2.5cm] (chunker) {Medical Chunker};
+    \node [process, below of=chunker, yshift=-0.5cm] (embeddings) {BGE-M3 Embeddings};
+    \node [block, below of=embeddings, yshift=-0.5cm] (qdrant) {Qdrant Index};
+    
+    % Arrows
+    \draw [arrow] (bioportal) -- (conn1);
+    \draw [arrow] (pubmed) -- (conn2);
+    \draw [arrow] (local) -- (conn3);
+    \draw [arrow] (conn1) -- (cleaner);
+    \draw [arrow] (conn2) -- (cleaner);
+    \draw [arrow] (conn3) -- (cleaner);
+    \draw [arrow] (cleaner) -- (chunker);
+    \draw [arrow] (chunker) -- (embeddings);
+    \draw [arrow] (embeddings) -- (qdrant);
+    
+\end{tikzpicture}
+\caption{Flux del Bloc 1 --- Ingesta de coneixement. Les fonts externes es processen mitjançant connectors especialitzats que segueixen el patró Strategy, i els documents resultants passen per una cadena de processament unificada abans de ser indexats.}
+\label{fig:bloc1-flux}
+\end{figure}
+
+\subsubsection*{Bloc 2 --- Indexació}
+
+El bloc d'indexació transforma els fragments de text en representacions vectorials i els emmagatzema al magatzem vectorial Qdrant. El model d'\textit{embeddings} BAAI/bge-m3 genera vectors de 1.024~dimensions amb suport natiu multilingüe. Aquest bloc és crític per al rendiment del sistema RAG, ja que la qualitat dels \textit{embeddings} i l'eficiència de l'índex vectorial condicionen directament la precisió i la latència de la recuperació.
+
+\paragraph{Representacions vectorials: \textit{embeddings}.}
+
+Els \textit{embeddings} són transformacions de text en vectors numèrics de dimensió fixa que capturen el significat semàntic del contingut. Aquesta representació vectorial permet mesurar la similitud entre documents mitjançant operacions matemàtiques simples (producte escalar, distància cosinus), convertint el problema de cerca semàntica en un problema de cerca de veïns més propers en un espai vectorial d'alta dimensió.
+
+En el context d'aquest sistema, els \textit{embeddings} compleixen dues funcions essencials:
+
+\begin{enumerate}
+    \item \textbf{Indexació:} Transformar els \textit{chunks} de protocols i els conceptes ontològics en vectors que es poden emmagatzemar i indexar eficientment a Qdrant.
+    
+    \item \textbf{Cerca semàntica:} Transformar les consultes dels usuaris en vectors que es poden comparar amb els vectors indexats per recuperar el contingut més rellevant, independentment de si comparteixen les mateixes paraules exactes.
+\end{enumerate}
+
+\paragraph{Model d'\textit{embeddings}: BAAI/bge-m3.}
+
+El sistema utilitza \textbf{BAAI/bge-m3} (\textit{BAAI General Embedding, Multilingual, version 3}) com a model d'\textit{embeddings}, un model de la família BERT especialitzat en la generació de representacions vectorials denses per a tasques de recuperació d'informació.
+
+La selecció de BGE-M3 respon a cinc criteris tècnics:
+
+\begin{enumerate}
+    \item \textbf{Suport multilingüe natiu:} BGE-M3 ha estat entrenat amb corpus multilingües que inclouen català, espanyol i anglès, garantint representacions vectorials coherents entre idiomes. Aquesta capacitat és essencial per al requisit RF-8 (suport multilingüe) i permet cerques \textit{cross-lingual} (consulta en català, resultats en anglès).
+    
+    \item \textbf{Dimensions optimitzades (1.024):} La dimensionalitat de 1.024 representa un equilibri entre capacitat expressiva i eficiència computacional. Dimensions superiors (p.~ex., 1.536 de \texttt{text-embedding-ada-002}) milloren marginalment la precisió però incrementen significativament els requisits de memòria i el temps de cerca.
+    
+    \item \textbf{Rendiment competitiu:} BGE-M3 assoleix resultats comparables als models propietaris (OpenAI, Cohere) en els benchmarks MTEB (\textit{Massive Text Embedding Benchmark}), amb l'avantatge de ser de codi obert i executable localment.
+    
+    \item \textbf{Compatibilitat amb CPU:} El model funciona eficientment en CPU (requisit RNF-1), tot i que pot aprofitar acceleració GPU (Metal en macOS, CUDA en Linux) quan està disponible. La mida del model ($\sim$1,2~GB) és manejable en dispositius amb 8--16~GB de RAM.
+    
+    \item \textbf{Llicència permissiva:} BGE-M3 es distribueix sota llicència Apache~2.0, permetent l'ús comercial i la modificació del model sense restriccions.
+\end{enumerate}
+
+El procés de generació d'\textit{embeddings} (implementat a \texttt{infrastructure/embeddings/bge\_m3.py}) segueix tres passos:
+
+\begin{enumerate}
+    \item \textbf{Tokenització:} El text es divideix en \textit{tokens} (subparaules) segons el vocabulari del model, amb un màxim de 512~\textit{tokens} per sequència.
+    
+    \item \textbf{Codificació:} El model BERT processa la sequència de \textit{tokens} i genera un vector de 1.024~dimensions per a cada \textit{token}. La representació final del text s'obté mitjançant \textit{mean pooling} (mitjana dels vectors de tots els \textit{tokens}).
+    
+    \item \textbf{Normalització L2:} El vector resultant es normalitza a longitud unitària, garantint que la distància cosinus sigui equivalent al producte escalar i optimitzant la cerca a Qdrant.
+\end{enumerate}
+
+Per optimitzar el rendiment, el servei processa múltiples textos simultàniament en grups de 32 (\textit{batch processing}), aprofitant la capacitat de paral·lelització del processador. A més, els \textit{embeddings} ja calculats s'emmagatzemen en una memòria cau persistent per evitar recàlculs innecessaris en futures execucions.
+
+\paragraph{Emmagatzematge vectorial: Qdrant.}
+
+Els vectors generats pel model BGE-M3 s'indexen a \textbf{Qdrant}, una base de dades vectorial especialitzada en cerca de similitud d'alta velocitat. Qdrant permet emmagatzemar milions de vectors i recuperar els més similars a una consulta en mil·lisegons, utilitzant l'algoritme HNSW (\textit{Hierarchical Navigable Small World}) que construeix un graf de navegació jeràrquic per accelerar la cerca.
+
+\paragraph{Arquitectura de dues col·leccions separades.}
+
+El sistema manté \textbf{dues col·leccions independents} a Qdrant: \texttt{healthcare\_rag} per a protocols i articles clínics, i \texttt{medical\_ontologies} per a conceptes ontològics (SNOMED~CT, ICD-10, ATC). Aquesta separació respon a les característiques diferenciades dels dos tipus de contingut:
+
+\begin{itemize}
+    \item \textbf{Tipus de contingut diferent:} Els protocols són textos llargs i narratius (512~\textit{tokens} per fragment), mentre que els conceptes ontològics són termes curts i específics. Barrejar-los en una única col·lecció degradaria la qualitat de la cerca en ambdues tipologies.
+    
+    \item \textbf{Patrons de cerca diferents:} La cerca de protocols retorna múltiples resultats rellevants (top-10) amb filtres complexos (especialitat, data, idioma), mentre que la codificació ontològica cerca el millor \textit{match} exacte (top-1) amb filtre per tipus d'ontologia.
+    
+    \item \textbf{Escalabilitat independent:} Les dues col·leccions creixen a ritmes diferents (protocols mensuals, ontologies anuals) i tenen mides molt diferents ($\sim$10.000~fragments de protocols vs $\sim$100.000~conceptes ontològics).
+\end{itemize}
+
+A continuació es detallen les característiques de cadascuna de les dues col·leccions:
+
+\textbf{1. Col·lecció \texttt{healthcare\_rag} (protocols i articles clínics)}
+
+\begin{itemize}
+    \item \textbf{Propòsit:} Recuperació de context clínic per a la generació de documents. Quan un professional sanitari sol·licita un informe, el sistema cerca en aquesta col·lecció els protocols i guies més rellevants per al cas clínic, que s'utilitzen com a context per al model de llenguatge.
+    
+    \item \textbf{Contingut:} Fragments (\textit{chunks}) de protocols clínics, guies de pràctica clínica i articles científics. Cada fragment representa un fragment semànticament coherent de 512~\textit{tokens} (aproximadament 350--400~paraules).
+    
+    \item \textbf{Metadades emmagatzemades:} Cada fragment inclou el text complet, el títol del document d'origen, l'especialitat clínica (cardiologia, neurologia, etc.), el tipus de font (protocol, article, guia), la data de publicació, l'idioma (ca, es, en) i la posició dins del document original. Aquestes metadades permeten filtrar les cerques per especialitat, tipus de font i idioma.
+\end{itemize}
+
+\textbf{2. Col·lecció \texttt{medical\_ontologies} (conceptes ontològics)}
+
+\begin{itemize}
+    \item \textbf{Propòsit:} Codificació automàtica de diagnòstics i medicacions amb codis estandarditzats (SNOMED~CT, ICD-10, ATC). Quan el model de llenguatge genera un diagnòstic en text lliure (p.~ex., "infart agut de miocardi"), el sistema cerca en aquesta col·lecció el concepte ontològic més similar i assigna el codi corresponent (p.~ex., SNOMED~CT: \texttt{22298006}).
+    
+    \item \textbf{Contingut:} Conceptes de SNOMED~CT, ICD-10 i ATC. Cada concepte inclou el codi ontològic, el terme preferit, sinònims, definició textual i relacions jeràrquiques amb altres conceptes.
+    
+    \item \textbf{Cerca i filtratge:} Les cerques inclouen un filtre per tipus d'ontologia (\texttt{SNOMED\_CT}, \texttt{ICD10}, \texttt{ATC}) per restringir la cerca només als codis de l'ontologia desitjada, millorant la precisió de la codificació.
+\end{itemize}
+
+\paragraph{Diagrama de flux del Bloc 2.}
+
+La Figura~\ref{fig:bloc2-flux} il·lustra el procés d'indexació, des dels \textit{chunks} processats fins a les dues col·leccions a Qdrant.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[node distance=1.5cm, auto,
+    block/.style={rectangle, draw, fill=blue!20, text width=6.5em, text centered, rounded corners, minimum height=3em},
+    process/.style={rectangle, draw, fill=orange!20, text width=6.5em, text centered, rounded corners, minimum height=3em},
+    storage/.style={rectangle, draw, fill=purple!20, text width=8em, text centered, rounded corners, minimum height=3em},
+    arrow/.style={->, >=stealth, thick}]
+
+    % Input
+    \node [block] (chunks) {Chunks\\processats};
+    \node [block, below of=chunks] (ontologies) {Conceptes\\ontològics};
+    
+    % BGE-M3
+    \node [process, right of=chunks, xshift=2.5cm, yshift=-0.75cm] (bge) {BGE-M3\\Encoder};
+    
+    % Embeddings
+    \node [block, right of=bge, xshift=2.5cm, yshift=0.75cm] (emb1) {Embeddings\\protocols};
+    \node [block, right of=bge, xshift=2.5cm, yshift=-0.75cm] (emb2) {Embeddings\\ontologies};
+    
+    % Collections
+    \node [storage, right of=emb1, xshift=2.8cm] (qdrant1) {Col·lecció\\healthcare\_rag};
+    \node [storage, right of=emb2, xshift=2.8cm] (qdrant2) {Col·lecció\\medical\_ont.};
+    
+    % Arrows
+    \draw [arrow] (chunks) -- (bge);
+    \draw [arrow] (ontologies) -- (bge);
+    \draw [arrow] (bge) -- (emb1);
+    \draw [arrow] (bge) -- (emb2);
+    \draw [arrow] (emb1) -- (qdrant1);
+    \draw [arrow] (emb2) -- (qdrant2);
+    
+    % Labels (one above, one below)
+    \node [above of=qdrant1, yshift=-0.6cm, text width=8em, text centered] {\scriptsize Cerca de context};
+    \node [below of=qdrant2, yshift=0.6cm, text width=8em, text centered] {\scriptsize Codificació semàntica};
+    
+\end{tikzpicture}
+\caption{Flux del Bloc 2 --- Indexació. Els \textit{chunks} i conceptes ontològics es transformen en \textit{embeddings} amb BGE-M3 i s'indexen en dues col·leccions separades a Qdrant, cadascuna optimitzada per al seu ús específic.}
+\label{fig:bloc2-flux}
+\end{figure}
 
 \chapter{Glossari}
 
