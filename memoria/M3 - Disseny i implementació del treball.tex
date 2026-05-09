@@ -1645,6 +1645,155 @@ Aquest procés iteratiu ha permès millorar progressivament la qualitat dels doc
 
 Les plantilles de \textit{prompts} s'emmagatzemen com a fitxers de text independent al directori \texttt{core/prompts/}, amb una plantilla per cas d'ús i idioma. Aquesta externalització facilita la modificació i el versionat de les plantilles sense tocar el codi font, i permet la col·laboració amb professionals sanitaris per al refinament de les instruccions clíniques.
 
+\section{Selecció del model de llenguatge}
+
+La selecció del model de llenguatge és una de les decisions arquitectòniques més crítiques del sistema, ja que el LLM constitueix el component central del pipeline de generació ---responsable de la qualitat textual, la precisió clínica i el temps de resposta--- i alhora el component que més condiciona els requisits d'infraestructura (RNF-1, RNF-2). En un context on el sistema ha de funcionar en dispositius sanitaris estàndard sense GPU dedicada i amb un objectiu de latència inferior a 30~segons (RNF-2), la selecció del model ha de ponderar no només la qualitat de la sortida sinó també l'eficiència computacional i la viabilitat de desplegament.
+
+S'ha realitzat un procés d'avaluació empírica comparativa entre dos candidats viables per a inferència local en CPU: \textbf{Llama~3.2} (3,2~mil milions de paràmetres, 2,0~GB en disc) i \textbf{Mistral~7B} (7~mil milions de paràmetres, 4,4~GB en disc), tots dos servits mitjançant \textbf{Ollama} amb inferència exclusivament en CPU. La selecció d'aquests dos candidats es basa en la seva disponibilitat com a models oberts amb llicències permissives, la seva compatibilitat amb Ollama i la seva viabilitat en dispositius amb 8--16~GB de RAM.
+
+\subsection{Metodologia de comparació}
+
+S'han avaluat ambdós models sobre els tres casos d'ús implementats, utilitzant \textit{prompts} idèntics i les mateixes dades d'entrada en cada cas. Les mètriques mesurades inclouen: latència de resposta (temps total de generació en segons), longitud de la sortida (nombre de paraules), precisió diagnòstica (verificació manual de la correcció del diagnòstic principal), codificació de medicaments (presència de codis ATC correctes), taxa d'al·lucinacions (informació clínica generada sense fonament en les dades d'entrada ni en els protocols recuperats), i consum de RAM en \textit{runtime}. Totes les mesures s'han realitzat en un entorn controlat amb les mateixes condicions de maquinari i càrrega, repetint cada cas tres vegades i reportant la mitjana.
+
+\subsection{Resultats comparatius}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lccc}
+\hline
+\textbf{Mètrica} & \textbf{Mistral~7B} & \textbf{Llama~3.2} & \textbf{Diferència} \\
+\hline
+Latència informe d'alta & 72,81~s & 23,19~s & \textbf{3,1$\times$ més ràpid} \\
+Latència resum clínic & 24,16~s & 26,87~s & 1,1$\times$ més lent \\
+Latència mitjana & 32,33~s & 16,69~s & \textbf{1,9$\times$ més ràpid} \\
+Mida del model & 4,4~GB & 2,0~GB & 55\% més petit \\
+Consum RAM \textit{runtime} & 5--6~GB & 3--4~GB & 33\% menys RAM \\
+Viabilitat en 8~GB RAM & Ajustat & Còmode & --- \\
+Precisió diagnòstica & 75\% & 100\% & --- \\
+Codificació medicaments & Parcial & Completa (ATC) & --- \\
+Taxa d'al·lucinacions & Present & Cap (0\%) & --- \\
+\hline
+\end{tabular}
+\caption{Comparativa empírica entre Mistral~7B i Llama~3.2 sobre els tres casos d'ús. Mesures realitzades en CPU (sense GPU), llenguatge català.}
+\label{tab:llm-comparison}
+\end{table}
+
+\subsection{Decisió i justificació}
+
+Es va seleccionar \textbf{Llama~3.2} com a model de producció. Els factors decisius, ordenats per importància en el context del desplegament sanitari objectiu:
+
+\begin{enumerate}
+    \item \textbf{Velocitat (crític per a UX):} 1,9$\times$ més ràpid de mitjana (16,69~s vs 32,33~s), amb una diferència especialment marcada en l'informe d'alta (3,1$\times$, 23,19~s vs 72,81~s). En un entorn clínic, la velocitat de resposta condiciona directament l'adopció del sistema pels professionals.
+
+    \item \textbf{Precisió mèdica:} 100\% de precisió diagnòstica sense al·lucinacions en cap dels casos avaluats, davant del 75\% de Mistral~7B que va generar diagnòstics incorrectes en un dels quatre casos. En el domini mèdic, l'absència d'al·lucinacions és un requisit no negociable.
+
+    \item \textbf{Eficiència de recursos:} 33\% menys RAM (3--4~GB vs 5--6~GB) i 55\% menys de mida en disc (2,0~GB vs 4,4~GB), fent viable el desplegament en dispositius de 8~GB de RAM ---un escenari realista en infraestructures sanitàries no actualitzades.
+
+    \item \textbf{Compliment de l'objectiu de latència:} Tots els casos d'ús per sota dels 30~segons objectiu (16,69~s de mitjana, 26,87~s en el pitjor cas), complint RNF-2 amb marge.
+\end{enumerate}
+
+Els \textit{trade-offs} acceptats inclouen documents lleugerament més curts (168--193~paraules davant 178--184~de Mistral) i una latència marginalment superior en el resum clínic (2,7~s més). Aquests \textit{trade-offs} es consideren acceptables perquè la longitud del document no és una mètrica de qualitat per se (documents més concisos poden ser igualment informatius) i la diferència de latència en el resum clínic no compromet el compliment de RNF-2.
+
+\section{Desenvolupament del programari: \textit{stack} i entorn}
+
+La selecció de l'\textit{stack} tecnològic s'ha guiat pels requisits no funcionals del sistema ---eficiència computacional (RNF-1), privacitat (RNF-3), modularitat (RNF-4) i reproductibilitat (RNF-5)--- i per tres criteris addicionals: (1)~prioritzar tecnologies de \textbf{codi obert} amb llicències permissives, (2)~seleccionar tecnologies amb \textbf{comunitats actives} i documentació extensa, i (3)~afavorir tecnologies amb \textbf{suport madur per al domini biomèdic}. Cada elecció s'ha contrastat amb les alternatives disponibles per garantir que la combinació resultant és la més adequada per al context de desplegament objectiu.
+
+\subsection{\textit{Backend} i pipeline RAG}
+
+\begin{itemize}
+    \item \textbf{Python 3.10+} com a llenguatge principal del \textit{backend}, atesa la seva preeminència en l'ecosistema d'IA/NLP i la disponibilitat de llibreries especialitzades per a processament de text mèdic, \textit{embeddings} i integració amb Ollama i Qdrant.
+
+    \item \textbf{FastAPI} per a la implementació de l'API REST, seleccionada pel seu rendiment elevat, validació automàtica de tipus i documentació interactiva integrada.
+
+    \item \textbf{Pydantic v2} per a la validació i serialització de tots els models de domini (peticions, respostes, configuració del sistema), garantint la consistència de les dades en tot el pipeline.
+\end{itemize}
+
+\subsection{Components específics RAG}
+
+\begin{itemize}
+    \item \textbf{Model de llenguatge --- Llama~3.2:} 3,2~mil milions de paràmetres, servit amb \textbf{Ollama}. Configuració: \texttt{temperature=0,3} per equilibrar coherència i variabilitat.
+
+    \item \textbf{Model d'\textit{embeddings} --- BAAI/bge-m3:} 1.024~dimensions, multilingüe, accessible mitjançant \texttt{sentence-transformers}. Seleccionat per tres raons: (1)~suport natiu per a català, castellà i anglès, essencial per a RF-8; (2)~rendiment competitiu amb models més grans en benchmarks MTEB; (3)~mida manejable ($\sim$1,2~GB) compatible amb les restriccions de memòria.
+
+    \item \textbf{Base de dades vectorial --- Qdrant:} Versió $\geq$1.7, en contenidor Docker amb emmagatzematge persistent (\texttt{localhost:6333}). Seleccionada per la seva API REST nativa, el suport per a filtres de metadades complexos (essencials per al filtratge per especialitat i tipus d'ontologia), i el rendiment optimitzat per a col·leccions de mida mitjana. Les alternatives considerades (Milvus, Weaviate, ChromaDB) van ser descartades per raons de complexitat de desplegament (Milvus), major pes (Weaviate) o menor funcionalitat de filtratge (ChromaDB).
+
+    \item \textbf{Recursos ontològics --- BioPortal:} API REST (\texttt{https://data.bioontology.org}) com a capa de \textit{fallback} per a SNOMED~CT, ICD-10 i MeSH, amb autenticació per API \textit{key}~\cite{vendetti2025bioportal}. Seleccionat per la seva cobertura d'ontologies ($>$900~ontologies biomèdiques) i la seva API estandarditzada.
+\end{itemize}
+
+\subsection{\textit{Frontend} i interfície d'usuari}
+
+\begin{itemize}
+    \item \textbf{React 18 + TypeScript:} \textit{Framework} per a la interfície interactiva, amb tipatge estàtic. \textbf{Vite} com a \textit{bundler}.
+
+    \item \textbf{Tailwind CSS:} Estilització \textit{utility-first} amb paleta personalitzada adaptada al context mèdic.
+
+    \item \textbf{Lucide React:} Biblioteca d'icones.
+\end{itemize}
+
+\subsection{Entorn de desenvolupament i desplegament}
+
+\begin{itemize}
+    \item \textbf{Control de versions:} Git amb repositori a GitHub.
+
+    \item \textbf{Entorn virtual Python:} Entorn virtual (\texttt{venv}) preparat amb totes les dependències necessàries, garantint l'aïllament de paquets i la reproductibilitat de l'entorn d'execució.
+
+    \item \textbf{Contenidorització:} Docker Compose per orquestrar Qdrant i l'API.
+
+    \item \textbf{Gestió de dependències:} \texttt{pip} amb \texttt{requirements.txt} per al \textit{backend}, \texttt{npm} amb \texttt{package-lock.json} per al \textit{frontend}, garantint la reproductibilitat (RNF-5).
+
+    \item \textbf{Observabilitat (RNF-7):} Endpoint \texttt{GET /health/detailed} per verificar l'estat dels components, \textit{logging} estructurat i mètriques de temps per component del pipeline.
+\end{itemize}
+
+\section{Avaluació i validació del sistema}
+
+L'avaluació d'un sistema de generació de documentació clínica requereix un enfocament multidimensional que vagi més enllà de les mètriques textuals clàssiques (BLEU, ROUGE) per incorporar dimensions específiques del domini mèdic: la correcció de la codificació ontològica, la completesa estructural del document, la precisió clínica i l'eficiència computacional. Aquesta secció descriu el disseny experimental adoptat, les mètriques definides i els resultats obtinguts, seguint les recomanacions de la literatura sobre avaluació de LLM en contextos sanitaris~\cite{bedi2025llm,kocaman2025clever}.
+
+\subsection{Disseny experimental}
+
+S'ha construït un \textit{dataset} d'avaluació amb \textbf{\textit{gold standards}} de referència per a cada cas d'ús, elaborats manualment a partir de guies clíniques oficials i validats per garantir la seva correcció:
+
+\begin{itemize}
+    \item \textbf{Informe d'alta:} Quatre casos representatius de patologies prevalents: cardiologia/IAMEST, pneumònia adquirida a la comunitat, ictus isquèmic, i diabetis mellitus tipus~2. Cada \textit{gold standard} inclou el text complet de l'informe de referència i els codis ontològics esperats (SNOMED~CT, ICD-10, ATC).
+
+    \item \textbf{Informe de derivació:} Sis casos cobrint les especialitats més comunes: cardiologia, neurologia, endocrinologia, dermatologia, gastroenterologia i reumatologia. Cada cas inclou l'especialitat destí, la classificació d'urgència, el motiu de derivació i els codis esperats.
+
+    \item \textbf{Resum clínic:} En fase de construcció del \textit{gold standard}, amb casos representatius que inclouen interaccions medicamentoses i alertes clíniques.
+\end{itemize}
+
+El pipeline d'avaluació automatitzat compara la sortida del sistema amb els \textit{gold standards} mitjançant scripts dedicats (\texttt{scripts/evaluate\_*.py}) que calculen totes les mètriques de manera reproduïble.
+
+\subsection{Mètriques d'avaluació}
+
+Les mètriques s'organitzen en quatre dimensions complementàries, cadascuna amb una justificació específica:
+
+\begin{itemize}
+    \item \textbf{Mètriques de superposició textual:} \textbf{BLEU} (BiLingual Evaluation Understudy) mesura la similitud lèxica entre el text generat i la referència mitjançant n-grams. \textbf{ROUGE-L F1} (Recall-Oriented Understudy for Gisting Evaluation, variant Longest Common Subsequence) mesura la cobertura de contingut. Ambdues mètriques es calculen sobre el text complet del document i proporcionen una estimació de la fidelitat textual, si bé la seva utilitat és limitada en el domini mèdic, on la reformulació d'un diagnòstic pot ser correcta sense compartir n-grams amb la referència.
+
+    \item \textbf{\textit{Completeness} estructural:} Percentatge de seccions obligatòries presents al document generat respecte de les esperades (9 seccions per a l'informe d'alta, 8 per a la derivació). Aquesta mètrica verifica el compliment de l'estructura documental requerida, independent de la qualitat del contingut.
+
+    \item \textbf{F1 de codificació mèdica:} Càlcul independent per a \textbf{SNOMED~CT}, \textbf{ICD-10} i \textbf{ATC}, comparant els codis assignats pel sistema amb els codis del \textit{gold standard}. S'aplica \textit{base code matching} per reflectir la jerarquia ontològica: per exemple, \texttt{E11.9} i \texttt{E11.10} reben un crèdit del 50\% per compartir la base \texttt{E11} (ambdós corresponen a ``Diabetis mellitus tipus~2'' amb variacions de detall). Aquesta mètrica és la més específica del domini i la que millor reflecteix la capacitat de codificació ontològica del sistema.
+
+    \item \textbf{Mètriques específiques per cas d'ús:} Precisió de detecció d'especialitat i precisió de classificació d'urgència (aplicables al cas de derivació), latència de generació per cas d'ús, i consum de RAM en \textit{runtime}.
+\end{itemize}
+
+\subsection{Fórmula d'\textit{Overall Score}}
+
+Per sintetitzar les múltiples dimensions en una mètrica unificada que permeti la comparació entre casos d'ús i entre versions del sistema, s'ha definit un \textit{Overall Score} ponderat:
+
+\begin{equation*}
+\begin{split}
+\text{Overall} = & \; 0{,}30 \cdot \frac{\text{ROUGE-L}+\text{BLEU}}{2} + 0{,}20 \cdot \text{Completeness} \\
+& + 0{,}30 \cdot \frac{\text{F1}_\text{SNOMED}+\text{F1}_\text{ICD-10}+\text{F1}_\text{ATC}}{3} + 0{,}20 \cdot \text{Content}
+\end{split}
+\end{equation*}
+
+La ponderació reflecteix la importància relativa de cada dimensió en el context clínic: la codificació ontològica (30\%) i la qualitat textual (30\%) reben el pes més alt, seguides de la completesa estructural (20\%) i el contingut addicional (20\%). L'objectiu establert és un \textit{Overall Score} $\geq$60\% per considerar el sistema apte per a desplegament assistit (\textit{human-in-the-loop}).
+
+\subsection{Proposta de validació qualitativa amb casos reals}
+
+Complementàriament a les mètriques quantitatives automàtiques, es proposa com a treball futur una validació qualitativa amb professionals sanitaris utilitzant casos clínics reals. Aquesta validació permetria avaluar aspectes de qualitat que les mètriques automàtiques no capturen. Els criteris d'avaluació qualitativa proposats inclouen: (1)~qualitat documental (claredat, estructura, terminologia), (2)~utilitat clínica real (informació rellevant, accionabilitat), (3)~confiança en el sistema (percepció de fiabilitat, disposició a utilitzar-lo en la pràctica clínica), i (4)~identificació d'errors crítics (omissions, imprecisions, al·lucinacions que podrien comprometre la seguretat del pacient). Aquesta validació amb casos reals proporcionaria una perspectiva complementària essencial per avaluar la viabilitat del sistema en entorns clínics reals abans d'un eventual desplegament.
+
 \chapter{Glossari}
 
 \begin{description}
