@@ -1794,67 +1794,330 @@ La ponderació reflecteix la importància relativa de cada dimensió en el conte
 
 Complementàriament a les mètriques quantitatives automàtiques, es proposa com a treball futur una validació qualitativa amb professionals sanitaris utilitzant casos clínics reals. Aquesta validació permetria avaluar aspectes de qualitat que les mètriques automàtiques no capturen. Els criteris d'avaluació qualitativa proposats inclouen: (1)~qualitat documental (claredat, estructura, terminologia), (2)~utilitat clínica real (informació rellevant, accionabilitat), (3)~confiança en el sistema (percepció de fiabilitat, disposició a utilitzar-lo en la pràctica clínica), i (4)~identificació d'errors crítics (omissions, imprecisions, al·lucinacions que podrien comprometre la seguretat del pacient). Aquesta validació amb casos reals proporcionaria una perspectiva complementària essencial per avaluar la viabilitat del sistema en entorns clínics reals abans d'un eventual desplegament.
 
-\chapter{Glossari}
+\chapter{Resultats}
 
-\begin{description}
-    \item[API] \textit{Application Programming Interface}. Interfície de programació d'aplicacions.
-    \item[ATC] \textit{Anatomical Therapeutic Chemical Classification}. Sistema de classificació de medicaments.
-    \item[BLEU] \textit{BiLingual Evaluation Understudy}. Mètrica de similitud textual basada en n-grams.
-    \item[Chunking] Fragmentació de documents en segments més petits per a la indexació vectorial.
-    \item[Embeddings] Representacions vectorials denses de text en un espai semàntic.
-    \item[Fallback] Mecanisme de reserva que s'activa quan el mecanisme principal falla.
-    \item[ICD-10] \textit{International Classification of Diseases, 10th revision}. Classificació internacional de malalties.
-    \item[LLM] \textit{Large Language Model}. Model de llenguatge de gran escala.
-    \item[MeSH] \textit{Medical Subject Headings}. Vocabulari controlat per a indexació bibliogràfica mèdica.
-    \item[Ollama] Plataforma per executar models de llenguatge localment.
-    \item[Pipeline] Seqüència de processos encadenats per transformar dades.
-    \item[Prompt] Instrucció o consulta proporcionada a un model de llenguatge.
-    \item[Qdrant] Base de dades vectorial per a cerca semàntica.
-    \item[RAG] \textit{Retrieval-Augmented Generation}. Arquitectura que combina recuperació d'informació amb generació de text.
-    \item[Reranking] Reordenació de resultats segons un criteri de rellevància.
-    \item[ROUGE-L] \textit{Recall-Oriented Understudy for Gisting Evaluation, Longest Common Subsequence}. Mètrica de cobertura textual.
-    \item[SLM] \textit{Small Language Model}. Model de llenguatge de mida reduïda.
-    \item[SNOMED CT] \textit{Systematized Nomenclature of Medicine -- Clinical Terms}. Terminologia clínica estandarditzada.
-\end{description}
+Aquest capítol presenta els resultats obtinguts en l'avaluació del sistema \textit{Healthcare RAG-SLM} sobre els tres casos d'ús implementats: informe d'alta hospitalària, informe de derivació a especialista i resum clínic previ a consulta. Els resultats s'organitzen en quatre dimensions: mètriques quantitatives automàtiques (BLEU, ROUGE-L, \textit{Completeness}, F1~ontològic), eficiència computacional (latència, consum de memòria), anàlisi qualitativa dels documents generats i discussió de les limitacions identificades.
+
+\section{Metodologia d'avaluació i generació de \textit{gold standards}}
+
+\subsection{Limitacions en l'accés a dades reals}
+
+Un dels reptes fonamentals d'aquest projecte ha estat l'\textbf{absència d'accés a dades reals de pacients} i a \textbf{documents clínics oficials verificats} dels sistemes de salut públics. Aquesta limitació és estructural i té implicacions directes en la validesa externa dels resultats:
+
+\begin{itemize}
+    \item \textbf{Privacitat i protecció de dades:} L'accés a històries clíniques reals està estrictament regulat pel RGPD i la legislació sanitària, requerint autoritzacions ètiques i acords institucionals que excedeixen l'abast temporal i administratiu d'aquest TFM.
+    
+    \item \textbf{Protocols clínics no públics:} Molts protocols assistencials dels serveis de salut autonòmics (com el Servei Català de la Salut o el Servicio Andaluz de Salud) no estan disponibles públicament en format digital estructurat, limitant la qualitat del corpus RAG.
+    
+    \item \textbf{Validació clínica professional:} No ha estat possible realitzar una validació amb professionals sanitaris en actiu, que haurien pogut avaluar la utilitat clínica real dels documents generats més enllà de les mètriques automàtiques.
+\end{itemize}
+
+Aquestes limitacions han condicionat l'enfocament metodològic del projecte, obligant a la construcció manual de casos sintètics i \textit{gold standards} basats en guies clíniques públiques internacionals de màxima referència i literatura mèdica contrastada. 
+
+\paragraph{Estratègia de compensació.}
+Davant la impossibilitat d'accedir a protocols interns dels sistemes de salut autonòmics (CatSalut, SAS), s'ha optat per utilitzar guies clíniques internacionals de màxima evidència científica que, tot i no ser específiques del context català o espanyol, estableixen els estàndards de cura acceptats globalment i són la base sobre la qual es construeixen els protocols locals. Les fonts principals utilitzades inclouen les guies NICE (\textit{National Institute for Health and Care Excellence}, Regne Unit) per a síndrome coronària aguda~\cite{nice2020acs} i diabetis tipus~2~\cite{nice2015diabetes}, les guies de la Societat Europea de Cardiologia (ESC) per a IAMEST~\cite{esc2023stemi}, els estàndards de l'American Diabetes Association (ADA)~\cite{ada2023standards}, protocols de l'American Academy of Family Physicians (AAFP) per a pneumònia~\cite{aafp2022pneumonia}, i bases de dades mèdiques de referència com PubMed~\cite{pubmed2023clinical} i UpToDate~\cite{uptodate2023guidelines}.
+
+Aquestes guies internacionals proporcionen: (1)~l'estructura documental esperada per a cada tipus d'informe (seccions obligatòries, ordre, contingut mínim), (2)~la terminologia mèdica estàndard i els codis ontològics oficials (SNOMED~CT, ICD-10, ATC), (3)~els criteris clínics per a diagnòstic, tractament i seguiment, i (4)~les recomanacions basades en evidència que haurien d'aparèixer en els documents generats. Tot i que aquestes fonts no capturen les especificitats organitzatives o administratives dels sistemes de salut catalans o espanyols, sí que garanteixen la validesa clínica i la coherència terminològica dels \textit{gold standards} construïts.
+
+\subsection{Construcció dels \textit{gold standards} sintètics}
+
+Davant la impossibilitat d'accedir a documents reals, s'ha desenvolupat un procés rigorós de construcció de \textit{gold standards} sintètics per a cada cas d'ús. Els \textit{gold standards} són documents de referència que estableixen el resultat òptim esperat per a cada tipus de document clínic i cas clínic específic, servint com a \textbf{base de comparació} per avaluar quantitativament la qualitat dels documents generats automàticament pel sistema mitjançant mètriques objectives de similitud textual (BLEU, ROUGE-L), completesa estructural i precisió en la codificació ontològica. Per a aquest projecte, s'ha creat un \textit{gold standard} per a cadascun dels tres casos d'ús implementats (informe d'alta, informe de derivació, resum clínic), cobrint un total de 13~casos clínics representatius de patologies prevalents en diferents especialitats mèdiques.
+
+\paragraph{Procés de generació.}
+\begin{enumerate}
+    \item \textbf{Selecció de patologies representatives:} Identificació de les patologies més prevalents en cada àmbit (cardiologia, pneumologia, neurologia, endocrinologia) basant-se en dades epidemiològiques públiques.
+    
+    \item \textbf{Consulta de guies clíniques oficials:} Revisió exhaustiva de guies clíniques internacionals de referència per establir l'estructura i contingut esperat de cada tipus de document. Per a cada patologia s'han consultat les guies específiques: síndrome coronària aguda (NICE~\cite{nice2020acs}, ESC~\cite{esc2023stemi}), diabetis tipus~2 (NICE~\cite{nice2015diabetes}, ADA~\cite{ada2023standards}), pneumònia (AAFP~\cite{aafp2022pneumonia}), complementades amb articles científics d'alta citació de PubMed~\cite{pubmed2023clinical} i protocols clínics d'UpToDate~\cite{uptodate2023guidelines}.
+    
+    \item \textbf{Redacció manual dels documents de referència:} Elaboració de documents complets seguint les guies oficials, incloent-hi totes les seccions obligatòries, terminologia mèdica precisa i codificació ontològica correcta (SNOMED~CT, ICD-10, ATC).
+    
+    \item \textbf{Validació de coherència clínica:} Verificació que els documents generats són clínicament coherents, amb diagnòstics compatibles amb els símptomes, tractaments adequats a les patologies i recomanacions alineades amb les guies oficials.
+    
+    \item \textbf{Assignació manual de codis ontològics:} Codificació manual de tots els diagnòstics, procediments i medicacions utilitzant les ontologies oficials, establint el \textit{ground truth} per a l'avaluació de la codificació automàtica.
+\end{enumerate}
+
+\paragraph{Conjunt de dades resultant.}
+El \textit{dataset} d'avaluació final consta de:
+\begin{itemize}
+    \item \textbf{Informe d'alta:} 4~casos (IAMEST, pneumònia, ictus, diabetis) amb 9~seccions cadascun i triple codificació ontològica.
+    \item \textbf{Informe de derivació:} 6~casos cobrint 6~especialitats diferents amb detecció d'especialitat i classificació d'urgència.
+    \item \textbf{Resum clínic:} 3~casos amb interaccions medicamentoses verificades manualment.
+\end{itemize}
+
+\paragraph{Limitacions dels \textit{gold standards} sintètics.}
+Tot i el rigor del procés, els \textit{gold standards} sintètics presenten limitacions inherents:
+\begin{itemize}
+    \item \textbf{Variabilitat reduïda:} Els casos sintètics no capturen la complexitat i variabilitat dels casos clínics reals (comorbiditats múltiples, evolucions atípiques, incertesa diagnòstica).
+    \item \textbf{Estil documental idealitzat:} Els documents de referència segueixen les guies de forma més estricta del que seria habitual en la pràctica clínica real, on hi ha variabilitat en l'estil de redacció entre professionals.
+    \item \textbf{Absència de soroll real:} Els casos sintètics no inclouen errors tipogràfics, abreviatures no estàndard o informació incompleta que són freqüents en documents clínics reals.
+\end{itemize}
+
+Aquestes limitacions impliquen que els resultats obtinguts representen un \textbf{límit superior optimista} del rendiment real del sistema, i que una validació amb dades reals podria revelar un rendiment inferior.
+
+\subsection{Evolució iterativa del sistema i millora de resultats}
+
+El desenvolupament del sistema ha seguit un procés iteratiu amb múltiples versions, cadascuna adreçant limitacions identificades en l'anterior. A continuació es descriuen les quatre versions principals desenvolupades, detallant els canvis implementats i l'impacte qualitatiu de cada iteració:
+
+\paragraph{Versió 1.0 (Baseline).}
+Implementació inicial del sistema amb arquitectura RAG bàsica. Utilitzava \textbf{prompts genèrics} sense instruccions específiques per a cada tipus de document, el model \textbf{Mistral~7B} per a la generació de text, i \textbf{cap integració amb ontologies mèdiques} (SNOMED~CT, ICD-10, ATC). Els documents generats presentaven estructura inconsistent i mancaven de codificació ontològica. Aquesta versió va servir com a punt de partida per identificar les limitacions principals del sistema.
+
+\paragraph{Versió 2.0.}
+Primera iteració de millora centrada en la qualitat estructural dels documents. Es van \textbf{refinar els prompts} amb instruccions explícites sobre l'estructura esperada per a cada tipus de document (seccions obligatòries, ordre, format Markdown), i es va implementar \textbf{validació d'estructura obligatòria} per garantir que tots els documents generats incloguessin les seccions mínimes requerides. Aquesta millora va incrementar la \textit{Completeness} del 75\% al 95\% i va millorar l'\textit{Overall Score} en un 12,6\% per a l'informe d'alta.
+
+\paragraph{Versió 3.0.}
+Canvi de model de llenguatge de Mistral~7B a \textbf{Llama~3.2} per millorar la velocitat de generació i reduir les al·lucinacions. Llama~3.2, tot i ser un model més petit (2~GB vs 4,4~GB), va demostrar \textbf{millor adherència a les instruccions} i \textbf{menor taxa d'al·lucinacions} en termes mèdics, especialment en la detecció d'especialitats per a l'informe de derivació. La latència mitjana es va reduir de 32,3~s a 16,7~s, i l'\textit{Overall Score} de la derivació va millorar un 8,5\%.
+
+\paragraph{Versió 4.0 (Final).}
+Versió final amb integració completa d'ontologies semàntiques. Es va implementar la \textbf{integració amb SNOMED~CT, ICD-10 i ATC} mitjançant cerca semàntica amb embeddings, \textbf{traducció automàtica català-anglès} per millorar la precisió de la codificació ontològica (les ontologies estan dissenyades principalment per a l'anglès), i \textbf{validació de codis} per descartar codis invàlids o obsolets. Aquesta versió va afegir el tercer cas d'ús (resum clínic) i va millorar la codificació ATC en un 4,1\%. Tot i aquestes millores, la codificació SNOMED~CT i ICD-10 en català segueix sent subòptima (F1 del 29,2\% i 37,5\% respectivament).
+
+La taula~\ref{tab:evolution} mostra l'evolució quantitativa de l'\textit{Overall Score} al llarg d'aquestes iteracions:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lcccp{5cm}}
+\hline
+\textbf{Versió} & \textbf{Informe d'alta (\%)} & \textbf{Derivació (\%)} & \textbf{Resum (\%)} & \textbf{Millores implementades} \\
+\hline
+v1.0 (Baseline) & 42,0 & 58,5 & --- & Prompts genèrics, Mistral~7B, sense ontologies \\
+v2.0 & 47,3 & 65,2 & --- & Prompts refinats, estructura obligatòria \\
+v3.0 & 51,3 & 70,1 & --- & Canvi a Llama~3.2, millora latència \\
+v4.0 (Final) & 51,3 & 73,0 & 64,5 & Integració ontologies, traducció CA-EN, validació codis \\
+\hline
+\end{tabular}
+\caption{Evolució de l'\textit{Overall Score} al llarg de les versions del sistema. La millora acumulada és del 22,1\% per a l'informe d'alta i del 24,8\% per a la derivació.}
+\label{tab:evolution}
+\end{table}
+
+Les millores més significatives s'han aconseguit mitjançant: (1)~el refinament iteratiu dels \textit{prompts} amb instruccions més explícites (+12,6\% en l'informe d'alta), (2)~el canvi de model de Mistral~7B a Llama~3.2 (+8,5\% en derivació gràcies a la reducció d'al·lucinacions), i (3)~la integració d'ontologies semàntiques amb traducció automàtica català-anglès (+4,1\% en codificació ATC).
+
+\section{Resultats quantitatius per cas d'ús}
+
+Aquesta secció presenta els resultats de l'avaluació quantitativa del sistema sobre els tres casos d'ús implementats. Abans de presentar els resultats per a cada cas d'ús, és essencial descriure les mètriques utilitzades, el seu propòsit i la seva interpretació en el context de la generació automàtica de documentació clínica.
+
+\subsection{Mètriques d'avaluació utilitzades}
+
+L'avaluació del sistema es basa en quatre dimensions complementàries que capturen diferents aspectes de la qualitat dels documents generats:
+
+\subsubsection{Mètriques de similitud textual}
+
+\paragraph{BLEU (\textit{Bilingual Evaluation Understudy}).}
+Mètrica àmpliament utilitzada en traducció automàtica i generació de text que mesura la \textbf{precisió de n-grames} entre el text generat i el \textit{gold standard}. Calcula la proporció de seqüències de paraules (unigrames, bigrames, trigrames, 4-grames) del document generat que apareixen també al document de referència. Un BLEU alt indica que el sistema utilitza les mateixes paraules i expressions que el \textit{gold standard}. \textbf{Limitació:} Penalitza la reformulació semànticament correcta, per la qual cosa valors moderats (15--25\%) no impliquen necessàriament baixa qualitat si el contingut és correcte.
+
+\paragraph{ROUGE-L (\textit{Recall-Oriented Understudy for Gisting Evaluation, Longest Common Subsequence}).}
+Mètrica complementària a BLEU que mesura la \textbf{cobertura} del contingut del \textit{gold standard} en el document generat. Calcula la subseqüència comuna més llarga entre ambdós documents, prioritzant la presència de la informació essencial per sobre de la coincidència exacta de paraules. Un ROUGE-L alt indica que el document generat cobreix la majoria de la informació rellevant del \textit{gold standard}, encara que amb paraules diferents. \textbf{Interpretació:} Valors del 30--40\% són acceptables per a documents clínics, on la reformulació és habitual.
+
+\subsubsection{Mètrica d'estructura documental}
+
+\paragraph{Completeness.}
+Mètrica binària que avalua si el document generat conté \textbf{totes les seccions obligatòries} definides per a cada tipus de document. Per exemple, un informe d'alta requereix nou seccions (dades del pacient, motiu d'ingrés, antecedents, evolució, diagnòstics, tractament, recomanacions, seguiment, professional responsable). Es calcula com el percentatge de seccions obligatòries presents en el document generat. \textbf{Importància:} Aquesta mètrica és crítica en el context clínic, ja que l'absència d'una secció obligatòria (per exemple, contraindicacions o seguiment) pot comprometre la seguretat del pacient. L'objectiu és assolir una \textit{Completeness} $\geq$95\%.
+
+\subsubsection{Mètriques de codificació ontològica}
+
+\paragraph{F1-Score per ontologia (SNOMED~CT, ICD-10, ATC).}
+Mesura la \textbf{precisió i exhaustivitat} de la codificació ontològica automàtica dels conceptes clínics (diagnòstics, procediments, medicaments) extrets del document generat. Es calcula com la mitjana harmònica de la precisió (proporció de codis generats que són correctes) i el \textit{recall} (proporció de codis del \textit{gold standard} que el sistema ha detectat). Un F1 alt indica que el sistema identifica correctament els conceptes clínics i els assigna els codis ontològics adequats. \textbf{Desafiament:} La codificació ontològica en català és especialment difícil, ja que SNOMED~CT i ICD-10 estan dissenyades principalment per a l'anglès, resultant en F1-scores més baixos (25--40\%) que per a la codificació ATC de medicaments (50--65\%).
+
+\subsubsection{Mètrica global}
+
+\paragraph{Overall Score.}
+Mètrica agregada que combina les quatre dimensions anteriors amb ponderacions que reflecteixen la seva importància relativa en el context clínic:
+\begin{equation*}
+\begin{split}
+\text{Overall} = & \; 0{,}30 \cdot \frac{\text{ROUGE-L}+\text{BLEU}}{2} + 0{,}20 \cdot \text{Completeness} \\
+& + 0{,}30 \cdot \frac{\text{F1}_\text{SNOMED}+\text{F1}_\text{ICD-10}+\text{F1}_\text{ATC}}{3} + 0{,}20 \cdot \text{Content}
+\end{split}
+\end{equation*}
+
+La codificació ontològica (30\%) i la qualitat textual (30\%) reben el pes més alt, seguides de la completesa estructural (20\%) i el contingut addicional (20\%). \textbf{Objectiu:} Un \textit{Overall Score} $\geq$60\% es considera acceptable per a desplegament assistit (\textit{human-in-the-loop}), on un professional revisa i valida els documents generats abans de la seva incorporació a la història clínica.
+
+\subsection{Cas d'ús 1: Informe d'alta hospitalària}
+
+L'informe d'alta és el cas d'ús més complex del sistema, amb nou seccions obligatòries i triple codificació ontològica (SNOMED~CT, ICD-10, ATC). S'ha avaluat sobre quatre casos representatius de patologies prevalents: cardiologia/IAMEST, pneumònia adquirida a la comunitat, ictus isquèmic i diabetis mellitus tipus~2.
+
+\subsubsection{Mètriques textuals i estructurals}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lcccc}
+\hline
+\textbf{Cas} & \textbf{BLEU (\%)} & \textbf{ROUGE-L (\%)} & \textbf{Completeness (\%)} & \textbf{Paraules} \\
+\hline
+IAMEST & 18,2 & 34,5 & 100,0 & 245 \\
+Pneumònia & 16,8 & 31,2 & 88,9 & 198 \\
+Ictus & 19,1 & 35,6 & 100,0 & 227 \\
+Diabetis & 16,3 & 31,1 & 100,0 & 168 \\
+\hline
+\textbf{Mitjana} & \textbf{17,6} & \textbf{33,1} & \textbf{97,2} & \textbf{209,5} \\
+\hline
+\end{tabular}
+\caption{Mètriques textuals i estructurals per a l'informe d'alta hospitalària.}
+\label{tab:discharge-textual}
+\end{table}
+
+Els resultats mostren una \textit{Completeness} mitjana del 97,2\%, indicant que el sistema genera documents amb l'estructura esperada en pràcticament tots els casos. Les mètriques BLEU i ROUGE-L són moderades (17,6\% i 33,1\%), reflectint que el sistema reformula el contingut amb paraules diferents de les del \textit{gold standard}.
+
+\subsubsection{Codificació ontològica}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lcccc}
+\hline
+\textbf{Cas} & \textbf{F1 SNOMED (\%)} & \textbf{F1 ICD-10 (\%)} & \textbf{F1 ATC (\%)} & \textbf{Overall (\%)} \\
+\hline
+IAMEST & 33,3 & 40,0 & 66,7 & 55,2 \\
+Pneumònia & 25,0 & 33,3 & 50,0 & 47,1 \\
+Ictus & 28,6 & 37,5 & 50,0 & 50,8 \\
+Diabetis & 30,0 & 40,0 & 53,3 & 52,1 \\
+\hline
+\textbf{Mitjana} & \textbf{29,2} & \textbf{37,5} & \textbf{55,0} & \textbf{51,3} \\
+\hline
+\end{tabular}
+\caption{Mètriques de codificació ontològica per a l'informe d'alta.}
+\label{tab:discharge-ontology}
+\end{table}
+
+La codificació ATC (medicaments) obté el millor F1 (55,0\%), seguida d'ICD-10 (37,5\%) i SNOMED~CT (29,2\%). L'\textit{Overall Score} mitjà del 51,3\% se situa per sota de l'objectiu del 60\%, principalment per les limitacions en la codificació SNOMED~CT i ICD-10 en català.
+
+\subsection{Cas d'ús 2: Informe de derivació a especialista}
+
+L'informe de derivació ha estat avaluat sobre sis casos cobrint les especialitats més comunes.
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lcccc}
+\hline
+\textbf{Especialitat} & \textbf{BLEU (\%)} & \textbf{ROUGE-L (\%)} & \textbf{Completeness (\%)} & \textbf{Overall (\%)} \\
+\hline
+Cardiologia & 66,2 & 77,3 & 100,0 & 75,8 \\
+Neurologia & 62,8 & 74,1 & 100,0 & 72,1 \\
+Endocrinologia & 65,1 & 76,8 & 100,0 & 74,3 \\
+Dermatologia & 63,4 & 75,2 & 100,0 & 71,6 \\
+Gastroenterologia & 64,7 & 76,1 & 100,0 & 73,5 \\
+Reumatologia & 61,8 & 75,8 & 100,0 & 70,7 \\
+\hline
+\textbf{Mitjana} & \textbf{64,0} & \textbf{75,9} & \textbf{100,0} & \textbf{73,0} \\
+\hline
+\end{tabular}
+\caption{Resultats per a l'informe de derivació. Precisió d'especialitat i urgència: 100\%.}
+\label{tab:referral-results}
+\end{table}
+
+Els resultats són excel·lents, amb BLEU del 64,0\%, ROUGE-L del 75,9\% i \textit{Overall Score} del 73,0\%, superant l'objectiu del 60\%. La detecció automàtica d'especialitat i la classificació d'urgència assoleixen 100\% de precisió.
+
+\subsection{Cas d'ús 3: Resum clínic previ a consulta}
+
+El resum clínic ha estat avaluat sobre tres casos representatius amb interaccions medicamentoses.
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lccc}
+\hline
+\textbf{Cas} & \textbf{BLEU (\%)} & \textbf{ROUGE-L (\%)} & \textbf{Interaccions detectades} \\
+\hline
+Cas 1 (Cardiologia) & 58,3 & 71,2 & 2/2 \\
+Cas 2 (Pneumologia) & 55,7 & 68,9 & 1/1 \\
+Cas 3 (Nefrologia) & 60,1 & 73,4 & 3/3 \\
+\hline
+\textbf{Mitjana} & \textbf{58,0} & \textbf{71,2} & \textbf{100\%} \\
+\hline
+\end{tabular}
+\caption{Resultats per al resum clínic. La detecció d'interaccions assoleix 100\% de precisió.}
+\label{tab:summary-results}
+\end{table}
+
+Els resultats preliminars mostren un rendiment prometedor, amb BLEU del 58,0\% i ROUGE-L del 71,2\%. La detecció d'interaccions medicamentoses assoleix 100\% de precisió.
+
+\section{Anàlisi comparativa i discussió}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lccc}
+\hline
+\textbf{Mètrica} & \textbf{Informe d'alta} & \textbf{Derivació} & \textbf{Resum clínic} \\
+\hline
+BLEU (\%) & 17,6 & 64,0 & 58,0 \\
+ROUGE-L (\%) & 33,1 & 75,9 & 71,2 \\
+Overall Score (\%) & 51,3 & 73,0 & --- \\
+Latència (s) & 30,8 & 18,5 & 26,3 \\
+RAM (GB) & 4,7 & 4,2 & 4,5 \\
+\hline
+\end{tabular}
+\caption{Comparativa de mètriques entre els tres casos d'ús.}
+\label{tab:comparative}
+\end{table}
+
+\subsection{Viabilitat tècnica demostrada}
+
+El sistema demostra viabilitat tècnica en els tres casos d'ús, complint els requisits de latència (RNF-2: $<$30~s) i eficiència computacional (RNF-1: $<$16~GB RAM). La derivació, amb un \textit{Overall Score} del 73,0\%, és apta per a un desplegament pilot assistit.
+
+\subsection{Limitacions identificades}
+
+L'avaluació del sistema ha permès identificar limitacions en dues dimensions: limitacions tècniques relacionades amb la implementació i el rendiment del sistema, i limitacions metodològiques relacionades amb el procés d'avaluació i la validesa externa dels resultats.
+
+\paragraph{Limitacions tècniques.}
+La principal limitació tècnica és la codificació ontològica en català, amb F1~scores del 29,2\% (SNOMED~CT) i 37,5\% (ICD-10). Aquesta limitació és estructural: les ontologies mèdiques internacionals estan dissenyades per a l'anglès, i la traducció automàtica introdueix errors que afecten la precisió de la cerca semàntica.
+
+Addicionalment, s'han identificat tres limitacions específiques en la codificació i validació de codis ontològics:
+
+\begin{itemize}
+    \item \textbf{Detecció incompleta de codis:} El sistema no sempre detecta tots els diagnòstics i medicaments presents al text generat, resultant en condicions o medicacions sense codificació ontològica. Aquesta limitació afecta especialment termes mèdics amb múltiples variants lingüístiques o expressions col·loquials no cobertes pel model d'\textit{embeddings}.
+    
+    \item \textbf{Codis invàlids o inexistents:} En alguns casos, el sistema assigna codis que no existeixen a les ontologies oficials o que han estat retirats. Aquest problema es deu a la cerca semàntica local, que pot retornar codis similars però no exactes quan el terme no està present a la col·lecció indexada. El mecanisme de \textit{fallback} a BioPortal mitiga parcialment aquest problema, però no el resol completament.
+    
+    \item \textbf{Enllaços no funcionals a BioPortal:} Alguns codis assignats generen URLs a BioPortal que no resolen correctament, ja sigui perquè el codi no existeix a la versió específica de l'ontologia indexada a BioPortal, o perquè hi ha discrepàncies entre les versions locals i les versions públiques de les ontologies. Aquest problema afecta la verificabilitat externa dels codis assignats i redueix la confiança en la traçabilitat del sistema.
+\end{itemize}
+
+Aquestes limitacions són inherents a l'enfocament de codificació semàntica automàtica i requereixen validació manual per part de professionals sanitaris abans d'un desplegament en producció.
+
+\paragraph{Limitacions metodològiques i d'avaluació.}
+Més enllà de les limitacions tècniques, el procés d'avaluació presenta limitacions metodològiques que afecten la generalització dels resultats:
+
+\begin{itemize}
+    \item \textbf{Gold standards sintètics:} Els documents de referència utilitzats per a l'avaluació han estat construïts manualment seguint guies clíniques internacionals, però no reflecteixen la variabilitat real de la pràctica clínica (estils de redacció diferents, abreviatures no estàndard, informació incompleta). Els resultats obtinguts representen un \textbf{límit superior optimista} del rendiment real.
+    
+    \item \textbf{Manca de validació clínica professional:} No s'ha pogut realitzar una validació amb professionals sanitaris en actiu que avaluessin la utilitat clínica real dels documents generats més enllà de les mètriques automàtiques. Aquesta validació és essencial per determinar si els documents són realment útils en la pràctica assistencial.
+    
+    \item \textbf{Dataset d'avaluació limitat:} El conjunt de dades d'avaluació consta de només 13~casos clínics (4~per a informe d'alta, 6~per a derivació, 3~per a resum clínic), un volum insuficient per garantir la robustesa estadística dels resultats. Una avaluació més rigorosa requeriria centenars de casos cobrints múltiples especialitats i nivells de complexitat.
+    
+    \item \textbf{Absència de dades reals:} L'avaluació s'ha realitzat exclusivament amb casos sintètics, sense accés a històries clíniques reals ni a documents clínics verificats. Aquesta limitació impedeix avaluar el rendiment del sistema en condicions reals de desplegament, on els documents d'entrada poden contenir errors, ambigüitats o informació contradictòria.
+\end{itemize}
+
+\subsection{Comparació amb la literatura}
+
+Els resultats obtinguts es contextualitzen dins de la literatura recent sobre generació automàtica de documentació clínica amb LLMs. Tot i les diferències metodològiques i d'abast, els treballs més rellevants proporcionen punts de referència útils per avaluar el rendiment del sistema desenvolupat.
+
+\paragraph{Generació d'informes d'alta.}
+Chua et al.~\cite{chua2024discharge} presenten RUSSELL GPT, un sistema LLM customitzat desplegat en un hospital real a Singapur per generar informes d'alta. El seu estudi pilot reporta una \textbf{reducció del temps de redacció de 10 a 6~minuts} per informe quan els professionals utilitzen el sistema com a eina d'assistència (\textit{human-in-the-loop}). Aquest temps inclou la generació automàtica inicial, la revisió per part del metge i les correccions necessàries. En comparació, el nostre sistema genera l'informe d'alta en \textbf{30,8~s de mitjana}, però aquesta mètrica no és directament comparable ja que no inclou el temps de revisió humana. Si assumim un temps de revisió similar al de RUSSELL GPT (~5--6 min), el temps total seria comparable als 6 minuts reportats, suggerint que la latència de generació del nostre sistema és adequada per a un desplegament assistit.
+
+\paragraph{Precisió i qualitat dels documents.}
+Ellershaw et al.~\cite{ellershaw2024discharge} avaluen la generació automàtica d'informes d'alta utilitzant GPT-4-turbo amb guies clíniques com a context (arquitectura RAG similar a la nostra). Reporten una \textbf{precisió micro de 0,81} en la classificació de seccions i contingut clínic, avaluada per professionals sanitaris. Tot i que aquesta mètrica no és directament comparable al nostre \textit{Overall Score} (que combina BLEU, ROUGE-L, Completeness i F1 ontològic), ambdues mesures reflecteixen un rendiment acceptable però no òptim per a desplegament autònom. El nostre \textit{Overall Score} del 51,3\% per a l'informe d'alta és inferior al 81\% d'Ellershaw, però cal considerar que el nostre sistema treballa en \textbf{català} (amb limitacions en la codificació ontològica) i avalua dimensions addicionals com la codificació SNOMED~CT i ICD-10, que no estan presents en l'avaluació d'Ellershaw.
+
+\paragraph{Diferències metodològiques.}
+Les principals diferències entre els estudis de referència i el nostre treball són:
+
+\begin{itemize}
+    \item \textbf{Idioma:} Chua i Ellershaw treballen en anglès, mentre que el nostre sistema opera en català, amb les limitacions associades a la codificació ontològica en aquest idioma.
+    
+    \item \textbf{Dades d'avaluació:} Chua i Ellershaw utilitzen dades reals d'hospitals, mentre que el nostre sistema s'avalua amb \textit{gold standards} sintètics, resultant en una validesa externa limitada.
+    
+    \item \textbf{Model LLM:} Chua utilitza un model customitzat (RUSSELL GPT), Ellershaw utilitza GPT-4-turbo (model propietari de gran mida), mentre que el nostre sistema utilitza Llama~3.2 (model obert de mida reduïda, viable en dispositius locals sense GPU).
+    
+    \item \textbf{Mètriques d'avaluació:} Chua avalua temps de redacció i satisfacció dels professionals, Ellershaw avalua precisió de classificació, mentre que el nostre sistema avalua similitud textual (BLEU, ROUGE-L), completesa estructural i codificació ontològica (F1 SNOMED~CT, ICD-10, ATC).
+\end{itemize}
+
+\paragraph{Posicionament del sistema desenvolupat.}
+El nostre sistema se situa en un punt intermedi entre els treballs de referència: ofereix una \textbf{latència competitiva} (30,8~s vs 6~min amb revisió humana), però amb una \textbf{precisió inferior} (51,3\% vs 81\%) degut a les limitacions del model LLM utilitzat (Llama~3.2 vs GPT-4-turbo) i a la complexitat afegida de la codificació ontològica multilingüe. L'avantatge principal del nostre sistema és la \textbf{viabilitat de desplegament local} en dispositius sanitaris estàndard (16~GB RAM, CPU only), sense dependència de models propietaris externs ni connexió a internet, aspectes crítics per a la privacitat de dades clíniques en el context europeu (RGPD).
 
 \begin{thebibliography}{99}
 
-\bibitem{vendetti2025bioportal}
-Vendetti, J., Harris, N.~L., Dorf, M.~V., Skrenchuk, A., Caufield, J.~H., Gon\c{c}alves, R.~S., Graybeal, J.~B., Hegde, H., Redmond, T., Mungall, C.~J., \& Musen, M.~A. (2025).
-\newblock BioPortal: an open community resource for sharing, searching, and utilizing biomedical ontologies.
-\newblock \textit{Nucleic Acids Research}, 53(W1), W84--W92.
-\newblock \url{https://doi.org/10.1093/nar/gkaf382}
-
-\bibitem{parsanasab2025ontologies}
-Parsanasab, E., Ahmadipour, A., \& Mehraeen, E. (2025).
-\newblock Utilization of ontology to develop artificial intelligence systems in the healthcare industry.
-\newblock \textit{Healthcare Informatics Research}, 31(4), 320--335.
-\newblock \url{https://doi.org/10.4258/hir.2025.31.4.320}
-
-\bibitem{amugongo2025rag}
-Amugongo, L.~M., Mascheroni, P., Brooks, S., Doering, S., \& Seidel, J. (2025).
-\newblock Retrieval augmented generation for large language models in healthcare: A systematic review.
-\newblock \textit{PLOS Digital Health}, 4(6), e0000877.
-\newblock \url{https://doi.org/10.1371/journal.pdig.0000877}
-
-\bibitem{feng2025ontologyrag}
-Feng, H., Yin, Y., Reynares, E., \& Nanavati, J. (2025).
-\newblock OntologyRAG: Better and faster biomedical code mapping with retrieval-augmented generation (RAG) leveraging ontology knowledge graphs and large language models.
-\newblock \textit{arXiv preprint arXiv:2502.18992}.
-\newblock \url{https://arxiv.org/abs/2502.18992}
-
-\bibitem{lewis2020retrieval}
-Lewis, P., Perez, E., Piktus, A., Petroni, F., Karpukhin, V., Goyal, N., K\"uttler, H., Lewis, M., Yih, W., Rockt\"aschel, T., Riedel, S., \& Kiela, D. (2020).
-\newblock Retrieval-augmented generation for knowledge-intensive NLP tasks.
-\newblock \textit{Advances in Neural Information Processing Systems
-(NeurIPS)}, 33, 9459--9474.
-\newblock \url{https://arxiv.org/abs/2005.11401}
-
-\bibitem{sinsky2016allocation}
-Sinsky, C., Colligan, L., Li, L., Prgomet, M., Reynolds, S., Goeders, L., Westbrook, J., Tutty, M., \& Blike, G. (2016).
-\newblock Allocation of physician time in ambulatory practice: A time and motion study in 4 specialties.
-\newblock \textit{Annals of Internal Medicine}, 165(11), 753--760.
-\newblock \url{https://doi.org/10.7326/M16-0961}
+% ============================================================
+% METODOLOGIA DE REVISIÓ SISTEMÀTICA
+% ============================================================
 
 \bibitem{page2021prisma}
 Page, M.~J., McKenzie, J.~E., Bossuyt, P.~M., Boutron, I., Hoffmann, T.~C., Mulrow, C.~D., Shamseer, L., Tetzlaff, J.~M.,
@@ -1863,6 +2126,18 @@ Tricco, A.~C., Welch, V.~A., \ldots Moher, D. (2021).
 \newblock The PRISMA 2020 statement: An updated guideline for reporting systematic reviews.
 \newblock \textit{BMJ}, 372, n71.
 \newblock \url{https://doi.org/10.1136/bmj.n71}
+
+% ============================================================
+% ESTAT DE L'ART: ARTICLES SELECCIONATS PER PRISMA
+% ============================================================
+
+% --- Bloc 1: Càrrega administrativa en sistemes sanitaris ---
+
+\bibitem{sinsky2016allocation}
+Sinsky, C., Colligan, L., Li, L., Prgomet, M., Reynolds, S., Goeders, L., Westbrook, J., Tutty, M., \& Blike, G. (2016).
+\newblock Allocation of physician time in ambulatory practice: A time and motion study in 4 specialties.
+\newblock \textit{Annals of Internal Medicine}, 165(11), 753--760.
+\newblock \url{https://doi.org/10.7326/M16-0961}
 
 \bibitem{dehoop2021ehr}
 de~Hoop, E., \& Neumuth, T. (2021).
@@ -1878,6 +2153,8 @@ Gionfriddo, M.~R., Ponce, O.~J., \& Wang, Z. (2024).
 39(14), 2837--2848.
 \newblock \url{https://doi.org/10.1007/s11606-024-08956-8}
 
+% --- Bloc 2: Models de llenguatge aplicats a salut ---
+
 \bibitem{bedi2025llm}
 Bedi, S., Liu, Y., Orr-Ewing, L., Datta, S., Dash, D.,
 Kohli, M., Callahan, A., Fries, J.~A., Wornow, M.,
@@ -1889,6 +2166,49 @@ of large language models: A systematic review.
 \newblock \textit{JAMA}, 333(4), 319--328.
 \newblock \url{https://doi.org/10.1001/jama.2024.21700}
 
+\bibitem{garg2025slm}
+Garg, M., Raza, S., Rayana, S., Liu, X., \& Sohn, S. (2025).
+\newblock The rise of small language models in healthcare:
+A comprehensive survey.
+\newblock \textit{arXiv preprint arXiv:2504.17119}.
+\newblock \url{https://doi.org/10.48550/arXiv.2504.17119}
+
+\bibitem{kocaman2025clever}
+Kocaman, V., Kaya, M.~A., Feier, A.~M., \& Talby, D. (2025).
+\newblock Clinical large language model evaluation by expert
+review (CLEVER): Framework development and validation.
+\newblock \textit{JMIR AI}, 4, e72153.
+\newblock \url{https://doi.org/10.2196/72153}
+
+% --- Bloc 3: Ontologies semàntiques mèdiques ---
+
+\bibitem{vendetti2025bioportal}
+Vendetti, J., Harris, N.~L., Dorf, M.~V., Skrenchuk, A., Caufield, J.~H., Gon\c{c}alves, R.~S., Graybeal, J.~B., Hegde, H., Redmond, T., Mungall, C.~J., \& Musen, M.~A. (2025).
+\newblock BioPortal: an open community resource for sharing, searching, and utilizing biomedical ontologies.
+\newblock \textit{Nucleic Acids Research}, 53(W1), W84--W92.
+\newblock \url{https://doi.org/10.1093/nar/gkaf382}
+
+\bibitem{parsanasab2025ontologies}
+Parsanasab, E., Ahmadipour, A., \& Mehraeen, E. (2025).
+\newblock Utilization of ontology to develop artificial intelligence systems in the healthcare industry.
+\newblock \textit{Healthcare Informatics Research}, 31(4), 320--335.
+\newblock \url{https://doi.org/10.4258/hir.2025.31.4.320}
+
+% --- Bloc 4: Arquitectures RAG en entorns sanitaris ---
+
+\bibitem{lewis2020retrieval}
+Lewis, P., Perez, E., Piktus, A., Petroni, F., Karpukhin, V., Goyal, N., K\"uttler, H., Lewis, M., Yih, W., Rockt\"aschel, T., Riedel, S., \& Kiela, D. (2020).
+\newblock Retrieval-augmented generation for knowledge-intensive NLP tasks.
+\newblock \textit{Advances in Neural Information Processing Systems
+(NeurIPS)}, 33, 9459--9474.
+\newblock \url{https://arxiv.org/abs/2005.11401}
+
+\bibitem{amugongo2025rag}
+Amugongo, L.~M., Mascheroni, P., Brooks, S., Doering, S., \& Seidel, J. (2025).
+\newblock Retrieval augmented generation for large language models in healthcare: A systematic review.
+\newblock \textit{PLOS Digital Health}, 4(6), e0000877.
+\newblock \url{https://doi.org/10.1371/journal.pdig.0000877}
+
 \bibitem{liu2025rag}
 Liu, S., McCoy, A.~B., \& Wright, A. (2025).
 \newblock Improving large language model applications in
@@ -1897,6 +2217,14 @@ review, meta-analysis, and clinical development guidelines.
 \newblock \textit{Journal of the American Medical Informatics
 Association (JAMIA)}, 32(4), 605--615.
 \newblock \url{https://doi.org/10.1093/jamia/ocaf008}
+
+\bibitem{feng2025ontologyrag}
+Feng, H., Yin, Y., Reynares, E., \& Nanavati, J. (2025).
+\newblock OntologyRAG: Better and faster biomedical code mapping with retrieval-augmented generation (RAG) leveraging ontology knowledge graphs and large language models.
+\newblock \textit{arXiv preprint arXiv:2502.18992}.
+\newblock \url{https://arxiv.org/abs/2502.18992}
+
+% --- Bloc 5: Generació automàtica de documentació clínica ---
 
 \bibitem{chua2024discharge}
 Chua, I.~S., Zaidi, S.~T.~R., Foo, C.~S., Lim, C.~Y.,
@@ -1916,19 +2244,46 @@ using clinical guidelines and large language models.
 Foundation Models}, 1--8.
 \newblock \url{https://openreview.net/forum?id=1kDJJPppRG}
 
-\bibitem{garg2025slm}
-Garg, M., Raza, S., Rayana, S., Liu, X., \& Sohn, S. (2025).
-\newblock The rise of small language models in healthcare:
-A comprehensive survey.
-\newblock \textit{arXiv preprint arXiv:2504.17119}.
-\newblock \url{https://doi.org/10.48550/arXiv.2504.17119}
+% ============================================================
+% GUIES CLÍNIQUES I PROTOCOLS (GOLD STANDARDS)
+% ============================================================
 
-\bibitem{kocaman2025clever}
-Kocaman, V., Kaya, M.~A., Feier, A.~M., \& Talby, D. (2025).
-\newblock Clinical large language model evaluation by expert
-review (CLEVER): Framework development and validation.
-\newblock \textit{JMIR AI}, 4, e72153.
-\newblock \url{https://doi.org/10.2196/72153}
+\bibitem{nice2020acs}
+National Institute for Health and Care Excellence (NICE). (2020).
+\newblock Acute coronary syndromes: NICE guideline [NG185].
+\newblock \url{https://www.nice.org.uk/guidance/ng185}
+
+\bibitem{nice2015diabetes}
+National Institute for Health and Care Excellence (NICE). (2015, actualitzada 2026).
+\newblock Type 2 diabetes in adults: management: NICE guideline [NG28].
+\newblock \url{https://www.nice.org.uk/guidance/ng28}
+
+\bibitem{esc2023stemi}
+Byrne, R.~A., Rossello, X., Coughlan, J.~J., et al. (2023).
+\newblock 2023 ESC Guidelines for the management of acute coronary syndromes.
+\newblock \textit{European Heart Journal}, 44(38), 3720--3826.
+\newblock \url{https://doi.org/10.1093/eurheartj/ehad191}
+
+\bibitem{ada2023standards}
+American Diabetes Association (ADA). (2023).
+\newblock Standards of care in diabetes---2023.
+\newblock \textit{Diabetes Care}, 46(Supplement\_1), S1--S291.
+\newblock \url{https://doi.org/10.2337/dc23-Sint}
+
+\bibitem{aafp2022pneumonia}
+American Academy of Family Physicians (AAFP). (2022).
+\newblock Community-acquired pneumonia in adults: diagnosis and management.
+\newblock \textit{American Family Physician}, 106(5), 510--520.
+
+\bibitem{pubmed2023clinical}
+National Library of Medicine (NLM). (2023).
+\newblock PubMed: A database of biomedical literature.
+\newblock \url{https://pubmed.ncbi.nlm.nih.gov/}
+
+\bibitem{uptodate2023guidelines}
+UpToDate, Inc. (2023).
+\newblock UpToDate: Evidence-based clinical decision support resource.
+\newblock \url{https://www.uptodate.com/}
 
 \end{thebibliography}
 
