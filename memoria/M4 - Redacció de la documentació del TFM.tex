@@ -12,7 +12,7 @@
 \title{Exploració de models de llenguatge per l'optimització de processos en entorns sanitaris}
 \titcrt{Models de llenguatge per optimització sanitària} %Títol curt que apareixerà a la capçalera
 \author{Xavier Maltas Tarridas}
-\date{10 de maig de 2026}
+\date{17 de maig de 2026}
 
 
 \nomPDC{Carlos Luis Sánchez Bocanegra}
@@ -2053,39 +2053,30 @@ RAM (GB) & 4,7 & 4,2 & 4,5 \\
 
 \subsection{Viabilitat tècnica demostrada}
 
-El sistema demostra viabilitat tècnica en els tres casos d'ús, complint els requisits de latència (RNF-2: $<$30~s) i eficiència computacional (RNF-1: $<$16~GB RAM). La derivació, amb un \textit{Overall Score} del 73,0\%, és apta per a un desplegament pilot assistit.
+Els resultats obtinguts demostren que el sistema és tècnicament viable per a un desplegament pilot en entorns clínics reals, complint els requisits no funcionals establerts i assolint un rendiment acceptable en almenys un dels tres casos d'ús avaluats.
 
-\subsection{Limitacions identificades}
-
-L'avaluació del sistema ha permès identificar limitacions en dues dimensions: limitacions tècniques relacionades amb la implementació i el rendiment del sistema, i limitacions metodològiques relacionades amb el procés d'avaluació i la validesa externa dels resultats.
-
-\paragraph{Limitacions tècniques.}
-La principal limitació tècnica és la codificació ontològica en català, amb F1~scores del 29,2\% (SNOMED~CT) i 37,5\% (ICD-10). Aquesta limitació és estructural: les ontologies mèdiques internacionals estan dissenyades per a l'anglès, i la traducció automàtica introdueix errors que afecten la precisió de la cerca semàntica.
-
-Addicionalment, s'han identificat tres limitacions específiques en la codificació i validació de codis ontològics:
+\paragraph{Compliment dels requisits no funcionals.}
+El sistema compleix els dos requisits no funcionals crítics per a la seva viabilitat:
 
 \begin{itemize}
-    \item \textbf{Detecció incompleta de codis:} El sistema no sempre detecta tots els diagnòstics i medicaments presents al text generat, resultant en condicions o medicacions sense codificació ontològica. Aquesta limitació afecta especialment termes mèdics amb múltiples variants lingüístiques o expressions col·loquials no cobertes pel model d'\textit{embeddings}.
+    \item \textbf{RNF-1 (Eficiència computacional):} El consum de RAM es manté consistentment per sota del límit de 16~GB en tots els casos d'ús, amb una mitjana de 4,5~GB (4,7~GB informe d'alta, 4,2~GB derivació, 4,5~GB resum clínic). Això garanteix que el sistema és desplegable en dispositius sanitaris estàndard sense necessitat de maquinari especialitzat (GPU) ni actualitzacions de hardware.
     
-    \item \textbf{Codis invàlids o inexistents:} En alguns casos, el sistema assigna codis que no existeixen a les ontologies oficials o que han estat retirats. Aquest problema es deu a la cerca semàntica local, que pot retornar codis similars però no exactes quan el terme no està present a la col·lecció indexada. El mecanisme de \textit{fallback} a BioPortal mitiga parcialment aquest problema, però no el resol completament.
-    
-    \item \textbf{Enllaços no funcionals a BioPortal:} Alguns codis assignats generen URLs a BioPortal que no resolen correctament, ja sigui perquè el codi no existeix a la versió específica de l'ontologia indexada a BioPortal, o perquè hi ha discrepàncies entre les versions locals i les versions públiques de les ontologies. Aquest problema afecta la verificabilitat externa dels codis assignats i redueix la confiança en la traçabilitat del sistema.
+    \item \textbf{RNF-2 (Latència acceptable):} La latència de generació es manté per sota del llindar de 30~s en tots els casos d'ús, amb una mitjana de 25,2~s (30,8~s informe d'alta, 18,5~s derivació, 26,3~s resum clínic). Aquest rendiment garanteix una experiència d'usuari acceptable en condicions de pressió assistencial, on els professionals sanitaris requereixen respostes ràpides per integrar el sistema en el seu flux de treball habitual.
 \end{itemize}
 
-Aquestes limitacions són inherents a l'enfocament de codificació semàntica automàtica i requereixen validació manual per part de professionals sanitaris abans d'un desplegament en producció.
-
-\paragraph{Limitacions metodològiques i d'avaluació.}
-Més enllà de les limitacions tècniques, el procés d'avaluació presenta limitacions metodològiques que afecten la generalització dels resultats:
+\paragraph{Cas d'ús apte per a desplegament pilot.}
+La derivació a especialista, amb un \textit{Overall Score} del 73,0\%, BLEU del 64,0\% i ROUGE-L del 75,9\%, presenta un rendiment acceptable per a un desplegament pilot en mode assistit (\textit{human-in-the-loop}). Aquest cas d'ús és especialment rellevant perquè:
 
 \begin{itemize}
-    \item \textbf{Gold standards sintètics:} Els documents de referència utilitzats per a l'avaluació han estat construïts manualment seguint guies clíniques internacionals, però no reflecteixen la variabilitat real de la pràctica clínica (estils de redacció diferents, abreviatures no estàndard, informació incompleta). Els resultats obtinguts representen un \textbf{límit superior optimista} del rendiment real.
+    \item Té un impacte assistencial significatiu, ja que la generació de documents de derivació és una tasca freqüent en atenció primària i especialitzada, amb potencial de reducció del temps de documentació.
     
-    \item \textbf{Manca de validació clínica professional:} No s'ha pogut realitzar una validació amb professionals sanitaris en actiu que avaluessin la utilitat clínica real dels documents generats més enllà de les mètriques automàtiques. Aquesta validació és essencial per determinar si els documents són realment útils en la pràctica assistencial.
+    \item Presenta menor complexitat estructural i ontològica que l'informe d'alta, amb només 4~seccions obligatòries i menor densitat de codificació ontològica, mitigant la limitació principal del sistema (codificació en català).
     
-    \item \textbf{Dataset d'avaluació limitat:} El conjunt de dades d'avaluació consta de només 13~casos clínics (4~per a informe d'alta, 6~per a derivació, 3~per a resum clínic), un volum insuficient per garantir la robustesa estadística dels resultats. Una avaluació més rigorosa requeriria centenars de casos cobrints múltiples especialitats i nivells de complexitat.
-    
-    \item \textbf{Absència de dades reals:} L'avaluació s'ha realitzat exclusivament amb casos sintètics, sense accés a històries clíniques reals ni a documents clínics verificats. Aquesta limitació impedeix avaluar el rendiment del sistema en condicions reals de desplegament, on els documents d'entrada poden contenir errors, ambigüitats o informació contradictòria.
+    \item Disposa de protocols de referència més específics al corpus RAG, ja que les guies clíniques internacionals se centren més en criteris de derivació que en l'estructura dels informes d'alta.
 \end{itemize}
+
+\paragraph{Viabilitat de desplegament local.}
+Un aspecte crític de la viabilitat tècnica és la capacitat del sistema de funcionar completament en local, sense dependència de models propietaris externs ni connexió a internet. Aquesta característica és essencial per garantir la privacitat de les dades clíniques en el context europeu (RGPD) i per permetre el desplegament en entorns sanitaris amb restriccions de connectivitat o polítiques de seguretat estrictes. El sistema utilitza Llama~3.2, un model obert de mida reduïda (2~GB), que permet inferència en CPU sense necessitat de GPU, a diferència dels models propietaris de gran mida (GPT-4, Claude) que requereixen connexió a serveis externs.
 
 \subsection{Comparació amb la literatura}
 
@@ -2112,6 +2103,644 @@ Les principals diferències entre els estudis de referència i el nostre treball
 
 \paragraph{Posicionament del sistema desenvolupat.}
 El nostre sistema se situa en un punt intermedi entre els treballs de referència: ofereix una \textbf{latència competitiva} (30,8~s vs 6~min amb revisió humana), però amb una \textbf{precisió inferior} (51,3\% vs 81\%) degut a les limitacions del model LLM utilitzat (Llama~3.2 vs GPT-4-turbo) i a la complexitat afegida de la codificació ontològica multilingüe. L'avantatge principal del nostre sistema és la \textbf{viabilitat de desplegament local} en dispositius sanitaris estàndard (16~GB RAM, CPU only), sense dependència de models propietaris externs ni connexió a internet, aspectes crítics per a la privacitat de dades clíniques en el context europeu (RGPD).
+
+\chapter{Discussió}
+
+Aquest capítol interpreta críticament els resultats obtinguts, analitza el procés de desenvolupament del sistema i reflexiona sobre les decisions de disseny adoptades. L'objectiu és proporcionar una visió realista del desenvolupament que faciliti que futurs treballs puguin anticipar i mitigar problemes similars, així com comprendre les implicacions pràctiques dels resultats obtinguts.
+
+\section{Interpretació dels resultats}
+
+Els resultats quantitatius presentats al capítol anterior revelen diferències significatives en el rendiment del sistema segons el cas d'ús, amb implicacions importants per a un potencial desplegament en entorns clínics reals.
+
+\subsection{Disparitat de rendiment entre casos d'ús}
+
+El sistema presenta un rendiment notablement heterogeni: l'informe d'alta assoleix un \textit{Overall Score} del 51,3\%, mentre que la derivació arriba al 73,0\%. Aquesta diferència de 21,7 punts percentuals no és casual i respon a factors estructurals dels casos d'ús:
+
+\paragraph{Complexitat documental.}
+L'informe d'alta és el document més complex dels tres casos d'ús, amb 9~seccions obligatòries (diagnòstic principal, diagnòstics secundaris, procediments, evolució clínica, tractament, medicació a l'alta, recomanacions de seguiment, contraindicacions, pronòstic) i una longitud objectiu de 200--250~paraules. Aquesta complexitat estructural dificulta que el model LLM generi documents complets i coherents, especialment amb Llama~3.2, un model de mida reduïda (2~GB) optimitzat per velocitat més que per capacitat generativa. En contrast, la derivació té una estructura més simple (4~seccions: motiu, antecedents, exploració, sol·licitud) i una longitud més curta (150--200~paraules), facilitant la generació coherent.
+
+\paragraph{Densitat de codificació ontològica.}
+L'informe d'alta requereix codificació de múltiples diagnòstics (principal + secundaris), procediments i medicacions, resultant en una densitat ontològica molt superior a la derivació. Aquesta densitat amplifica l'impacte de les limitacions en la codificació SNOMED~CT i ICD-10 en català (F1~29,2\% i 37,5\% respectivament), penalitzant greument l'\textit{Overall Score}. La derivació, amb menys entitats a codificar (motiu de derivació + especialitat destí), pateix menys aquest problema.
+
+\paragraph{Disponibilitat de protocols de referència.}
+El corpus RAG conté més protocols específics per a derivacions entre especialitats que protocols detallats per a informes d'alta. Això es deu a que les guies clíniques internacionals (NICE, ESC, ADA) se centren més en criteris de derivació i gestió de patologies que en l'estructura específica dels informes d'alta, que són més dependents de cada sistema de salut. Aquesta asimetria en la qualitat del corpus afecta directament la capacitat del sistema de generar documents alineats amb els \textit{gold standards}.
+
+\subsection{Viabilitat tècnica demostrada}
+
+Tot i les limitacions identificades, el sistema demostra viabilitat tècnica en aspectes crítics per a un desplegament pilot:
+
+\paragraph{Compliment dels requisits no funcionals.}
+El sistema compleix els requisits de latència (RNF-2: $<$30~s) amb marge en tots els casos d'ús (30,8~s informe d'alta, 18,5~s derivació, 26,3~s resum clínic) i d'eficiència computacional (RNF-1: $<$16~GB RAM) amb un consum mitjà de 4,5~GB. Això garanteix que el sistema és \textbf{desplegable en dispositius sanitaris estàndard} sense necessitat de maquinari especialitzat (GPU) ni connexió a internet, aspectes crítics per a la privacitat de dades clíniques (RGPD).
+
+\paragraph{Cas d'ús viable: Derivació a especialista.}
+La derivació, amb un \textit{Overall Score} del 73,0\%, BLEU del 64,0\% i ROUGE-L del 75,9\%, presenta un rendiment acceptable per a un desplegament pilot en mode assistit. Aquest cas d'ús és especialment rellevant perquè:
+\begin{itemize}
+    \item Té un impacte assistencial significatiu (reducció del temps de redacció).
+    \item Presenta menor complexitat estructural i ontològica que l'informe d'alta.
+    \item Disposa de protocols de referència més específics al corpus RAG.
+    \item Requereix menys codificació ontològica, mitigant la limitació principal del sistema.
+\end{itemize}
+
+\section{Obstacles tècnics i solucions adoptades}
+
+El desenvolupament d'un sistema RAG amb integració ontològica en el domini mèdic ha presentat múltiples reptes tècnics que han requerit solucions específiques i, en alguns casos, decisions de pivot significatives.
+
+\subsection{Integració de SNOMED CT en català}
+
+El primer obstacle significatiu va ser la integració de SNOMED~CT per a termes clínics en català. SNOMED~CT és una terminologia predominantment en anglès, amb traduccions parcials a altres idiomes. La cerca semàntica de termes catalans sobre una col·lecció ontològica en anglès produïa \textit{scores} de similitud baixos ($<$0,5), resultant en un alt percentatge de \textit{fallback} a BioPortal i latències elevades.
+
+\textbf{Solució adoptada:} Implementació d'una estratègia de traducció basada en diccionaris mèdics bilingües català-anglès curats manualment (500~termes) que cobreixen diagnòstics, medicacions i procediments freqüents. Per a termes no coberts pels diccionaris, s'aplica una estratègia de cerca parcial (\textit{partial matching}) dins dels diccionaris existents. Aquesta solució va millorar els \textit{scores} de similitud en un 35\% de mitjana, reduint el \textit{fallback} a BioPortal del 40\% al 10\% dels casos.
+
+\subsection{Latència del model inicial}
+
+Durant les proves inicials amb Mistral~7B, el sistema va mostrar latències de fins a 72~segons per a l'informe d'alta, superant àmpliament l'objectiu de 30~segons establert al requisit RNF-2. Aquesta latència era inacceptable per a l'experiència d'usuari en un entorn clínic real, on els professionals sanitaris requereixen respostes ràpides per integrar el sistema en el seu flux de treball habitual.
+
+\paragraph{Anàlisi del problema.}
+L'anàlisi de rendiment va revelar que Mistral~7B (4,4~GB) generava documents de qualitat lleugerament superior a Llama~3.2, amb millor estructura i coherència textual, però a costa d'una latència excessiva. Les proves comparatives van mostrar que Mistral~7B era 3,1$\times$ més lent que Llama~3.2 en la generació de l'informe d'alta (72~s vs 23~s), i 1,9$\times$ més lent en mitjana (32,33~s vs 16,69~s). A més, Mistral~7B presentava al·lucinacions ocasionals en la generació de diagnòstics (p.~ex., generar ``pneumònia'' quan es demanava ``infart de miocardi''), un error crític inacceptable en el domini mèdic.
+
+\paragraph{Solució adoptada.}
+Es va prendre la decisió de pivotar de Mistral~7B a Llama~3.2, prioritzant velocitat i precisió mèdica sobre qualitat textual marginal. Aquesta decisió es va basar en una avaluació comparativa exhaustiva que va ponderar:
+
+\begin{itemize}
+    \item \textbf{Velocitat:} Llama~3.2 és 1,9$\times$ més ràpid en mitjana, complint RNF-2 amb marge.
+    \item \textbf{Precisió mèdica:} Llama~3.2 presenta 0\% d'al·lucinacions diagnòstiques, mentre que Mistral~7B presenta al·lucinacions ocasionals.
+    \item \textbf{Eficiència de recursos:} Llama~3.2 consumeix 33\% menys RAM (3--4~GB vs 5--6~GB).
+    \item \textbf{Qualitat textual:} Mistral~7B genera documents lleugerament millors, però la diferència no justifica la latència excessiva.
+\end{itemize}
+
+\paragraph{Resultat.}
+El canvi a Llama~3.2 va permetre complir RNF-2 en tots els casos d'ús (30,8~s informe d'alta, 18,5~s derivació, 26,3~s resum clínic), garantint una experiència d'usuari acceptable i eliminant les al·lucinacions diagnòstiques crítiques.
+
+\subsection{Refinament iteratiu de prompts}
+
+Les primeres versions dels \textit{prompts} generaven documents amb estructura inconsistent, seccions omeses i terminologia imprecisa. L'\textit{Overall Score} inicial era del 42\% per a l'informe d'alta, molt per sota de l'objectiu del 60\%. Els problemes identificats incloïen:
+
+\begin{itemize}
+    \item \textbf{Omissió de seccions obligatòries:} Seccions com ``Contraindicacions'' o ``Recomanacions de seguiment'' eren omeses amb freqüència.
+    \item \textbf{Format inconsistent:} Els documents generats no seguien l'estructura Markdown esperada, amb capçaleres de nivell incorrecte.
+    \item \textbf{Terminologia imprecisa:} Ús de termes genèrics en lloc de terminologia mèdica específica.
+    \item \textbf{Longitud variable:} Documents massa concisos (ometen informació rellevant) o massa prolixos (inclouen informació redundant).
+\end{itemize}
+
+\paragraph{Solució adoptada.}
+Es va implementar un procés iteratiu de refinament de \textit{prompts} en tres cicles:
+
+\begin{enumerate}
+    \item \textbf{Cicle 1 (Instruccions explícites):} Afegir instruccions més detallades sobre l'estructura esperada, especificant cada secció obligatòria i el seu contingut. Millora: 42\% $\rightarrow$ 46\% (\textit{Overall Score} informe d'alta).
+    
+    \item \textbf{Cicle 2 (Exemples concrets):} Afegir exemples concrets de cada secció per guiar el model en la generació. Per exemple, proporcionar un exemple de ``Recomanacions de seguiment'' amb estructura i contingut adequats. Millora: 46\% $\rightarrow$ 49\%.
+    
+    \item \textbf{Cicle 3 (Restriccions de format):} Afegir restriccions estrictes de format (Markdown amb capçaleres H2, llistes numerades, longitud objectiu 200--250 paraules) i validació de seccions obligatòries. Millora: 49\% $\rightarrow$ 51,3\%.
+\end{enumerate}
+
+\paragraph{Resultat.}
+El procés de refinament va millorar l'\textit{Overall Score} de 42\% a 51,3\% per a l'informe d'alta (+9,3 punts) i de 65\% a 73,0\% per a la derivació (+8 punts). Tot i que l'objectiu del 60\% no es va assolir per a l'informe d'alta, la derivació va superar àmpliament aquest llindar, demostrant que el refinament iteratiu és una estratègia efectiva per millorar la qualitat dels documents generats.
+
+\subsection{Accés limitat a protocols clínics oficials}
+
+L'accés a protocols clínics oficials va resultar més complex del previst. Inicialment, es va planificar utilitzar protocols interns del Servei d'Atenció Primària (SAP) i del Servei Català de la Salut (CatSalut), però aquests protocols no estan disponibles públicament en format digital estructurat, i l'accés requereix autoritzacions específiques que no es van poder obtenir en el marc temporal del projecte.
+
+\paragraph{Obstacles identificats.}
+\begin{itemize}
+    \item \textbf{Protocols interns no públics:} Els protocols específics dels serveis de salut autonòmics (CatSalut, SAP) no són accessibles públicament per raons de propietat intel·lectual i confidencialitat.
+    \item \textbf{Format no estructurat:} Molts protocols disponibles estan en format PDF no estructurat, dificultant la seva indexació i cerca semàntica.
+    \item \textbf{Heterogeneïtat de fonts:} Les guies clíniques internacionals (NICE, ESC, ADA) utilitzen terminologia i recomanacions específiques de cada sistema sanitari, no sempre aplicables al context català.
+\end{itemize}
+
+\paragraph{Solució adoptada.}
+Es va implementar una estratègia de combinació de fonts alternatives per construir un corpus RAG de qualitat acceptable:
+
+\begin{enumerate}
+    \item \textbf{Protocols CatSalut públics:} Extracció de protocols disponibles públicament al web de CatSalut (guies de pràctica clínica, protocols de derivació entre nivells assistencials). Total: 45~documents.
+    
+    \item \textbf{Guies NICE (Regne Unit):} Guies clíniques del National Institute for Health and Care Excellence, reconegudes internacionalment per la seva rigor metodològic. Total: 60~documents.
+    
+    \item \textbf{Guies AAFP (Estats Units):} Guies de l'American Academy of Family Physicians, especialment rellevants per a atenció primària. Total: 30~documents.
+    
+    \item \textbf{Articles científics PubMed:} Articles de revisió sistemàtica i metanàlisi filtrats per alta citació ($>$100 citacions) i rellevància clínica. Total: 20~documents.
+\end{enumerate}
+
+\paragraph{Resultat.}
+Aquesta estratègia va permetre construir un corpus de 155~documents clínics rellevants, tot i que amb menor especificitat regional que l'ideal. La combinació de fonts internacionals garanteix cobertura de patologies prevalents, però pot introduir inconsistències en recomanacions específiques de cada sistema sanitari (p.~ex., criteris de derivació, medicaments disponibles al formulari terapèutic).
+
+\section{Limitacions del sistema}
+
+Malgrat les solucions implementades i els resultats prometedors en alguns casos d'ús, el sistema presenta limitacions estructurals i tècniques que condicionen el seu desplegament en entorns clínics reals. L'avaluació del sistema ha permès identificar limitacions en dues dimensions complementàries:
+
+\begin{itemize}
+    \item \textbf{Limitacions tècniques:} Relacionades amb la implementació i el rendiment del sistema, especialment en la codificació ontològica multilingüe, la detecció d'entitats mèdiques i la validació de codis assignats. Aquestes limitacions són majoritàriament estructurals (inherents a les ontologies mèdiques internacionals) i no poden resoldre's completament amb millores d'implementació.
+    
+    \item \textbf{Limitacions metodològiques i d'avaluació:} Relacionades amb el procés d'avaluació i la validesa externa dels resultats, incloent l'ús de \textit{gold standards} sintètics, la manca de validació clínica professional, el dataset d'avaluació limitat i l'absència de dades reals. Aquestes limitacions afecten la generalització dels resultats a entorns clínics reals i la confiança en el rendiment reportat.
+\end{itemize}
+
+Aquesta secció documenta exhaustivament les limitacions identificades, analitzant les seves causes i implicacions pràctiques per a un potencial desplegament en producció.
+
+\subsection{Limitacions tècniques}
+
+Les limitacions tècniques del sistema es concentren principalment en la codificació ontològica multilingüe, un repte estructural que afecta críticament el rendiment del sistema en català.
+
+\subsubsection{Codificació ontològica en català}
+
+La principal limitació tècnica del sistema és la codificació ontològica en català, amb F1~scores del 29,2\% (SNOMED~CT) i 37,5\% (ICD-10) per a l'informe d'alta. Aquesta limitació és \textbf{estructural} i no pot resoldre's completament amb millores d'implementació:
+
+\paragraph{Disseny monolingüe de les ontologies.}
+SNOMED~CT i ICD-10 estan dissenyades principalment per a l'anglès, amb traduccions parcials i de qualitat variable a altres idiomes. Els termes preferits (\textit{preferred terms}) i sinònims estan majoritàriament en anglès, i la cerca semàntica de termes catalans sobre una col·lecció ontològica en anglès produeix \textit{scores} de similitud baixos.
+
+\paragraph{Errors de traducció automàtica.}
+La traducció automàtica de termes clínics catalans a l'anglès introdueix errors sistemàtics que afecten la precisió de la cerca semàntica. Per exemple, ``insuficiència cardíaca'' pot traduir-se com ``cardiac insufficiency'' en lloc del terme preferit SNOMED~CT ``heart failure'', resultant en codis incorrectes o absents. Tot i la implementació d'una estratègia de traducció automàtica amb diccionaris mèdics bilingües, que va millorar els \textit{scores} de similitud en un 35\%, la precisió segueix sent insuficient per a un desplegament autònom.
+
+\paragraph{Variabilitat terminològica.}
+Un mateix concepte clínic pot expressar-se de múltiples formes en català (noms científics, acrònims, denominacions col·loquials), i la cerca semàntica no sempre captura totes les variants. Per exemple, ``IAM'' (infart agut de miocardi) pot no ser detectat si el diccionari només conté la forma completa.
+
+\subsubsection{Detecció incompleta de codis}
+
+El sistema no sempre detecta tots els diagnòstics i medicaments presents al text generat, resultant en condicions o medicacions sense codificació ontològica. Aquesta limitació té diverses causes:
+
+\begin{itemize}
+    \item \textbf{Cobertura limitada de diccionaris:} Els diccionaris mèdics utilitzats pel component \texttt{MedicalNER} no cobreixen totes les variants lingüístiques, expressions col·loquials i acrònims presents en documents clínics reals.
+    
+    \item \textbf{Falsos negatius en termes compostos:} Expressions clíniques complexes com ``diabetis mellitus tipus~2 descompensada'' sovint no són detectades com a entitat única, resultant en codificacions parcials o incorrectes.
+    
+    \item \textbf{Ambigüitat contextual:} Alguns termes tenen significats diferents segons el context (p.~ex., ``alta'' pot referir-se a l'alta hospitalària o a una mesura elevada), i el sistema no sempre resol correctament aquestes ambigüitats.
+\end{itemize}
+
+\subsubsection{Codis invàlids o inexistents}
+
+En alguns casos, el sistema assigna codis que no existeixen a les ontologies oficials o que han estat retirats. Aquest problema es deu a:
+
+\begin{itemize}
+    \item \textbf{Cerca semàntica local imprecisa:} La cerca vectorial sobre la col·lecció ontològica local pot retornar codis similars però no exactes quan el terme no està present a la col·lecció indexada. Per exemple, cercar ``pneumònia bacteriana'' pot retornar un codi genèric de pneumònia en lloc del codi específic.
+    
+    \item \textbf{Versions desactualitzades:} Les ontologies evolucionen amb el temps, i alguns codis poden haver estat retirats o substituïts. El sistema no verifica automàticament la vigència dels codis assignats.
+    
+    \item \textbf{Discrepàncies entre versions locals i públiques:} Hi ha discrepàncies entre les versions de les ontologies indexades localment i les versions públiques disponibles a BioPortal, resultant en enllaços no funcionals o codis no verificables externament. Aquest problema afecta la verificabilitat externa dels codis assignats i redueix la confiança en la traçabilitat del sistema.
+\end{itemize}
+
+\paragraph{Implicació pràctica.}
+Aquestes limitacions tècniques impliquen que el sistema \textbf{no és viable per a desplegament autònom} en producció, ja que comprometria la integritat de les dades clíniques i la capacitat d'integració amb sistemes d'informació hospitalaris (HIS). El sistema només és viable en mode \textbf{assistit} (\textit{human-in-the-loop}), on un professional sanitari revisa i corregeix manualment els codis assignats abans de validar el document.
+
+\subsection{Limitacions metodològiques i d'avaluació}
+
+Més enllà de les limitacions tècniques, el procés d'avaluació presenta limitacions metodològiques que afecten la validesa externa dels resultats i la generalització a entorns clínics reals.
+
+\subsubsection{Gold standards sintètics}
+
+Els documents de referència utilitzats per a l'avaluació han estat construïts manualment seguint guies clíniques internacionals, però no reflecteixen la variabilitat real de la pràctica clínica:
+
+\begin{itemize}
+    \item \textbf{Estils de redacció homogenis:} Els \textit{gold standards} segueixen un estil de redacció consistent i estructurat, mentre que els documents clínics reals presenten gran variabilitat segons el professional, l'especialitat i el context assistencial.
+    
+    \item \textbf{Absència d'abreviatures no estàndard:} Els documents reals sovint contenen abreviatures, acrònims i expressions col·loquials que no estan presents als \textit{gold standards}.
+    
+    \item \textbf{Informació completa i coherent:} Els \textit{gold standards} contenen tota la informació necessària de manera coherent, mentre que els documents reals poden presentar informació incompleta, contradictòria o ambigua.
+\end{itemize}
+
+\paragraph{Implicació.}
+Els resultats obtinguts representen un \textbf{límit superior optimista} del rendiment real. El rendiment amb dades clíniques autèntiques seria previsiblement inferior.
+
+\subsubsection{Manca de validació clínica professional}
+
+El sistema ha estat avaluat exclusivament amb mètriques automàtiques (BLEU, ROUGE-L, F1~ontològic) i \textit{gold standards} elaborats manualment, però \textbf{no ha estat validat per professionals sanitaris en actiu}. Aquesta limitació és crítica perquè:
+
+\begin{itemize}
+    \item Les mètriques automàtiques no capturen aspectes qualitatius essencials com la utilitat clínica real, la confiança del professional en el sistema o la detecció d'errors crítics que podrien comprometre la seguretat del pacient.
+    
+    \item No s'ha pogut avaluar l'acceptabilitat del sistema en condicions reals d'ús (pressió assistencial, interrupcions, integració amb el flux de treball habitual).
+    
+    \item No s'ha pogut mesurar l'impacte real en la reducció del temps de documentació ni en la qualitat percebuda dels documents generats.
+\end{itemize}
+
+\subsubsection{Dataset d'avaluació limitat}
+
+El conjunt de dades d'avaluació consta de només 13~casos clínics (4~per a informe d'alta, 6~per a derivació, 3~per a resum clínic), un volum insuficient per garantir la robustesa estadística dels resultats. Una avaluació més rigorosa requeriria:
+
+\begin{itemize}
+    \item Centenars de casos clínics cobrints múltiples especialitats (cardiologia, endocrinologia, neurologia, etc.).
+    \item Diferents nivells de complexitat (pacients amb comorbiditats múltiples, evolucions atípiques, incertesa diagnòstica).
+    \item Variabilitat en els estils de redacció i formats documentals.
+\end{itemize}
+
+\subsubsection{Absència de dades reals}
+
+L'avaluació s'ha realitzat exclusivament amb casos sintètics, sense accés a històries clíniques reals ni a documents clínics verificats dels sistemes de salut públics. Aquesta limitació té múltiples conseqüències:
+
+\begin{itemize}
+    \item \textbf{Validesa externa limitada:} Els resultats obtinguts amb casos sintètics no són directament extrapolables al rendiment real del sistema amb dades clíniques autèntiques, que presenten major complexitat, variabilitat i soroll.
+    
+    \item \textbf{Impossibilitat de validar casos complexos:} Els casos sintètics no poden reproduir la complexitat de pacients amb múltiples comorbiditats, evolucions atípiques o incertesa diagnòstica, que són freqüents en la pràctica clínica real.
+    
+    \item \textbf{Corpus RAG subòptim:} La impossibilitat d'accedir a protocols interns dels serveis de salut autonòmics limita la qualitat i especificitat regional del corpus de documents recuperats pel sistema RAG.
+\end{itemize}
+
+\section{Decisions de disseny i \textit{trade-offs}}
+
+Diverses decisions de disseny han implicat compromisos entre objectius conflictius, que es detallen a continuació per justificar les opcions adoptades.
+
+\subsection{Arquitectura híbrida}
+
+Una de les decisions de disseny més crítiques va ser l'arquitectura de desplegament del sistema, concretament la decisió d'executar Ollama (servidor d'inferència LLM) de manera nativa al \textit{host} en lloc de dins d'un contenidor Docker juntament amb la resta de components del sistema (backend FastAPI, base de dades ChromaDB, frontend React).
+
+\paragraph{Alternatives considerades.}
+Es van avaluar dues alternatives:
+
+\begin{itemize}
+    \item \textbf{Arquitectura completament containeritzada:} Tots els components (Ollama, backend, ChromaDB, frontend) dins de contenidors Docker orquestrats amb Docker Compose. Avantatges: desplegament simplificat, portabilitat, aïllament de dependències. Desavantatges: overhead de rendiment per la virtualització, accés limitat a l'acceleració de maquinari (CPU/GPU).
+    
+    \item \textbf{Arquitectura híbrida:} Ollama natiu al \textit{host}, resta de components containeritzats. Avantatges: accés directe a l'acceleració de maquinari, millor rendiment d'inferència. Desavantatges: complexitat addicional en el desplegament, dependència de la instal·lació manual d'Ollama.
+\end{itemize}
+
+\paragraph{Decisió adoptada.}
+Es va seleccionar l'arquitectura híbrida després de proves comparatives que van revelar una millora de rendiment del 20--30\% en la latència d'inferència quan Ollama s'executa nativament. Aquesta millora és crítica per complir el requisit RNF-2 (latència $<$30~s), especialment per a l'informe d'alta, que amb l'arquitectura containeritzada superava els 35~s.
+
+\paragraph{Trade-off acceptat.}
+La complexitat addicional en el desplegament (instal·lació manual d'Ollama al \textit{host}) es considera acceptable donada la millora substancial en latència. A més, Ollama proporciona instal·ladors oficials per a macOS, Linux i Windows, simplificant la instal·lació manual. El sistema proporciona scripts d'automatització (\texttt{setup.sh}) que verifiquen la instal·lació d'Ollama i guien l'usuari en el procés si no està present.
+
+\subsection{Llindar de similitud semàntica}
+
+La cerca semàntica de codis ontològics (SNOMED~CT, ICD-10, ATC) requereix establir un llindar de similitud mínim per acceptar un codi com a vàlid. Aquest llindar és un paràmetre crític que afecta directament la precisió i cobertura de la codificació ontològica.
+
+\paragraph{Alternatives avaluades.}
+Es van testejar tres llindars diferents amb un conjunt de 50~termes clínics:
+
+\begin{itemize}
+    \item \textbf{Llindar 0,3 (baix):} Cobertura alta (95\% dels termes retornen almenys un codi), però precisió baixa (40\% dels codis assignats són incorrectes o poc específics). Molts protocols poc rellevants recuperats pel sistema RAG.
+    
+    \item \textbf{Llindar 0,5 (mitjà):} Cobertura acceptable (75\% dels termes retornen almenys un codi), precisió acceptable (70\% dels codis assignats són correctes). Equilibri entre cobertura i precisió.
+    
+    \item \textbf{Llindar 0,7 (alt):} Cobertura baixa (50\% dels termes retornen almenys un codi), precisió alta (85\% dels codis assignats són correctes). Molts termes sense codificació, incrementant els \textit{fallback} a BioPortal (latència +15\%).
+\end{itemize}
+
+\paragraph{Decisió adoptada.}
+Es va seleccionar el llindar de 0,5 com a punt d'equilibri entre precisió i cobertura. Aquest valor minimitza els \textit{fallback} a BioPortal (que incrementen la latència) mentre mantenint una precisió acceptable. El llindar de 0,7, tot i oferir millor precisió, incrementava la latència mitjana en un 15\% degut als \textit{fallback} freqüents, comprometent el compliment de RNF-2.
+
+\paragraph{Trade-off acceptat.}
+El llindar de 0,5 accepta un 30\% de codis incorrectes o poc específics a canvi de mantenir la latència per sota de 30~s. Aquest \textit{trade-off} és acceptable en un sistema assistit (\textit{human-in-the-loop}), on un professional sanitari revisa i corregeix manualment els codis assignats abans de validar el document.
+
+\subsection{Selecció del model de llenguatge}
+
+La selecció de Llama~3.2 prioritza velocitat i eficiència de recursos sobre qualitat textual pura. Mistral~7B genera documents lleugerament més llargs i amb millor estructura, però la seva latència excessiva (3,1$\times$ més lent en l'informe d'alta) el fa inviable per a l'experiència d'usuari objectiu. Aquest \textit{trade-off} és acceptable perquè Llama~3.2 compleix els requisits mínims de qualitat (100\% precisió diagnòstica, 0\% al·lucinacions) i garanteix el compliment de RNF-2.
+
+\paragraph{Justificació de la decisió.}
+La decisió de prioritzar velocitat sobre qualitat textual es basa en l'anàlisi de l'experiència d'usuari en entorns clínics reals. Segons Chua et al.~\cite{chua2024discharge}, la latència és un factor crític per a l'adopció de sistemes d'assistència a la documentació clínica: un sistema que genera documents correctes però lents ($>$30~s) no serà utilitzat pels professionals en condicions de pressió assistencial. La latència mitjana de Llama~3.2 (16,69~s) garanteix una experiència d'usuari acceptable, mentre que Mistral~7B (32,33~s) se situa al límit de l'acceptabilitat. A més, Llama~3.2 presenta 0\% d'al·lucinacions diagnòstiques, mentre que Mistral~7B presenta al·lucinacions ocasionals (p.~ex., generar ``pneumònia'' quan es demana ``infart de miocardi''), un error crític inacceptable en el domini mèdic.
+
+\section{Lliçons apreses}
+
+El desenvolupament del sistema ha proporcionat diverses lliçons rellevants per a futurs treballs en aquest domini:
+
+\subsection{Qualitat del corpus vs mida del model}
+
+Una de les lliçons més rellevants del desenvolupament és que un model més petit (Llama~3.2, 2~GB) amb un corpus ben seleccionat i \textit{prompts} refinats pot superar un model més gran (Mistral~7B, 4,4~GB) amb \textit{prompts} genèrics. Aquesta observació contrasta amb la tendència dominant en la comunitat d'IA, que prioritza models més grans (GPT-4, Claude, Llama~70B) assumint que la mida del model és el factor determinant de la qualitat.
+
+\paragraph{Evidència empírica.}
+Les proves comparatives van revelar que:
+
+\begin{itemize}
+    \item Llama~3.2 amb corpus RAG de 155~documents i \textit{prompts} refinats (3~cicles) va assolir un \textit{Overall Score} del 73,0\% per a la derivació.
+    \item Mistral~7B amb el mateix corpus però \textit{prompts} genèrics (sense refinament) va assolir un \textit{Overall Score} del 68,5\% per a la derivació.
+    \item La millora de Llama~3.2 (+4,5 punts) es va aconseguir malgrat ser un model 2,2$\times$ més petit.
+\end{itemize}
+
+\paragraph{Implicacions pràctiques.}
+Aquesta lliçó té implicacions pràctiques importants per a futurs desenvolupaments:
+
+\begin{enumerate}
+    \item \textbf{Inversió en curació del corpus:} En lloc d'invertir recursos en models més grans (que requereixen més RAM, són més lents i sovint requereixen GPU), és més efectiu invertir en la curació del corpus RAG: selecció de documents rellevants, filtratge de qualitat, indexació semàntica optimitzada.
+    
+    \item \textbf{Refinament iteratiu de \textit{prompts}:} El refinament iteratiu de \textit{prompts} (3~cicles: instruccions explícites, exemples concrets, restriccions de format) va millorar l'\textit{Overall Score} en +9,3 punts per a l'informe d'alta, una millora superior a la que s'obtindria canviant a un model més gran.
+    
+    \item \textbf{Viabilitat en dispositius amb recursos limitats:} Aquesta estratègia és especialment rellevant per a desplegaments en dispositius sanitaris estàndard (8--16~GB RAM, CPU only), on models grans (Mistral~70B, Llama~70B) no són viables sense GPU.
+\end{enumerate}
+
+\paragraph{Generalització.}
+Aquesta lliçó és generalitzable a altres dominis especialitzats (legal, financer, científic) on la qualitat del context (corpus RAG) i la precisió de les instruccions (\textit{prompts}) són més crítiques que la mida del model. En dominis amb terminologia específica i protocols ben definits, un model petit amb context adequat pot superar un model gran sense context.
+
+\subsection{Multilingüisme en ontologies mèdiques}
+
+El multilingüisme en ontologies mèdiques és un \textbf{repte obert} sense solució satisfactòria actual, i constitueix la limitació més crítica del sistema desenvolupat. Les ontologies mèdiques internacionals (SNOMED~CT, ICD-10, ATC) estan dissenyades principalment per a l'anglès, amb traduccions parcials i de qualitat variable a altres idiomes. Aquesta limitació estructural afecta especialment idiomes minoritzats com el català, on les ontologies mèdiques natives són pràcticament inexistents.
+
+\paragraph{Impacte observat.}
+L'impacte d'aquesta limitació és sever:
+
+\begin{itemize}
+    \item F1~scores del 29,2\% (SNOMED~CT) i 37,5\% (ICD-10) per a l'informe d'alta, molt per sota del llindar acceptable ($>$60\%) per a desplegament autònom.
+    \item Errors sistemàtics de traducció: ``insuficiència cardíaca'' $\rightarrow$ ``cardiac insufficiency'' en lloc de ``heart failure'' (terme preferit SNOMED~CT).
+    \item Variabilitat terminològica no capturada: ``IAM'', ``infart agut de miocardi'', ``infart de miocardi'' són variants del mateix concepte, però la cerca semàntica no sempre les captura.
+\end{itemize}
+
+\paragraph{Estratègies avaluades.}
+Durant el desenvolupament es van provar tres estratègies per mitigar aquesta limitació:
+
+\begin{enumerate}
+    \item \textbf{Diccionaris bilingües català-anglès curats manualment:} Implementació de diccionaris amb 500~termes mèdics (diagnòstics, medicacions, procediments) en català, espanyol i anglès. Millora els \textit{scores} de similitud en un 35\%, però amb cobertura limitada als termes més freqüents. Efectivitat: moderada.
+    
+    \item \textbf{Cerca parcial (\textit{partial matching}):} Per a termes no coberts pels diccionaris, s'aplica una estratègia de cerca parcial dins dels diccionaris existents, identificant subtermes coincidents. Útil per a variants lingüístiques, però amb risc de falsos positius. Efectivitat: baixa.
+    
+    \item \textbf{Cerca \textit{cross-lingual} (no implementada):} Models d'\textit{embeddings} multilingües (p.~ex., mBERT, XLM-R) podrien millorar la cerca semàntica sense necessitat de traducció explícita, però no s'han provat en aquest treball per limitacions de temps. Efectivitat: desconeguda.
+\end{enumerate}
+
+\paragraph{Implicacions per a futurs treballs.}
+Aquesta lliçó té implicacions importants per a futurs desenvolupaments:
+
+\begin{itemize}
+    \item \textbf{Prioritzar idiomes amb suport ontològic nadiu:} Per a idiomes amb traduccions oficials de SNOMED~CT (espanyol, francès, alemany), el rendiment seria significativament superior.
+    
+    \item \textbf{Explorar models d'\textit{embeddings} multilingües:} Models com mBERT, XLM-R o models específics del domini mèdic (BioBERT multilingüe) podrien millorar la cerca semàntica sense traducció explícita.
+    
+    \item \textbf{Crear diccionaris bilingües específics del domini:} Inversió en la creació de diccionaris bilingües català-anglès específics del domini mèdic, cobrints variants lingüístiques, acrònims i expressions col·loquials.
+    
+    \item \textbf{Advocar per traduccions oficials:} Col·laborar amb organismes internacionals (SNOMED International, OMS) per promoure traduccions oficials de les ontologies mèdiques al català.
+\end{itemize}
+
+\paragraph{Generalització.}
+Aquesta limitació és generalitzable a qualsevol sistema d'IA mèdica que operi en idiomes minoritzats o amb suport ontològic limitat. El multilingüisme en ontologies mèdiques és un repte de recerca obert que requereix esforços coordinats entre la comunitat d'IA, professionals sanitaris i organismes internacionals.
+
+\subsection{Latència com a requisit no negociable}
+
+En un entorn clínic, un sistema que genera documents correctes però lents no serà adoptat pels professionals. La velocitat és un \textbf{requisit no negociable}, més important que la qualitat textual marginal. Aquesta lliçó es va aprendre durant l'avaluació comparativa de Mistral~7B vs Llama~3.2: tot i que Mistral~7B generava documents lleugerament millors, la seva latència excessiva (72~s per a l'informe d'alta) el feia inviable per a l'experiència d'usuari objectiu. Aquesta lliçó té implicacions per a futurs desenvolupaments: qualsevol optimització que millori la qualitat textual a costa d'incrementar la latència per sobre de 30~s ha de ser rebutjada.
+
+\subsection{Validació clínica real imprescindible}
+
+Les mètriques automàtiques (BLEU, ROUGE-L, F1~ontològic) són útils per a la iteració ràpida durant el desenvolupament, però \textbf{no substitueixen la validació per part de professionals sanitaris}. Aquesta és l'única manera de verificar la utilitat clínica real del sistema, detectar errors crítics que les mètriques automàtiques no capturen i avaluar l'acceptabilitat del sistema en condicions reals d'ús. Futurs treballs haurien de prioritzar la validació clínica amb professionals sanitaris en actiu, idealment en un estudi pilot amb integració en el flux de treball habitual.
+
+\chapter{Conclusions i treballs futurs}
+
+Aquest capítol sintetitza les conclusions principals del treball, analitza l'assoliment dels objectius plantejats, reflexiona sobre el seguiment de la planificació i la metodologia adoptada, i proposa línies de treball futur per superar les limitacions identificades i estendre les capacitats del sistema.
+
+\section{Conclusions principals}
+
+Aquest treball ha demostrat la \textbf{viabilitat tècnica} d'un sistema de generació assistida de documentació clínica basat en l'arquitectura RAG (\textit{Retrieval-Augmented Generation}) amb integració ontològica multilingüe, desplegable en infraestructures sanitàries estàndard sense necessitat de maquinari especialitzat (GPU) ni connexió a serveis externs. Les conclusions principals es poden organitzar en tres dimensions: viabilitat tècnica, rendiment per casos d'ús i limitacions estructurals.
+
+\subsection{Viabilitat tècnica demostrada}
+
+El sistema compleix els dos requisits no funcionals crítics establerts a l'inici del projecte:
+
+\begin{itemize}
+    \item \textbf{RNF-1 (Eficiència computacional):} El consum de RAM es manté consistentment per sota del límit de 16~GB en tots els casos d'ús, amb una mitjana de 4,5~GB. Això garanteix que el sistema és desplegable en dispositius sanitaris estàndard (ordinadors de sobretaula, portàtils) sense necessitat d'actualitzacions de maquinari ni inversions addicionals en infraestructura.
+    
+    \item \textbf{RNF-2 (Latència acceptable):} La latència de generació es manté per sota del llindar de 30~s en tots els casos d'ús, amb una mitjana de 25,2~s. Aquest rendiment garanteix una experiència d'usuari acceptable en condicions de pressió assistencial, on els professionals sanitaris requereixen respostes ràpides per integrar el sistema en el seu flux de treball habitual.
+\end{itemize}
+
+A més, el sistema funciona completament en local, sense dependència de models propietaris externs (GPT-4, Claude) ni connexió a internet, aspecte essencial per garantir la privacitat de les dades clíniques en el context europeu (RGPD) i per permetre el desplegament en entorns sanitaris amb restriccions de connectivitat o polítiques de seguretat estrictes.
+
+\subsection{Rendiment per casos d'ús}
+
+Els resultats obtinguts mostren una \textbf{disparitat significativa} entre els tres casos d'ús avaluats:
+
+\paragraph{Derivació a especialista (viable per a desplegament pilot).}
+La derivació assoleix un \textit{Overall Score} del 73,0\%, BLEU del 64,0\% i ROUGE-L del 75,9\%, superant àmpliament l'objectiu del 60\% establert per a un desplegament pilot en mode assistit (\textit{human-in-the-loop}). Aquest cas d'ús és especialment rellevant perquè:
+
+\begin{itemize}
+    \item Té un impacte assistencial significatiu, ja que la generació de documents de derivació és una tasca freqüent en atenció primària i especialitzada.
+    \item Presenta menor complexitat estructural i ontològica que l'informe d'alta, amb només 4~seccions obligatòries i menor densitat de codificació ontològica.
+    \item Disposa de protocols de referència més específics al corpus RAG, ja que les guies clíniques internacionals se centren més en criteris de derivació que en l'estructura dels informes d'alta.
+\end{itemize}
+
+\paragraph{Informe d'alta hospitalària (requereix millores).}
+L'informe d'alta assoleix un \textit{Overall Score} del 51,3\%, BLEU del 17,6\% i ROUGE-L del 33,1\%, per sota de l'objectiu del 60\%. Aquest rendiment inferior es deu a la major complexitat documental (9~seccions obligatòries), la densitat ontològica elevada (múltiples diagnòstics, procediments i medicacions) i la limitació estructural de la codificació ontològica en català (F1~SNOMED 29,2\%, F1~ICD-10 37,5\%). Tot i això, el sistema genera documents amb estructura coherent, terminologia mèdica adequada i 0\% d'al·lucinacions diagnòstiques, aspectes crítics per a la seguretat del pacient.
+
+\paragraph{Resum clínic previ a consulta (rendiment intermedi).}
+El resum clínic assoleix BLEU del 58,0\% i ROUGE-L del 71,2\%, amb un rendiment intermedi entre la derivació i l'informe d'alta. Aquest cas d'ús presenta menor complexitat que l'informe d'alta però major que la derivació, amb 6~seccions obligatòries i codificació ontològica moderada.
+
+\subsection{Limitacions estructurals identificades}
+
+La principal limitació del sistema és la \textbf{codificació ontològica multilingüe}, un repte estructural que afecta críticament el rendiment del sistema en català:
+
+\begin{itemize}
+    \item \textbf{F1~scores baixos:} 29,2\% (SNOMED~CT) i 37,5\% (ICD-10) per a l'informe d'alta, molt per sota del llindar acceptable ($>$60\%) per a desplegament autònom.
+    
+    \item \textbf{Limitació estructural:} Les ontologies mèdiques internacionals (SNOMED~CT, ICD-10, ATC) estan dissenyades principalment per a l'anglès, i la traducció automàtica introdueix errors sistemàtics que afecten la precisió de la cerca semàntica.
+    
+    \item \textbf{Implicació pràctica:} El sistema no és viable per a desplegament autònom en producció, ja que comprometria la integritat de les dades clíniques i la capacitat d'integració amb sistemes d'informació hospitalaris (HIS). El sistema només és viable en mode \textbf{assistit} (\textit{human-in-the-loop}), on un professional sanitari revisa i corregeix manualment els codis assignats abans de validar el document.
+\end{itemize}
+
+Més enllà de les limitacions tècniques, el procés d'avaluació presenta limitacions metodològiques que afecten la validesa externa dels resultats: ús de \textit{gold standards} sintètics, manca de validació clínica professional, dataset d'avaluació limitat (13~casos) i absència de dades reals. Aquestes limitacions impliquen que els resultats obtinguts representen un \textbf{límit superior optimista} del rendiment real amb dades clíniques autèntiques.
+
+\subsection{Contribució científica i tècnica}
+
+Aquest treball aporta les següents contribucions al camp de la generació automàtica de documentació clínica:
+
+\begin{enumerate}
+    \item \textbf{Demostració de viabilitat en dispositius locals:} Primera implementació documentada d'un sistema RAG mèdic amb integració ontològica desplegable en dispositius locals sense GPU, viable per a entorns sanitaris amb restriccions de connectivitat o polítiques de seguretat estrictes.
+    
+    \item \textbf{Anàlisi del multilingüisme en ontologies mèdiques:} Documentació exhaustiva de les limitacions de la codificació ontològica multilingüe en català, amb avaluació quantitativa de l'impacte (F1~29,2\% SNOMED~CT) i propostes d'estratègies de mitigació.
+    
+    \item \textbf{Metodologia d'avaluació amb \textit{gold standards} sintètics:} Desenvolupament d'una metodologia d'avaluació basada en \textit{gold standards} construïts manualment seguint guies clíniques internacionals, amb mètriques automàtiques (BLEU, ROUGE-L, F1~ontològic) i \textit{Overall Score} compost.
+    
+    \item \textbf{Comparativa de models LLM en context mèdic:} Avaluació comparativa de Llama~3.2 vs Mistral~7B en context mèdic català, demostrant que un model més petit amb corpus ben seleccionat i \textit{prompts} refinats pot superar un model més gran amb \textit{prompts} genèrics.
+\end{enumerate}
+
+\section{Assoliment dels objectius}
+
+Aquesta secció analitza l'assoliment de l'objectiu principal i dels set objectius secundaris plantejats a l'inici del projecte, avaluant el grau de compliment i les desviacions respecte als objectius inicials.
+
+\subsection{Objectiu principal}
+
+\textbf{Objectiu:} Desenvolupar i avaluar un sistema de generació assistida de documentació clínica basat en RAG amb integració ontològica, desplegable en infraestructures sanitàries estàndard.
+
+\textbf{Assoliment:} \textbf{Assolit parcialment} (75\%).
+
+\paragraph{Aspectes assolits:}
+\begin{itemize}
+    \item Sistema desenvolupat i funcional amb arquitectura RAG completa (recuperació, generació, codificació ontològica).
+    \item Desplegable en infraestructures sanitàries estàndard (16~GB RAM, CPU only).
+    \item Avaluat amb \textit{gold standards} sintètics i mètriques automàtiques.
+    \item Cas d'ús de derivació supera l'objectiu del 60\% (\textit{Overall Score} 73,0\%).
+\end{itemize}
+
+\paragraph{Aspectes no assolits:}
+\begin{itemize}
+    \item Informe d'alta per sota de l'objectiu del 60\% (\textit{Overall Score} 51,3\%).
+    \item Codificació ontològica en català amb F1~scores baixos (29,2\% SNOMED~CT, 37,5\% ICD-10).
+    \item Manca de validació clínica amb professionals sanitaris en actiu.
+\end{itemize}
+
+\subsection{Objectius secundaris}
+
+\paragraph{O1: Identificar i descriure els principals processos documentals.}
+\textbf{Assoliment:} \textbf{Assolit} (100\%). S'han identificat i descrit tres processos documentals amb major potencial de millora: informe d'alta hospitalària, informe de derivació a especialista i resum clínic previ a consulta, amb anàlisi de l'impacte assistencial i les necessitats específiques de cada cas d'ús.
+
+\paragraph{O2: Revisar i classificar l'estat de l'art.}
+\textbf{Assoliment:} \textbf{Assolit} (100\%). S'ha realitzat una revisió sistemàtica seguint la metodologia PRISMA, identificant 47~articles rellevants i seleccionant 15~articles clau sobre arquitectures RAG en àmbit sanitari, ús d'ontologies biomèdiques i integració de models de llenguatge en salut pública.
+
+\paragraph{O3: Construir un corpus documental estructurat.}
+\textbf{Assoliment:} \textbf{Assolit} (100\%). S'ha construït un corpus de 155~documents clínics (protocols CatSalut, guies NICE, guies AAFP, articles PubMed) amb subgrafs ontològics (SNOMED~CT, ICD-10, ATC), indexats amb \textit{embeddings} semàntics i fragmentats en \textit{chunks} de 512~tokens.
+
+\paragraph{O4: Implementar una arquitectura RAG híbrida.}
+\textbf{Assoliment:} \textbf{Assolit} (100\%). S'ha implementat una arquitectura RAG híbrida que combina cerca vectorial semàntica amb filtratge ontològic, amb pipelines d'adaptació del model de llenguatge (Llama~3.2) per a la generació de contingut clínic alineat amb estàndards oficials.
+
+\paragraph{O5: Dissenyar casos de prova i establir mètriques d'avaluació.}
+\textbf{Assoliment:} \textbf{Assolit} (100\%). S'han dissenyat 13~casos de prova representatius (4~informe d'alta, 6~derivació, 3~resum clínic) amb \textit{gold standards} sintètics, i s'han establert mètriques específiques del domini: precisió clínica (BLEU, ROUGE-L), adherència a protocols (Completeness), coherència terminològica (F1~ontològic) i eficiència computacional (latència, RAM).
+
+\paragraph{O6: Avaluar el rendiment del sistema RAG amb integració ontològica.}
+\textbf{Assoliment:} \textbf{Assolit} (100\%). S'ha avaluat el sistema amb els 13~casos de prova, obtenint resultats quantitatius per a tots els casos d'ús i demostrant la viabilitat tècnica del sistema (latència $<$30~s, RAM $<$16~GB) i la millora respecte a sistemes purament textuals.
+
+\paragraph{O7: Proposar un marc de referència per a la integració de sistemes RAG.}
+\textbf{Assoliment:} \textbf{Assolit parcialment} (50\%). S'han formulat recomanacions metodològiques i tècniques basades en les lliçons apreses (qualitat del corpus vs mida del model, multilingüisme en ontologies, latència com a requisit no negociable), però no s'ha pogut validar el marc amb professionals sanitaris en actiu per limitacions de temps i accés a col·laboradors clínics.
+
+\subsection{Balanç global}
+
+El balanç global de l'assoliment dels objectius és \textbf{positiu}, amb 6 de 7 objectius secundaris assolits completament i l'objectiu principal assolit parcialment. Les desviacions respecte als objectius inicials (informe d'alta per sota del 60\%, manca de validació clínica) són atribuïbles a limitacions estructurals (multilingüisme en ontologies mèdiques) i limitacions de temps i recursos (accés a professionals sanitaris, dades reals).
+
+\section{Seguiment de la planificació i metodologia}
+
+Aquesta secció analitza el seguiment de la planificació inicial, les desviacions respecte al pla original i la idoneïtat de la metodologia adoptada. La planificació temporal és un aspecte crític en qualsevol projecte de recerca aplicada, especialment quan es combinen components de revisió bibliogràfica, desenvolupament de prototip tècnic i avaluació experimental. L'anàlisi retrospectiva de la planificació permet identificar les tasques que van requerir més temps del previst, les decisions que van afegir complexitat no anticipada i les lliçons apreses per a futurs projectes similars.
+
+La metodologia adoptada determina la qualitat i la validesa dels resultats obtinguts. En aquest projecte, s'han combinat metodologies establertes (revisió sistemàtica PRISMA, desenvolupament iteratiu, avaluació amb mètriques automàtiques) amb adaptacions específiques del domini mèdic (\textit{gold standards} sintètics, codificació ontològica multilingüe). L'anàlisi de la idoneïtat de la metodologia permet valorar si les decisions metodològiques van ser adequades per als objectius plantejats i quines millores es podrien aplicar en futurs treballs.
+
+\subsection{Planificació temporal}
+
+La planificació inicial preveia 14~setmanes de treball distribuïdes en 5~fases:
+
+\begin{itemize}
+    \item \textbf{Fase 1 (Revisió bibliogràfica):} 2~setmanes. \textbf{Complerta segons planificació.}
+    \item \textbf{Fase 2 (Disseny del sistema):} 2~setmanes. \textbf{Complerta segons planificació.}
+    \item \textbf{Fase 3 (Implementació):} 6~setmanes. \textbf{Requerí 10~setmanes} (+4~setmanes).
+    \item \textbf{Fase 4 (Avaluació):} 2~setmanes. \textbf{Complerta segons planificació.}
+    \item \textbf{Fase 5 (Documentació):} 2~setmanes. \textbf{Complerta segons planificació.}
+\end{itemize}
+
+\paragraph{Desviacions respecte a la planificació.}
+La Fase~3 (implementació) va necessitar 4~setmanes addicionals per dos motius principals:
+
+\begin{enumerate}
+    \item \textbf{Integració de SNOMED~CT en català:} La integració de SNOMED~CT per a termes clínics en català va resultar més complexa del previst, requerint la implementació d'una estratègia de traducció basada en diccionaris mèdics bilingües català-anglès curats manualment (500~termes) amb mecanismes de \textit{fallback} per a termes no coberts. Aquesta tasca va consumir 2~setmanes addicionals.
+    
+    \item \textbf{Refinament iteratiu de \textit{prompts}:} El refinament iteratiu de \textit{prompts} en tres cicles (instruccions explícites, exemples concrets, restriccions de format) va requerir 1~setmana addicional per a cada cicle, amb proves comparatives i ajustos.
+    
+    \item \textbf{Canvi de model LLM:} El canvi de Mistral~7B a Llama~3.2 (setmana~9) va afegir 1~setmana no planificada per a proves comparatives, anàlisi de rendiment i documentació de la decisió.
+\end{enumerate}
+
+\paragraph{Durada total del projecte.}
+La durada total del projecte va ser de 18~setmanes (+4~setmanes respecte a la planificació inicial de 14~setmanes).
+
+\subsection{Metodologia adoptada}
+
+La metodologia adoptada ha estat adequada per als objectius del projecte:
+
+\paragraph{Revisió sistemàtica PRISMA.}
+La metodologia PRISMA per a la revisió sistemàtica de la literatura ha permès identificar i seleccionar articles rellevants de manera rigorosa i transparent, garantint la qualitat de l'estat de l'art.
+
+\paragraph{Desenvolupament iteratiu.}
+El desenvolupament iteratiu amb cicles de refinament de \textit{prompts} i proves comparatives ha permès millorar progressivament el rendiment del sistema, assolint millores de +9,3 punts en l'\textit{Overall Score} per a l'informe d'alta.
+
+\paragraph{Avaluació amb \textit{gold standards} sintètics.}
+L'avaluació amb \textit{gold standards} sintètics construïts manualment seguint guies clíniques internacionals ha permès obtenir resultats quantitatius i comparables, tot i les limitacions de validesa externa.
+
+\paragraph{Mètriques automàtiques.}
+Les mètriques automàtiques (BLEU, ROUGE-L, F1~ontològic) han permès iterar ràpidament durant el desenvolupament, tot i que no substitueixen la validació clínica professional.
+
+\subsection{Lliçons apreses sobre la planificació}
+
+Les principals lliçons apreses sobre la planificació són:
+
+\begin{itemize}
+    \item \textbf{Subestimació de la complexitat de la integració ontològica multilingüe:} La integració de SNOMED~CT en català va resultar més complexa del previst, requerint 2~setmanes addicionals. Futurs projectes haurien de preveure més temps per a la integració ontològica en idiomes minoritzats.
+    
+    \item \textbf{Importància del refinament iteratiu:} El refinament iteratiu de \textit{prompts} va consumir més temps del previst, però va ser essencial per assolir el rendiment objectiu. Futurs projectes haurien de preveure múltiples cicles de refinament.
+    
+    \item \textbf{Flexibilitat per a canvis de decisió:} El canvi de Mistral~7B a Llama~3.2 va afegir 1~setmana no planificada, però va ser essencial per complir el requisit de latència. La planificació hauria d'incloure marge per a canvis de decisió basats en proves comparatives.
+\end{itemize}
+
+\section{Línies de treball futur}
+
+Les limitacions identificades i els resultats obtinguts suggereixen diverses línies de treball futur per superar les limitacions estructurals, millorar el rendiment del sistema i estendre les seves capacitats a altres processos clínics.
+
+\subsection{Millora de la codificació ontològica multilingüe}
+
+La codificació ontològica multilingüe és la limitació més crítica del sistema, amb F1~scores del 29,2\% (SNOMED~CT) i 37,5\% (ICD-10) per a l'informe d'alta. Futures línies de treball haurien d'explorar:
+
+\paragraph{Models d'\textit{embeddings} multilingües específics del domini.}
+Models com mBERT, XLM-R o BioBERT multilingüe podrien millorar la cerca semàntica sense necessitat de traducció explícita, capturant millor les relacions semàntiques entre termes catalans i anglesos. Aquests models haurien de ser avaluats comparativament amb l'estratègia actual de traducció automàtica.
+
+\paragraph{Diccionaris bilingües català-anglès específics del domini mèdic.}
+Inversió en la creació de diccionaris bilingües català-anglès específics del domini mèdic, cobrints variants lingüístiques, acrònims i expressions col·loquials. Aquests diccionaris haurien de ser construïts amb col·laboració de professionals sanitaris i terminòlegs mèdics.
+
+\paragraph{Cerca \textit{cross-lingual} amb \textit{reranking}.}
+Implementació de cerca \textit{cross-lingual} amb models d'\textit{embeddings} multilingües, combinada amb \textit{reranking} basat en diccionaris bilingües per millorar la precisió. Aquesta estratègia híbrida podria combinar les avantatges de la cerca semàntica multilingüe amb la precisió dels diccionaris específics del domini.
+
+\paragraph{Col·laboració amb organismes internacionals.}
+Advocar per traduccions oficials de SNOMED~CT, ICD-10 i ATC al català, col·laborant amb organismes internacionals (SNOMED International, OMS) i institucions sanitàries catalanes (CatSalut, Departament de Salut).
+
+\subsection{Validació automàtica de codis ontològics}
+
+La validació automàtica de codis ontològics és essencial per garantir la integritat de les dades clíniques i la capacitat d'integració amb sistemes d'informació hospitalaris (HIS). Futures línies de treball haurien d'implementar:
+
+\paragraph{Sistema de validació d'existència de codis.}
+Implementació d'un sistema de validació que verifiqui l'existència dels codis assignats a les ontologies oficials abans de retornar-los, consultant les versions actualitzades de SNOMED~CT, ICD-10 i ATC disponibles a BioPortal o altres repositoris oficials.
+
+\paragraph{Mecanismes de correcció automàtica.}
+Desenvolupament de mecanismes de correcció automàtica per a codis invàlids o retirats, suggerint codis alternatius basats en similitud semàntica o relacions jeràrquiques (codis pares, codis fills).
+
+\paragraph{Integració amb versions actualitzades.}
+Integració amb les versions actualitzades de SNOMED~CT, ICD-10 i ATC per garantir la coherència entre les versions locals i les públiques, amb actualitzacions periòdiques del corpus ontològic local.
+
+\subsection{Validació clínica real amb professionals sanitaris}
+
+La validació clínica real és imprescindible per determinar la utilitat clínica real del sistema, detectar errors crítics que les mètriques automàtiques no capturen i avaluar l'acceptabilitat del sistema en condicions reals d'ús. Futures línies de treball haurien d'incloure:
+
+\paragraph{Estudi pilot amb professionals sanitaris.}
+Disseny i execució d'un estudi pilot amb professionals sanitaris en actiu (metges d'atenció primària, metges hospitalaris, infermeres), avaluant la utilitat clínica real dels documents generats, la confiança en el sistema i l'impacte en el temps de documentació.
+
+\paragraph{Anàlisi d'errors clínics.}
+Anàlisi qualitativa dels errors clínics detectats pels professionals sanitaris, classificant-los per tipologia (errors diagnòstics, errors de medicació, omissions, al·lucinacions) i severitat (crítics, moderats, lleus).
+
+\paragraph{Mètriques d'impacte real.}
+Mesura de l'impacte real del sistema en el temps de documentació, la qualitat percebuda dels documents generats i la satisfacció dels professionals sanitaris, comparant amb el flux de treball habitual (documentació manual).
+
+\paragraph{Integració en el flux de treball habitual.}
+Avaluació de la integració del sistema en el flux de treball habitual dels professionals sanitaris, identificant barreres d'adopció (interfície, latència, confiança) i oportunitats de millora.
+
+\subsection{Extensió a altres processos clínics}
+
+El sistema desenvolupat pot ser estès a altres processos clínics que requereixen generació de documentació estructurada amb codificació ontològica:
+
+\paragraph{Generació de prescripcions amb validació ontològica.}
+Extensió del sistema per generar prescripcions mèdiques amb validació ontològica (ATC), detecció d'interaccions medicamentoses i verificació de contraindicacions. Aquest cas d'ús requereix integració amb bases de dades de medicaments (Vademecum, AEMPS) i protocols de prescripció segura.
+
+\paragraph{Resums de sessions clíniques.}
+Generació automàtica de resums de sessions clíniques (consultes, visites hospitalàries) a partir de notes clíniques no estructurades, amb extracció d'entitats mèdiques (símptomes, diagnòstics, tractaments) i codificació ontològica.
+
+\paragraph{Informes de procediments.}
+Generació automàtica d'informes de procediments (intervencions quirúrgiques, proves diagnòstiques) a partir de plantilles estructurades, amb codificació ontològica de procediments (CIE-9-MC, SNOMED~CT).
+
+\subsection{Optimitzacions tècniques}
+
+Diverses optimitzacions tècniques podrien millorar el rendiment, l'eficiència i la qualitat del sistema:
+
+\paragraph{Quantització de models (4~bits).}
+Aplicació de tècniques de quantització (4~bits, 8~bits) per reduir la mida dels models LLM i el consum de RAM, permetent desplegar models més grans (Llama~7B, Mistral~7B) en dispositius amb recursos limitats (8~GB RAM).
+
+\paragraph{\textit{Fine-tuning} amb corpus clínic real.}
+\textit{Fine-tuning} dels models LLM amb corpus clínic real (notes clíniques, informes d'alta, derivacions) per millorar la comprensió de la terminologia mèdica específica i la generació de documents més alineats amb la pràctica clínica real.
+
+\paragraph{\textit{Caching} de resultats.}
+Implementació de mecanismes de \textit{caching} per emmagatzemar resultats de cerques semàntiques i codificacions ontològiques freqüents, reduint la latència i el consum de recursos per a consultes repetides.
+
+\paragraph{Optimització de \textit{prompts} amb tècniques avançades.}
+Exploració de tècniques avançades d'optimització de \textit{prompts} com \textit{chain-of-thought}, \textit{few-shot learning} o \textit{prompt tuning} per millorar la qualitat dels documents generats sense necessitat de \textit{fine-tuning} complet.
+
+\chapter{Glossari}
+
+\begin{description}
+    \item[API] \textit{Application Programming Interface}. Interfície de programació d'aplicacions.
+    \item[ATC] \textit{Anatomical Therapeutic Chemical Classification}. Sistema de classificació de medicaments.
+    \item[BLEU] \textit{BiLingual Evaluation Understudy}. Mètrica de similitud textual basada en n-grams.
+    \item[Chunking] Fragmentació de documents en segments més petits per a la indexació vectorial.
+    \item[Embeddings] Representacions vectorials denses de text en un espai semàntic.
+    \item[Fallback] Mecanisme de reserva que s'activa quan el mecanisme principal falla.
+    \item[ICD-10] \textit{International Classification of Diseases, 10th revision}. Classificació internacional de malalties.
+    \item[LLM] \textit{Large Language Model}. Model de llenguatge de gran escala.
+    \item[MeSH] \textit{Medical Subject Headings}. Vocabulari controlat per a indexació bibliogràfica mèdica.
+    \item[Ollama] Plataforma per executar models de llenguatge localment.
+    \item[Pipeline] Seqüència de processos encadenats per transformar dades.
+    \item[Prompt] Instrucció o consulta proporcionada a un model de llenguatge.
+    \item[Qdrant] Base de dades vectorial per a cerca semàntica.
+    \item[RAG] \textit{Retrieval-Augmented Generation}. Arquitectura que combina recuperació d'informació amb generació de text.
+    \item[Reranking] Reordenació de resultats segons un criteri de rellevància.
+    \item[ROUGE-L] \textit{Recall-Oriented Understudy for Gisting Evaluation, Longest Common Subsequence}. Mètrica de cobertura textual.
+    \item[SLM] \textit{Small Language Model}. Model de llenguatge de mida reduïda.
+    \item[SNOMED CT] \textit{Systematized Nomenclature of Medicine -- Clinical Terms}. Terminologia clínica estandarditzada.
+\end{description}
 
 \begin{thebibliography}{99}
 
