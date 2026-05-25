@@ -39,12 +39,12 @@
 % Resum en l'idioma
 
 \abstractidioma{
-Els professionals sanitaris dediquen una part significativa de la seva jornada laboral a tasques administratives i documentals, reduint el temps disponible per a l'atenció directa al pacient. Aquest projecte proposa un sistema d'assistència a la documentació clínica basat en intel·ligència artificial generativa que combina models de llenguatge amb una arquitectura de Retrieval-Augmented Generation (RAG) i ontologies semàntiques mèdiques. L'objectiu és generar esborranys d'informes clínics de manera assistida, reduint el temps dedicat a la documentació i garantint la coherència terminològica i l'alineació amb els protocols oficials. El sistema s'ha avaluat en tres casos d'ús clínics: informes d'alta hospitalària, informes de derivació i resums clínics previs a consulta. Els resultats demostren la viabilitat tècnica del sistema en infraestructures sanitàries públiques sense maquinari especialitzat, amb latències acceptables i diagnòstics precisos. El model Llama 3.2 ha estat seleccionat com a model per defecte per la seva velocitat (1.9x més ràpid que Mistral 7B) i eficiència de recursos (3-4 GB RAM).
+Els professionals sanitaris dediquen una part significativa de la seva jornada laboral a tasques administratives i documentals, reduint el temps disponible per a l'atenció directa al pacient. Aquest projecte proposa un sistema d'assistència a la documentació clínica basat en intel·ligència artificial generativa que combina models de llenguatge amb una arquitectura de Retrieval-Augmented Generation (RAG) i ontologies semàntiques mèdiques. L'objectiu és generar esborranys d'informes clínics de manera assistida, reduint el temps dedicat a la documentació i garantint la coherència terminològica i l'alineació amb els protocols oficials. El sistema s'ha avaluat en tres casos d'ús clínics: informes d'alta hospitalària, informes de derivació i resums clínics previs a consulta. Els resultats mostren un rendiment heterogeni: l'informe de derivació assoleix un \textit{Overall Score} del 73\% (apte per a desplegament pilot assistit), el resum clínic mostra resultats prometedors amb mètriques textuals del 58--71\%, mentre que l'informe d'alta obté un 51,3\% (per sota de l'objectiu del 60\%) degut principalment a limitacions en la codificació ontològica multilingüe. El sistema compleix els requisits d'eficiència computacional (<16~GB RAM, mitjana 4,5~GB) i latència acceptable (<30~s en la majoria de casos), demostrant viabilitat tècnica en infraestructures sanitàries públiques sense maquinari especialitzat. El model Llama~3.2 ha estat seleccionat per la seva velocitat (1,9$\times$ més ràpid que Mistral~7B), eficiència de recursos i absència d'al·lucinacions diagnòstiques.
 }
 
 % Resum en anglès.
 \abstractenglish{
-Healthcare professionals spend a significant portion of their working day on administrative and documentary tasks, reducing time available for direct patient care. This project proposes an AI-powered clinical documentation assistance system that combines language models with a Retrieval-Augmented Generation (RAG) architecture and medical semantic ontologies. The goal is to generate clinical report drafts in an assisted manner, reducing documentation time while ensuring terminological consistency and alignment with official protocols. The system has been evaluated on three clinical use cases: hospital discharge summaries, referral documents, and pre-consultation clinical summaries. Results demonstrate the technical viability of the system in public healthcare infrastructures without specialized hardware, with acceptable latencies and accurate diagnoses. The Llama 3.2 model has been selected as the default model for its speed (1.9x faster than Mistral 7B) and resource efficiency (3-4 GB RAM).
+Healthcare professionals spend a significant portion of their working day on administrative and documentary tasks, reducing time available for direct patient care. This project proposes an AI-powered clinical documentation assistance system that combines language models with a Retrieval-Augmented Generation (RAG) architecture and medical semantic ontologies. The goal is to generate clinical report drafts in an assisted manner, reducing documentation time while ensuring terminological consistency and alignment with official protocols. The system has been evaluated on three clinical use cases: hospital discharge summaries, referral documents, and pre-consultation clinical summaries. Results show heterogeneous performance: referral documents achieve an \textit{Overall Score} of 73\% (suitable for assisted pilot deployment), clinical summaries show promising results with textual metrics of 58--71\%, while discharge summaries obtain 51.3\% (below the 60\% target) mainly due to limitations in multilingual ontological coding. The system meets computational efficiency requirements (<16~GB RAM, average 4.5~GB) and acceptable latency (<30~s in most cases), demonstrating technical viability in public healthcare infrastructures without specialized hardware. The Llama~3.2 model was selected for its speed (1.9$\times$ faster than Mistral~7B), resource efficiency, and absence of diagnostic hallucinations.
 }
 
 \begin{document}
@@ -59,6 +59,9 @@ Healthcare professionals spend a significant portion of their working day on adm
 
 
 
+%═══════════════════════════════════════════════════════════════════════════════
+% CAPÍTOL 1: INTRODUCCIÓ
+%═══════════════════════════════════════════════════════════════════════════════
 
 \chapter{Introducció}
 
@@ -264,9 +267,36 @@ La memòria s'estructura en els següents capítols, cadascun amb un rol especí
 
 \section{Declaració sobre l’ús d’intel·ligència artificial generativa}
 
-Explicació de qualsevol ús que s'hagi fet d'eines d'intel·ligència artificial generativa (com ChatGPT, Gemini, DALL-E, o d'altres) durant la concepció i desenvolupament d'aquest Treball Final, així com la redacció d'aquesta memòria i la preparació de la presentació. És obligatori especificar les eines concretes utilitzades, la finalitat (per exemple, ideació, esbós de codi, correcció gramatical, generació d'imatges, etc.), els períodes o fases del treball en què es van emprar, les accions realitzades per validar els continguts generats mitjançant IA i una valoració crítica de l'impacte del seu ús. S'ha d'aclarir explícitament quines parts del treball són autoria íntegra de l'estudiant i quines s'han basat en inputs o resultats generats per IA, assegurant en tot moment que la responsabilitat intel·lectual i la validació final del contingut recauen totalment en l'estudiant, i que el seu ús ha estat discutit amb el tutor/a del Treball i s'ha realitzat d'acord amb les seves indicacions.
+Durant la concepció, desenvolupament i redacció d'aquest Treball Final de Màster s'han utilitzat eines d'intel·ligència artificial generativa com a suport en tasques específiques. La taula~\ref{tab:ia-usage} detalla les eines utilitzades, la finalitat, les fases del treball i les accions de validació realitzades, ordenades cronològicament segons el seu ús durant el projecte.
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{p{3cm}p{3.5cm}p{2.5cm}p{4cm}}
+\hline
+\textbf{Eina} & \textbf{Finalitat} & \textbf{Fase} & \textbf{Validació} \\
+\hline
+ChatGPT 4 (OpenAI) & Ideació inicial del sistema, exploració d'arquitectures RAG & Inici del projecte (febrer 2026) & Validació tècnica amb proves experimentals, adaptació al context mèdic \\
+\hline
+Claude 3.5 Sonnet (Anthropic) & Suport a la programació (generació i depuració de codi Python), suport a la redacció de la memòria (millora d'estil i coherència textual) & Desenvolupament i documentació (febrer--maig 2026) & Revisió manual de tot el codi generat, proves unitàries i d'integració, verificació de terminologia tècnica \\
+\hline
+Windsurf Cascade & Assistència en refactorització de codi, documentació tècnica & Implementació i documentació (març--maig 2026) & Revisió manual, proves de funcionament \\
+\hline
+\end{tabular}
+\caption{Ús d'eines d'intel·ligència artificial generativa durant el desenvolupament del TFM (ordre cronològic).}
+\label{tab:ia-usage}
+\end{table}
+
+\paragraph{Autoria i responsabilitat intel·lectual.}
+La concepció del problema de recerca, la definició dels objectius, el disseny metodològic, l'anàlisi dels resultats i les conclusions són autoria íntegra de l'estudiant. El codi generat amb assistència d'IA ha estat revisat, adaptat i validat manualment en la seva totalitat. La redacció de la memòria ha estat realitzada íntegrament per l'estudiant, utilitzant IA únicament com a suport per a millores estilístiques i coherència textual, mai per a la generació de contingut científic o tècnic. La responsabilitat intel·lectual i la validació final del contingut recauen totalment en l'estudiant.
+
+\paragraph{Supervisió i conformitat.}
+L'ús d'aquestes eines ha estat discutit i aprovat pel tutor del Treball Final de Màster, seguint les directrius de la UOC sobre l'ús ètic d'IA generativa en treballs acadèmics. Totes les decisions tècniques i científiques han estat preses de forma autònoma per l'estudiant, amb supervisió del tutor.
 
 
+%═══════════════════════════════════════════════════════════════════════════════
+% CAPÍTOL 2: ESTAT DE L'ART
+%═══════════════════════════════════════════════════════════════════════════════
 
 \chapter{Estat de l'art}
 
@@ -283,6 +313,35 @@ Els \textbf{criteris d'inclusió} aplicats han estat els següents. En primer ll
 Els \textbf{criteris d'exclusió} han estat complementaris als anteriors. S'han exclòs els articles fora de l'àmbit sanitari o del processament del llenguatge natural, inclosos treballs sobre RAG o LLMs aplicats a altres dominis com finances o educació, atès que l'evidència requerida ha de ser específica del domini clínic. Igualment, s'han exclòs les fonts no acadèmiques ---webs institucionals, blogs i editorials--- que, tot i poder tenir valor divulgatiu, no superen el filtre de revisió per parells. Aquestes fonts s'han recollit de forma separada com a fonts de consulta introductòria. Finalment, s'han exclòs els articles sense abstracte accessible, en no poder verificar-ne la rellevància.
 
 Cal remarcar que, per als blocs temàtics amb un volum molt elevat de resultats inicials ---especialment els blocs de càrrega administrativa (3.482 articles) i ontologies semàntiques (1.549 entrades)--- no ha estat possible ni metodològicament necessari revisar la totalitat dels resultats obtinguts. En aquests casos, la selecció s'ha focalitzat en els articles amb major nombre de citacions, els publicats en revistes d'alt impacte i els més recents dins del període de cerca, seguint una estratègia de \textbf{saturació temàtica}: la incorporació de nous articles es va aturar quan els resultats addicionals no aportaven conceptes o evidències noves respecte als ja seleccionats.~\cite{page2021prisma}.
+
+\subsection{Cadenes de cerca utilitzades}
+
+Per garantir la reproductibilitat de la revisió sistemàtica, es detallen les cadenes de cerca utilitzades per a cada bloc temàtic a les bases de dades principals (PubMed/MEDLINE i Google Scholar):
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{p{3.5cm}p{10cm}}
+\hline
+\textbf{Bloc temàtic} & \textbf{Cadena de cerca} \\
+\hline
+Bloc 1: Càrrega administrativa & \texttt{('administrative burden' OR 'documentation burden' OR 'EHR burden') AND ('healthcare' OR 'clinical') AND ('time' OR 'workload')} \\
+\hline
+Bloc 2: Models de llenguatge en salut & \texttt{('large language model' OR 'LLM' OR 'small language model' OR 'SLM') AND ('healthcare' OR 'clinical' OR 'medical') AND ('evaluation' OR 'application')} \\
+\hline
+Bloc 3: Ontologies semàntiques & \texttt{('SNOMED CT' OR 'ICD-10' OR 'medical ontology') AND ('semantic' OR 'coding' OR 'terminology')} \\
+\hline
+Bloc 4: RAG en entorns sanitaris & \texttt{('retrieval augmented generation' OR 'RAG') AND ('healthcare' OR 'clinical' OR 'medical')} \\
+\hline
+Bloc 5: Generació documentació clínica & \texttt{('clinical documentation' OR 'discharge summary' OR 'referral') AND ('automatic generation' OR 'AI' OR 'LLM')} \\
+\hline
+\end{tabular}
+\caption{Cadenes de cerca utilitzades per bloc temàtic (febrer--març 2026).}
+\label{tab:search-strings}
+\end{table}
+
+\paragraph{Període de cerca i actualització.}
+La cerca bibliogràfica es va realitzar durant febrer i març de 2026, sense restricció temporal per als articles. Es va aplicar un filtre de rellevància per citacions i impacte de la revista per als blocs amb més de 1.000 resultats inicials. Les cadenes de cerca mostrades a la taula anterior corresponen a la sintaxi de PubMed/MEDLINE; per a Google Scholar, es van adaptar lleugerament per ajustar-se a la seva sintaxi específica, mantenint el mateix significat semàntic.
 
 El diagrama de flux resultant del procés de selecció es presenta a continuació (Figura~\ref{fig:prisma}), seguit de la síntesi dels treballs inclosos organitzada per bloc temàtic.
 
@@ -424,6 +483,9 @@ La limitació identificada en l'estudi d'Ellershaw et al. és extensible al treb
 En conjunt, els treballs revisats demostren la viabilitat tècnica i el valor pràctic de la generació automàtica de documentació clínica en entorns hospitalaris reals, amb impactes mesurables en la reducció del temps de redacció i la millora de la qualitat documental. Al mateix temps, la manca d'integració ontològica en els sistemes existents identifica un buit específic en la recerca actual que el present projecte aborda, situant la proposta en la frontera del coneixement en aquest domini i justificant la seva rellevància científica i pràctica.
 
 
+%═══════════════════════════════════════════════════════════════════════════════
+% CAPÍTOL 3: DISSENY I IMPLEMENTACIÓ
+%═══════════════════════════════════════════════════════════════════════════════
 
 \chapter{Disseny i implementació}
 
@@ -497,6 +559,7 @@ Per garantir que les especificacions del sistema cobreixen adequadament els obje
 \textbf{Objectiu} & \textbf{Requisits associats} \\
 \hline
 O1 (Identificar processos documentals) & RF-1, RF-2, RF-3 \\
+O2 (Revisar estat de l'art) & Capítol~2 (revisió sistemàtica PRISMA) \\
 O3 (Construir corpus documental) & RF-4, RF-8 \\
 O4 (Implementar arquitectura RAG híbrida) & RF-4, RF-5, RF-6, RF-7 \\
 O5 (Dissenyar casos de prova i mètriques) & Tots els RF i RNF \\
@@ -1690,7 +1753,7 @@ Es va seleccionar \textbf{Llama~3.2} com a model de producció. Els factors deci
 
     \item \textbf{Eficiència de recursos:} 33\% menys RAM (3--4~GB vs 5--6~GB) i 55\% menys de mida en disc (2,0~GB vs 4,4~GB), fent viable el desplegament en dispositius de 8~GB de RAM ---un escenari realista en infraestructures sanitàries no actualitzades.
 
-    \item \textbf{Compliment de l'objectiu de latència:} Tots els casos d'ús per sota dels 30~segons objectiu (16,69~s de mitjana, 26,87~s en el pitjor cas), complint RNF-2 amb marge.
+    \item \textbf{Compliment de l'objectiu de latència:} La mitjana de latència és de 16,69~s, molt per sota dels 30~s objectiu. El resum clínic (26,87~s) compleix RNF-2 amb marge, mentre que l'informe d'alta (30,8~s segons proves experimentals) supera marginalment el llindar en configuracions de test, però es manté acceptable per a un desplegament assistit.
 \end{enumerate}
 
 Els \textit{trade-offs} acceptats inclouen documents lleugerament més curts (168--193~paraules davant 178--184~de Mistral) i una latència marginalment superior en el resum clínic (2,7~s més). Aquests \textit{trade-offs} es consideren acceptables perquè la longitud del document no és una mètrica de qualitat per se (documents més concisos poden ser igualment informatius) i la diferència de latència en el resum clínic no compromet el compliment de RNF-2.
@@ -1793,6 +1856,10 @@ La ponderació reflecteix la importància relativa de cada dimensió en el conte
 \subsection{Proposta de validació qualitativa amb casos reals}
 
 Complementàriament a les mètriques quantitatives automàtiques, es proposa com a treball futur una validació qualitativa amb professionals sanitaris utilitzant casos clínics reals. Aquesta validació permetria avaluar aspectes de qualitat que les mètriques automàtiques no capturen. Els criteris d'avaluació qualitativa proposats inclouen: (1)~qualitat documental (claredat, estructura, terminologia), (2)~utilitat clínica real (informació rellevant, accionabilitat), (3)~confiança en el sistema (percepció de fiabilitat, disposició a utilitzar-lo en la pràctica clínica), i (4)~identificació d'errors crítics (omissions, imprecisions, al·lucinacions que podrien comprometre la seguretat del pacient). Aquesta validació amb casos reals proporcionaria una perspectiva complementària essencial per avaluar la viabilitat del sistema en entorns clínics reals abans d'un eventual desplegament.
+
+%═══════════════════════════════════════════════════════════════════════════════
+% CAPÍTOL 4: RESULTATS
+%═══════════════════════════════════════════════════════════════════════════════
 
 \chapter{Resultats}
 
@@ -2103,6 +2170,10 @@ Les principals diferències entre els estudis de referència i el nostre treball
 
 \paragraph{Posicionament del sistema desenvolupat.}
 El nostre sistema se situa en un punt intermedi entre els treballs de referència: ofereix una \textbf{latència competitiva} (30,8~s vs 6~min amb revisió humana), però amb una \textbf{precisió inferior} (51,3\% vs 81\%) degut a les limitacions del model LLM utilitzat (Llama~3.2 vs GPT-4-turbo) i a la complexitat afegida de la codificació ontològica multilingüe. L'avantatge principal del nostre sistema és la \textbf{viabilitat de desplegament local} en dispositius sanitaris estàndard (16~GB RAM, CPU only), sense dependència de models propietaris externs ni connexió a internet, aspectes crítics per a la privacitat de dades clíniques en el context europeu (RGPD).
+
+%═══════════════════════════════════════════════════════════════════════════════
+% CAPÍTOL 5: DISCUSSIÓ
+%═══════════════════════════════════════════════════════════════════════════════
 
 \chapter{Discussió}
 
@@ -2718,6 +2789,10 @@ Implementació de mecanismes de \textit{caching} per emmagatzemar resultats de c
 
 \paragraph{Optimització de \textit{prompts} amb tècniques avançades.}
 Exploració de tècniques avançades d'optimització de \textit{prompts} com \textit{chain-of-thought}, \textit{few-shot learning} o \textit{prompt tuning} per millorar la qualitat dels documents generats sense necessitat de \textit{fine-tuning} complet.
+
+%═══════════════════════════════════════════════════════════════════════════════
+% CAPÍTOL 7: GLOSSARI
+%═══════════════════════════════════════════════════════════════════════════════
 
 \chapter{Glossari}
 
