@@ -1921,6 +1921,50 @@ Tot i el rigor del procés, els \textit{gold standards} sintètics presenten lim
 
 Aquestes limitacions impliquen que els resultats obtinguts representen un \textbf{límit superior optimista} del rendiment real del sistema, i que una validació amb dades reals podria revelar un rendiment inferior.
 
+\paragraph{Exemple de \textit{gold standard} sintètic.}
+Per il·lustrar el format dels \textit{gold standards} utilitzats en l'avaluació, es presenta un exemple simplificat d'informe d'alta per a un cas de IAMEST (Infart Agut de Miocardi amb Elevació del Segment ST):
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{p{4cm}p{9cm}}
+\hline
+\textbf{Camp} & \textbf{Contingut esperat} \\
+\hline
+\texttt{patient\_id} & P001 \\
+\hline
+\texttt{admission\_reason} & Infart agut de miocardi amb elevació del segment ST (IAMEST) \\
+\hline
+\textbf{Diagnòstic principal} & \\
+\quad \texttt{diagnosis} & Infart agut de miocardi \\
+\quad \texttt{snomed\_ct} & 401314000 (Acute myocardial infarction) \\
+\quad \texttt{icd10} & I21.0 (STEMI anterior wall) \\
+\hline
+\textbf{Medicacions a l'alta} & \\
+\quad Ramipril & ATC: C09AA05 (ACE inhibitor) \\
+\quad Atorvastatina & ATC: C10AA05 (Statin) \\
+\quad Àcid acetilsalicílic & ATC: B01AC06 (Antiplatelet) \\
+\hline
+\texttt{follow\_up} & Control amb cardiologia en 2 setmanes, ecocardiograma de control, rehabilitació cardíaca \\
+\hline
+\textbf{Seccions esperades} & Motiu d'ingrés, Antecedents personals, Exploració física, Proves complementàries, Evolució clínica, Diagnòstic principal, Tractament a l'alta, Recomanacions de seguiment \\
+\hline
+\end{tabular}
+\caption{Exemple de \textit{gold standard} sintètic per a informe d'alta (cas IAMEST). Els \textit{gold standards} complets inclouen el text esperat per a cada secció, tots els diagnòstics secundaris amb codis ontològics, i les fonts de protocols que haurien de ser recuperades pel sistema RAG.}
+\label{tab:gold-standard-example}
+\end{table}
+
+Els \textit{gold standards} sintètics han estat creats manualment seguint les guies clíniques internacionals de referència (NICE, ESC, ADA, AAFP) i la literatura mèdica contrastada. Cada \textit{gold standard} inclou:
+
+\begin{itemize}
+    \item \textbf{Context clínic:} Motiu d'ingrés, antecedents del pacient, evolució esperada.
+    \item \textbf{Document de referència:} Text complet de l'informe esperat amb les 8--9 seccions obligatòries.
+    \item \textbf{Codificació ontològica:} Codis SNOMED~CT, ICD-10 i ATC per a tots els diagnòstics i medicacions.
+    \item \textbf{Fonts esperades:} Protocols i guies clíniques que el sistema RAG hauria de recuperar.
+\end{itemize}
+
+La validació dels \textit{gold standards} s'ha realitzat verificant la coherència clínica (diagnòstics compatibles amb el motiu d'ingrés), la correcció dels codis ontològics (verificats amb BioPortal), i l'alineació amb les guies clíniques internacionals de referència.
+
 \subsection{Configuració experimental i reproducibilitat}
 
 Per garantir la reproductibilitat dels resultats i facilitar la validació independent del sistema, es detalla la configuració experimental completa utilitzada durant l'avaluació.
