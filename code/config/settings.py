@@ -27,7 +27,7 @@ class Settings(BaseSettings):
     
     # Ollama settings
     OLLAMA_BASE_URL: str = Field(default="http://localhost:11434", env="OLLAMA_BASE_URL")
-    OLLAMA_MODEL: str = Field(default="mistral", env="OLLAMA_MODEL")
+    OLLAMA_MODEL: str = Field(default="llama3.2", env="OLLAMA_MODEL")
     OLLAMA_TIMEOUT: int = Field(default=60, env="OLLAMA_TIMEOUT")
     
     # Qdrant settings
