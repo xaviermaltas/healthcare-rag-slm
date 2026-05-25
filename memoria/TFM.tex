@@ -1467,7 +1467,7 @@ Per garantir la reproductibilitat completa del sistema (RNF-5), tots els fitxers
 \begin{itemize}
     \item \texttt{requirements.txt}: Dependències Python amb versions exactes (\texttt{fastapi==0.115.6})
     \item \texttt{package-lock.json}: Dependències npm amb versions exactes
-    \item \texttt{docker-compose.yml}: Versions exactes de les imatges Docker (\texttt{qdrant/qdrant:v1.7.4})
+    \item \texttt{docker-compose.yml}: Versions exactes de les imatges Docker (\texttt{qdrant/qdrant:latest})
     \item \texttt{.env}: Fitxer de variables d'entorn amb credencials i configuració (no versionat, es proporciona plantilla d'exemple)
     \item \texttt{SETUP.md}: Documentació pas a pas per replicar l'entorn
 \end{itemize}
@@ -1779,7 +1779,7 @@ La selecció de l'\textit{stack} tecnològic s'ha guiat pels requisits no funcio
 
     \item \textbf{Model d'\textit{embeddings} --- BAAI/bge-m3:} 1.024~dimensions, multilingüe, accessible mitjançant \texttt{sentence-transformers}. Seleccionat per tres raons: (1)~suport natiu per a català, castellà i anglès, essencial per a RF-8; (2)~rendiment competitiu amb models més grans en benchmarks MTEB; (3)~mida manejable ($\sim$1,2~GB) compatible amb les restriccions de memòria.
 
-    \item \textbf{Base de dades vectorial --- Qdrant:} Versió $\geq$1.7, en contenidor Docker amb emmagatzematge persistent (\texttt{localhost:6333}). Seleccionada per la seva API REST nativa, el suport per a filtres de metadades complexos (essencials per al filtratge per especialitat i tipus d'ontologia), i el rendiment optimitzat per a col·leccions de mida mitjana. Les alternatives considerades (Milvus, Weaviate, ChromaDB) van ser descartades per raons de complexitat de desplegament (Milvus), major pes (Weaviate) o menor funcionalitat de filtratge (ChromaDB).
+    \item \textbf{Base de dades vectorial --- Qdrant:} Versió $\geq$1.17, en contenidor Docker amb emmagatzematge persistent (\texttt{localhost:6333}). Seleccionada per la seva API REST nativa, el suport per a filtres de metadades complexos (essencials per al filtratge per especialitat i tipus d'ontologia), i el rendiment optimitzat per a col·leccions de mida mitjana. Les alternatives considerades (Milvus, Weaviate, ChromaDB) van ser descartades per raons de complexitat de desplegament (Milvus), major pes (Weaviate) o menor funcionalitat de filtratge (ChromaDB).
 
     \item \textbf{Recursos ontològics --- BioPortal:} API REST (\texttt{https://data.bioontology.org}) com a capa de \textit{fallback} per a SNOMED~CT, ICD-10 i MeSH, amb autenticació per API \textit{key}~\cite{vendetti2025bioportal}. Seleccionat per la seva cobertura d'ontologies ($>$900~ontologies biomèdiques) i la seva API estandarditzada.
 \end{itemize}
@@ -1787,7 +1787,7 @@ La selecció de l'\textit{stack} tecnològic s'ha guiat pels requisits no funcio
 \subsection{\textit{Frontend} i interfície d'usuari}
 
 \begin{itemize}
-    \item \textbf{React 18 + TypeScript:} \textit{Framework} per a la interfície interactiva, amb tipatge estàtic. \textbf{Vite} com a \textit{bundler}.
+    \item \textbf{React 19 + TypeScript 6:} \textit{Framework} per a la interfície interactiva, amb tipatge estàtic. \textbf{Vite 8} com a \textit{bundler}.
 
     \item \textbf{Tailwind CSS:} Estilització \textit{utility-first} amb paleta personalitzada adaptada al context mèdic.
 
@@ -1921,6 +1921,90 @@ Tot i el rigor del procés, els \textit{gold standards} sintètics presenten lim
 
 Aquestes limitacions impliquen que els resultats obtinguts representen un \textbf{límit superior optimista} del rendiment real del sistema, i que una validació amb dades reals podria revelar un rendiment inferior.
 
+\subsection{Configuració experimental i reproducibilitat}
+
+Per garantir la reproductibilitat dels resultats i facilitar la validació independent del sistema, es detalla la configuració experimental completa utilitzada durant l'avaluació.
+
+\paragraph{Entorn d'execució.}
+Les proves s'han realitzat en un entorn local amb les següents característiques:
+\begin{itemize}
+    \item \textbf{Sistema operatiu:} macOS Tahoe 26.5
+    \item \textbf{Processador:} Apple M1 Pro (8 nuclis de rendiment, 2 nuclis d'eficiència)
+    \item \textbf{Memòria RAM:} 16 GB
+    \item \textbf{Emmagatzematge:} SSD 512 GB
+    \item \textbf{GPU:} Integrada Apple M1 Pro (no utilitzada per inferència LLM)
+\end{itemize}
+
+\paragraph{Versions de programari i models.}
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lp{10cm}}
+\hline
+\textbf{Component} & \textbf{Versió / Configuració} \\
+\hline
+Python & 3.14.3 \\
+Ollama & 0.19.0 \\
+Llama 3.2 & Model: \texttt{llama3.2:latest} (2,0 GB, 3B paràmetres) \\
+Qdrant & 1.17.0+ (client), latest (Docker) \\
+sentence-transformers & 2.0.0+ \\
+Model d'embeddings & \texttt{BAAI/bge-m3} (1.024 dimensions, multilingüe) \\
+FastAPI & 0.104.0+ \\
+React & 19.2.5 \\
+TypeScript & 6.0.2 \\
+Vite & 8.0.10 \\
+Docker & 29.4.0 \\
+\hline
+\end{tabular}
+\caption{Versions de programari i models utilitzats en l'avaluació experimental.}
+\label{tab:software-versions}
+\end{table}
+
+\paragraph{Paràmetres d'inferència del LLM.}
+\begin{itemize}
+    \item \textbf{Temperatura:} 0,3 (baixa per reduir variabilitat i al·lucinacions)
+    \item \textbf{Max tokens:} 800--1.000 segons el cas d'ús
+    \item \textbf{Top-p:} 0,9 (nucleus sampling)
+    \item \textbf{Repeat penalty:} 1,1 (evitar repeticions)
+    \item \textbf{Timeout:} 60 segons
+\end{itemize}
+
+\paragraph{Repositori de codi.}
+El codi font complet del sistema està disponible públicament al repositori GitHub:
+
+\texttt{https://github.com/xaviermaltas/healthcare-rag-slm}
+
+\paragraph{Reproducció del sistema.}
+Per reproduir el sistema complet:
+\begin{enumerate}
+    \item Clonar el repositori: \texttt{git clone https://github.com/xaviermaltas/healthcare-rag-slm}
+    \item Navegar al directori del codi: \texttt{cd healthcare-rag-slm/code}
+    \item Executar l'script d'instal·lació: \texttt{bash scripts/lifecycle/bootstrap.sh}
+\end{enumerate}
+
+L'script \texttt{bootstrap.sh} automatitza tot el procés de configuració: verifica prerequisits (Python~3.11+, Docker, Ollama), crea l'entorn virtual, instal·la dependències, descarrega els models Llama~3.2 i Mistral, aixeca els serveis Docker (Qdrant i API), i verifica que tot funcioni correctament. El sistema queda accessible a \texttt{http://localhost:8000}.
+
+\paragraph{Gestió del sistema.}
+Un cop instal·lat, el sistema es pot gestionar amb els scripts de cicle de vida:
+\begin{itemize}
+    \item \texttt{scripts/lifecycle/start.sh} -- Aixecar backend i Qdrant (ús diari)
+    \item \texttt{scripts/lifecycle/stop.sh} -- Aturar el sistema
+    \item \texttt{scripts/lifecycle/rebuild.sh} -- Reconstruir imatges Docker després de canvis al codi
+    \item \texttt{scripts/frontend/start-frontend.sh} -- Aixecar interfície web (React + Vite a \texttt{http://localhost:5173})
+\end{itemize}
+
+El flux de treball habitual consisteix en executar \texttt{start.sh} per aixecar el backend, seguit de \texttt{start-frontend.sh} per accedir a la interfície web. L'script del frontend verifica automàticament que el backend estigui accessible abans d'arrencar.
+
+\paragraph{Scripts d'avaluació.}
+Un cop el sistema està en funcionament, es poden executar els scripts d'avaluació disponibles:
+\begin{itemize}
+    \item \texttt{scripts/evaluation/evaluate\_discharge\_summary.py} -- Avaluació d'informes d'alta
+    \item \texttt{scripts/evaluation/evaluate\_referral.py} -- Avaluació d'informes de derivació
+    \item \texttt{scripts/compare\_models.sh} -- Comparació entre models LLM (Llama 3.2 vs Mistral 7B)
+\end{itemize}
+
+Cada script calcula automàticament totes les mètriques (BLEU, ROUGE-L, Completeness, F1 ontològic) i genera informes en format JSON i CSV per a anàlisi posterior. Els \textit{gold standards} sintètics utilitzats per a l'avaluació estan inclosos al repositori en format JSON a la carpeta \texttt{data/gold\_standards/}. L'avaluació del resum clínic es realitza mitjançant l'API REST del sistema, utilitzant els mateixos \textit{gold standards} que els altres casos d'ús.
+
 \subsection{Evolució iterativa del sistema i millora de resultats}
 
 El desenvolupament del sistema ha seguit un procés iteratiu amb múltiples versions, cadascuna adreçant limitacions identificades en l'anterior. A continuació es descriuen les quatre versions principals desenvolupades, detallant els canvis implementats i l'impacte qualitatiu de cada iteració:
@@ -1996,6 +2080,49 @@ Mètrica agregada que combina les quatre dimensions anteriors amb ponderacions q
 \end{equation*}
 
 La codificació ontològica (30\%) i la qualitat textual (30\%) reben el pes més alt, seguides de la completesa estructural (20\%) i el contingut addicional (20\%). \textbf{Objectiu:} Un \textit{Overall Score} $\geq$60\% es considera acceptable per a desplegament assistit (\textit{human-in-the-loop}), on un professional revisa i valida els documents generats abans de la seva incorporació a la història clínica.
+
+\subsection{Justificació dels criteris d'avaluació i llindars}
+
+La selecció de les mètriques i els llindars d'acceptabilitat no és arbitrària, sinó que respon a requisits específics del domini clínic i a les limitacions inherents dels LLM en contextos sanitaris.
+
+\paragraph{Limitacions de les mètriques automàtiques en el domini mèdic.}
+Les mètriques de superposició textual (BLEU, ROUGE-L) presenten limitacions conegudes en el domini mèdic~\cite{chua2024discharge}:
+\begin{itemize}
+    \item \textbf{Reformulació vàlida:} ``Infart agut de miocardi'' i ``Síndrome coronari agut amb elevació del segment ST'' són equivalents clínicament, però comparteixen pocs n-grams.
+    \item \textbf{Sinonímia mèdica:} ``Hipertensió arterial'' vs ``HTA'', ``Diabetis mellitus tipus~2'' vs ``DM2''.
+    \item \textbf{Variabilitat estilística:} Dos documents poden ser igualment correctes amb estructures sintàctiques diferents.
+\end{itemize}
+
+Per aquesta raó, les mètriques textuals reben només un 30\% del pes total, i es complementen amb mètriques específiques del domini (codificació ontològica, completesa estructural).
+
+\paragraph{Importància crítica de la codificació ontològica.}
+La codificació ontològica (SNOMED~CT, ICD-10, ATC) és la dimensió més crítica per a la utilitat clínica real del sistema, per tres raons:
+\begin{enumerate}
+    \item \textbf{Interoperabilitat:} Els codis ontològics permeten l'intercanvi d'informació entre sistemes d'informació hospitalaris (HIS), laboratoris, farmàcies i altres institucions sanitàries.
+    \item \textbf{Facturació i gestió:} Els codis ICD-10 són obligatoris per a la facturació hospitalària i la gestió de recursos sanitaris.
+    \item \textbf{Estadístiques de salut pública:} Els codis SNOMED~CT i ICD-10 alimenten les estadístiques epidemiològiques nacionals i internacionals.
+\end{enumerate}
+
+Un sistema que generi documents textuals correctes però amb codis ontològics incorrectes té una utilitat clínica limitada, ja que requereix una revisió manual exhaustiva dels codis per part del professional. Per aquesta raó, la codificació ontològica rep un 30\% del pes total.
+
+\paragraph{Llindar d'acceptabilitat: 60\% Overall Score.}
+El llindar del 60\% per a desplegament assistit es justifica per:
+\begin{itemize}
+    \item \textbf{Supervisió humana obligatòria:} En un sistema assistit (\textit{human-in-the-loop}), el professional revisa i corregeix el document generat. Un \textit{Overall Score} del 60\% implica que el sistema genera un esborrany útil que redueix el temps de redacció, però que requereix revisió i correccions.
+    \item \textbf{Comparació amb la literatura:} Chua et al.~\cite{chua2024discharge} reporta una reducció del temps de redacció de 10 a 6~minuts amb un sistema LLM assistit, sense especificar mètriques automàtiques. El nostre llindar del 60\% és conservador i prioritza la seguretat sobre la velocitat.
+    \item \textbf{Risc clínic acceptable:} Un \textit{Overall Score} del 60\% amb supervisió humana minimitza el risc d'errors crítics (al·lucinacions, contraindicacions incorrectes) que podrien comprometre la seguretat del pacient.
+\end{itemize}
+
+\paragraph{Riscos específics dels LLM en contextos sanitaris.}
+Els LLM presenten riscos específics que justifiquen la necessitat de supervisió humana i mètriques rigoroses:
+\begin{itemize}
+    \item \textbf{Al·lucinacions diagnòstiques:} Generació de diagnòstics incorrectes o inventats. Durant el desenvolupament, Mistral~7B va generar ``pneumònia'' quan es demanava ``infart de miocardi'', un error crític inacceptable.
+    \item \textbf{Errors de medicació:} Generació de medicacions contraindicades, dosis incorrectes o interaccions farmacològiques perilloses.
+    \item \textbf{Omissió d'informació crítica:} Absència de contraindicacions, al·lèrgies o recomanacions de seguiment essencials.
+    \item \textbf{Biaix i equitat:} Recomanacions diferents segons el gènere, edat o origen del pacient, reproduint biaixos presents en les dades d'entrenament.
+\end{itemize}
+
+Aquests riscos justifiquen el model de responsabilitat adoptat (sistema assistit, no autònom) i la necessitat de validació clínica amb professionals sanitaris abans de qualsevol desplegament en entorns reals.
 
 \subsection{Cas d'ús 1: Informe d'alta hospitalària}
 
@@ -2128,7 +2255,7 @@ El sistema compleix els dos requisits no funcionals crítics per a la seva viabi
 \begin{itemize}
     \item \textbf{RNF-1 (Eficiència computacional):} El consum de RAM es manté consistentment per sota del límit de 16~GB en tots els casos d'ús, amb una mitjana de 4,5~GB (4,7~GB informe d'alta, 4,2~GB derivació, 4,5~GB resum clínic). Això garanteix que el sistema és desplegable en dispositius sanitaris estàndard sense necessitat de maquinari especialitzat (GPU) ni actualitzacions de hardware.
     
-    \item \textbf{RNF-2 (Latència acceptable):} La latència de generació es manté per sota del llindar de 30~s en tots els casos d'ús, amb una mitjana de 25,2~s (30,8~s informe d'alta, 18,5~s derivació, 26,3~s resum clínic). Aquest rendiment garanteix una experiència d'usuari acceptable en condicions de pressió assistencial, on els professionals sanitaris requereixen respostes ràpides per integrar el sistema en el seu flux de treball habitual.
+    \item \textbf{RNF-2 (Latència acceptable):} La latència de generació es manté en un rang acceptable, amb una mitjana de 25,2~s. La derivació (18,5~s) i el resum clínic (26,3~s) compleixen estrictament el llindar de 30~s, mentre que l'informe d'alta (30,8~s) el supera marginalment en configuracions de test. Aquest rendiment garanteix una experiència d'usuari acceptable en condicions de pressió assistencial, especialment per als casos d'ús de derivació i resum clínic, que són els més freqüents en la pràctica clínica diària.
 \end{itemize}
 
 \paragraph{Cas d'ús apte per a desplegament pilot.}
@@ -2141,6 +2268,9 @@ La derivació a especialista, amb un \textit{Overall Score} del 73,0\%, BLEU del
     
     \item Disposa de protocols de referència més específics al corpus RAG, ja que les guies clíniques internacionals se centren més en criteris de derivació que en l'estructura dels informes d'alta.
 \end{itemize}
+
+\paragraph{Limitacions de l'informe d'alta: necessitat de millores.}
+L'informe d'alta, amb un \textit{Overall Score} del 51,3\%, se situa per sota de l'objectiu del 60\% establert per a desplegament pilot assistit. Les limitacions principals són: (1)~codificació ontològica en català amb F1~scores del 29,2\% (SNOMED~CT) i 37,5\% (ICD-10), molt per sota del llindar acceptable ($>$60\%); (2)~latència de 30,8~s que supera marginalment el requisit de 30~s; i (3)~complexitat documental elevada (9~seccions obligatòries) que dificulta la generació coherent amb models de mida reduïda. Aquest cas d'ús \textbf{requereix millores substancials} abans de considerar un desplegament pilot, incloent: millora de la codificació ontològica multilingüe, optimització de la latència i refinament addicional dels \textit{prompts} per a documents complexos.
 
 \paragraph{Viabilitat de desplegament local.}
 Un aspecte crític de la viabilitat tècnica és la capacitat del sistema de funcionar completament en local, sense dependència de models propietaris externs ni connexió a internet. Aquesta característica és essencial per garantir la privacitat de les dades clíniques en el context europeu (RGPD) i per permetre el desplegament en entorns sanitaris amb restriccions de connectivitat o polítiques de seguretat estrictes. El sistema utilitza Llama~3.2, un model obert de mida reduïda (2~GB), que permet inferència en CPU sense necessitat de GPU, a diferència dels models propietaris de gran mida (GPT-4, Claude) que requereixen connexió a serveis externs.
@@ -2201,7 +2331,7 @@ El corpus RAG conté més protocols específics per a derivacions entre especial
 Tot i les limitacions identificades, el sistema demostra viabilitat tècnica en aspectes crítics per a un desplegament pilot:
 
 \paragraph{Compliment dels requisits no funcionals.}
-El sistema compleix els requisits de latència (RNF-2: $<$30~s) amb marge en tots els casos d'ús (30,8~s informe d'alta, 18,5~s derivació, 26,3~s resum clínic) i d'eficiència computacional (RNF-1: $<$16~GB RAM) amb un consum mitjà de 4,5~GB. Això garanteix que el sistema és \textbf{desplegable en dispositius sanitaris estàndard} sense necessitat de maquinari especialitzat (GPU) ni connexió a internet, aspectes crítics per a la privacitat de dades clíniques (RGPD).
+El sistema compleix els requisits d'eficiència computacional (RNF-1: $<$16~GB RAM) amb un consum mitjà de 4,5~GB. Pel que fa a la latència (RNF-2: $<$30~s), la derivació (18,5~s) i el resum clínic (26,3~s) compleixen estrictament el requisit, mentre que l'informe d'alta (30,8~s) el supera marginalment. Això garanteix que el sistema és \textbf{desplegable en dispositius sanitaris estàndard} sense necessitat de maquinari especialitzat (GPU) ni connexió a internet, aspectes crítics per a la privacitat de dades clíniques (RGPD).
 
 \paragraph{Cas d'ús viable: Derivació a especialista.}
 La derivació, amb un \textit{Overall Score} del 73,0\%, BLEU del 64,0\% i ROUGE-L del 75,9\%, presenta un rendiment acceptable per a un desplegament pilot en mode assistit. Aquest cas d'ús és especialment rellevant perquè:
@@ -2240,7 +2370,7 @@ Es va prendre la decisió de pivotar de Mistral~7B a Llama~3.2, prioritzant velo
 \end{itemize}
 
 \paragraph{Resultat.}
-El canvi a Llama~3.2 va permetre complir RNF-2 en tots els casos d'ús (30,8~s informe d'alta, 18,5~s derivació, 26,3~s resum clínic), garantint una experiència d'usuari acceptable i eliminant les al·lucinacions diagnòstiques crítiques.
+El canvi a Llama~3.2 va permetre reduir significativament la latència (18,5~s derivació, 26,3~s resum clínic, 30,8~s informe d'alta), apropar-se a l'objectiu de RNF-2 i, més important, eliminar les al·lucinacions diagnòstiques crítiques que presentava Mistral~7B.
 
 \subsection{Refinament iteratiu de prompts}
 
@@ -2409,13 +2539,13 @@ Diverses decisions de disseny han implicat compromisos entre objectius conflicti
 
 \subsection{Arquitectura híbrida}
 
-Una de les decisions de disseny més crítiques va ser l'arquitectura de desplegament del sistema, concretament la decisió d'executar Ollama (servidor d'inferència LLM) de manera nativa al \textit{host} en lloc de dins d'un contenidor Docker juntament amb la resta de components del sistema (backend FastAPI, base de dades ChromaDB, frontend React).
+Una de les decisions de disseny més crítiques va ser l'arquitectura de desplegament del sistema, concretament la decisió d'executar Ollama (servidor d'inferència LLM) de manera nativa al \textit{host} en lloc de dins d'un contenidor Docker juntament amb la resta de components del sistema (backend FastAPI, base de dades vectorial Qdrant, frontend React).
 
 \paragraph{Alternatives considerades.}
 Es van avaluar dues alternatives:
 
 \begin{itemize}
-    \item \textbf{Arquitectura completament containeritzada:} Tots els components (Ollama, backend, ChromaDB, frontend) dins de contenidors Docker orquestrats amb Docker Compose. Avantatges: desplegament simplificat, portabilitat, aïllament de dependències. Desavantatges: overhead de rendiment per la virtualització, accés limitat a l'acceleració de maquinari (CPU/GPU).
+    \item \textbf{Arquitectura completament containeritzada:} Tots els components (Ollama, backend, Qdrant, frontend) dins de contenidors Docker orquestrats amb Docker Compose. Avantatges: desplegament simplificat, portabilitat, aïllament de dependències. Desavantatges: overhead de rendiment per la virtualització, accés limitat a l'acceleració de maquinari (CPU/GPU).
     
     \item \textbf{Arquitectura híbrida:} Ollama natiu al \textit{host}, resta de components containeritzats. Avantatges: accés directe a l'acceleració de maquinari, millor rendiment d'inferència. Desavantatges: complexitat addicional en el desplegament, dependència de la instal·lació manual d'Ollama.
 \end{itemize}
