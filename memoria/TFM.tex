@@ -2663,6 +2663,139 @@ En un entorn clínic, un sistema que genera documents correctes però lents no s
 
 Les mètriques automàtiques (BLEU, ROUGE-L, F1~ontològic) són útils per a la iteració ràpida durant el desenvolupament, però \textbf{no substitueixen la validació per part de professionals sanitaris}. Aquesta és l'única manera de verificar la utilitat clínica real del sistema, detectar errors crítics que les mètriques automàtiques no capturen i avaluar l'acceptabilitat del sistema en condicions reals d'ús. Futurs treballs haurien de prioritzar la validació clínica amb professionals sanitaris en actiu, idealment en un estudi pilot amb integració en el flux de treball habitual.
 
+\section{Implicacions per a desplegament en entorns clínics reals}
+
+El desplegament d'un sistema d'IA generativa en entorns clínics reals planteja reptes que van més enllà de la viabilitat tècnica, incloent aspectes legals, ètics i organitzatius que són crítics per a l'acceptació i adopció del sistema pels professionals sanitaris i les institucions de salut.
+
+\subsection{Compliment del RGPD i privacitat de dades clíniques}
+
+El tractament de dades clíniques està subjecte al \textbf{Reglament General de Protecció de Dades} (RGPD, Reglament UE 2016/679)~\cite{eu2016gdpr} i, en l'àmbit espanyol, a la \textbf{Llei Orgànica de Protecció de Dades i Garantia dels Drets Digitals} (LOPDGDD)~\cite{spain2018lopdgdd}. Aquestes normatives estableixen requisits estrictes per al tractament de dades de salut, considerades dades de categoria especial (Article~9 RGPD).
+
+\paragraph{Processament local i minimització de riscos.}
+El sistema desenvolupat ha estat dissenyat amb el principi de \textbf{privacitat per disseny} (\textit{privacy by design}, Article~25 RGPD). Totes les operacions ---indexació de corpus, generació de documents, inferència del model LLM--- s'executen \textbf{completament en local}, sense connexió a serveis externs ni transferència de dades a tercers. Aquesta arquitectura minimitza els riscos de filtració de dades i garanteix que les dades clíniques no surten mai de la infraestructura controlada per la institució sanitària.
+
+\paragraph{Mesures de seguretat tècniques.}
+Per complir l'Article~32 del RGPD, un desplegament en producció requereix les següents mesures de seguretat tècniques i organitzatives:
+
+\textbf{Mesures implementades en el prototip:}
+\begin{itemize}
+    \item \textbf{Dades sintètiques i pseudonimitzades:} Les dades clíniques utilitzades per a l'avaluació són completament sintètiques (generades artificialment) i pseudonimitzades, eliminant qualsevol risc de filtració de dades reals de pacients. La \textbf{pseudonimització} consisteix en la substitució de dades identificatives (noms, DNI, adreces) per identificadors alfanumèrics que no permeten la reidentificació sense informació addicional, complint així l'Article~4.5 del RGPD.
+    
+    \item \textbf{Auditabilitat bàsica:} El sistema registra totes les operacions (generació de documents, consultes al sistema) amb \textit{timestamps} i identificador de petició (\textit{request ID}) per garantir la traçabilitat bàsica de les operacions.
+\end{itemize}
+
+\textbf{Mesures recomanades per a desplegament en producció:}
+\begin{itemize}
+    \item \textbf{Xifrat en repòs:} Les bases de dades vectorials (Qdrant) i els volums de Docker haurien d'estar xifrats mitjançant LUKS (Linux) o FileVault (macOS) per protegir les dades emmagatzemades contra accés no autoritzat.
+    
+    \item \textbf{Control d'accés basat en rols (RBAC):} Implementació de mecanismes d'autenticació (p.~ex., OAuth 2.0, SAML) i autorització basats en rols per restringir l'accés al sistema només a professionals autoritzats, amb diferents nivells de permisos segons el rol (metge, infermer, administrador).
+    
+    \item \textbf{Auditabilitat completa:} Extensió del registre d'operacions per incloure identificador d'usuari autenticat, IP d'origen, tipus d'operació i dades accedides, complint els requisits de traçabilitat del RGPD.
+    
+    \item \textbf{Xifrat en trànsit:} Configuració de HTTPS amb certificats TLS per protegir les comunicacions entre el frontend i el backend.
+\end{itemize}
+
+\paragraph{Base legal per al tractament.}
+El tractament de dades clíniques per part del sistema requereix una base legal vàlida segons l'Article~6 i Article~9 RGPD. En el context sanitari públic, la base legal més adequada és l'\textbf{interès públic en l'àmbit de la salut pública} (Article~9.2.i RGPD), que permet el tractament de dades de salut per a finalitats d'assistència sanitària, gestió de serveis de salut i millora de la qualitat assistencial. No obstant això, caldria una avaluació jurídica específica per a cada institució sanitària que vulgui desplegar el sistema.
+
+\subsection{Governança de dades i responsabilitat clínica}
+
+La introducció d'un sistema d'IA generativa en el flux de treball clínic planteja qüestions crítiques sobre la \textbf{responsabilitat} de les decisions clíniques i la \textbf{governança} de les dades utilitzades pel sistema.
+
+\paragraph{Model de responsabilitat: sistema assistit, no autònom.}
+El sistema desenvolupat està dissenyat com una \textbf{eina d'assistència} (\textit{human-in-the-loop}), no com un sistema autònom de presa de decisions. Això significa que:
+\begin{itemize}
+    \item El professional sanitari \textbf{revisa i valida} sempre el document generat abans de la seva incorporació a la història clínica.
+    \item El professional sanitari té la \textbf{responsabilitat final} sobre el contingut del document, incloent diagnòstics, medicacions i recomanacions.
+    \item El sistema \textbf{no pren decisions clíniques}, només genera esborranys basats en protocols i dades proporcionades pel professional.
+\end{itemize}
+
+Aquest model de responsabilitat és coherent amb les recomanacions de la \textbf{Comissió Europea} sobre IA en salut i amb el \textbf{Reglament d'IA} (AI Act, Reglament UE 2024/1689)~\cite{eu2024aiact}, que classifica els sistemes d'IA en salut com a \textbf{sistemes d'alt risc} que requereixen supervisió humana efectiva.
+
+\paragraph{Governança del corpus RAG.}
+El corpus de protocols i guies clíniques utilitzat pel sistema requereix una governança explícita:
+\begin{itemize}
+    \item \textbf{Actualització periòdica:} Els protocols clínics evolucionen amb l'evidència científica. Caldria establir un procés d'actualització trimestral o semestral del corpus RAG per incorporar noves guies i retirar protocols obsolets.
+    \item \textbf{Auditabilitat de fonts:} Cada document generat inclou les fonts (protocols) utilitzades, permetent al professional verificar la base científica de les recomanacions.
+    \item \textbf{Validació de protocols:} Abans d'incorporar un nou protocol al corpus, caldria una validació per part d'un comitè clínic que verifiqui la seva qualitat i rellevància.
+\end{itemize}
+
+\paragraph{Transparència i explicabilitat.}
+El sistema proporciona \textbf{traçabilitat} de les decisions mitjançant:
+\begin{itemize}
+    \item Llistat dels 3~protocols més rellevants recuperats per a cada cas.
+    \item Codis ontològics assignats (SNOMED~CT, ICD-10, ATC) amb la seva font de codificació (cerca vectorial o BioPortal).
+    \item Metadades de generació (temps, model LLM, paràmetres).
+\end{itemize}
+
+Aquesta transparència és essencial per complir el \textbf{dret a l'explicació} (Article~22 RGPD) i per permetre al professional sanitari comprendre i validar les recomanacions del sistema.
+
+\subsection{Supervisió humana i integració en el flux de treball}
+
+La supervisió humana efectiva és un requisit crític per a sistemes d'IA d'alt risc en salut, segons el Reglament d'IA (Article~14). El sistema desenvolupat implementa diversos mecanismes de supervisió:
+
+\paragraph{Revisió obligatòria pre-validació.}
+El document generat es presenta al professional en un \textbf{mode d'edició}, no com a document final. El professional ha de:
+\begin{enumerate}
+    \item Revisar el contingut generat (diagnòstics, medicacions, recomanacions).
+    \item Verificar els codis ontològics assignats (SNOMED~CT, ICD-10, ATC).
+    \item Editar o corregir qualsevol error o imprecisió.
+    \item Validar explícitament el document abans de la seva incorporació a la història clínica.
+\end{enumerate}
+
+\paragraph{Detecció d'errors crítics.}
+El sistema hauria d'incloure mecanismes de \textbf{detecció d'errors crítics} que alertin el professional en cas de:
+\begin{itemize}
+    \item Contraindicacions detectades (p.~ex., medicació contraindicada per al diagnòstic).
+    \item Codis ontològics amb baixa confiança ($<$0,5).
+    \item Absència de seccions obligatòries en el document generat.
+\end{itemize}
+
+\paragraph{Formació i capacitació.}
+El desplegament del sistema requereix \textbf{formació específica} dels professionals sanitaris sobre:
+\begin{itemize}
+    \item Funcionament del sistema i les seves limitacions.
+    \item Interpretació de la traçabilitat (fonts, codis ontològics).
+    \item Procediments de revisió i validació de documents generats.
+    \item Protocols d'actuació en cas d'errors o inconsistències detectades.
+\end{itemize}
+
+\subsection{Limitacions i riscos dels LLM en contextos sanitaris}
+
+Els models de llenguatge de gran mida (LLM) presenten riscos específics en contextos sanitaris que han de ser explícitament reconeguts i mitigats. Durant el desenvolupament d'aquest projecte, s'han identificat diversos problemes crítics, dels quals alguns s'han resolt amb solucions tècniques i altres romanen com a limitacions que requereixen supervisió humana obligatòria.
+
+\paragraph{Al·lucinacions diagnòstiques.}
+El risc més crític detectat durant el desenvolupament va ser la generació de diagnòstics incorrectes o inventats pel model LLM. En les proves inicials amb Mistral~7B, el model va generar ``pneumònia'' quan el cas clínic descrivia clarament un ``infart de miocardi'', un error inacceptable que podria comprometre la seguretat del pacient. Aquest problema es va resoldre mitjançant el canvi a Llama~3.2, que va demostrar 100\% de precisió diagnòstica en tots els casos avaluats (0\% d'al·lucinacions). A més, els \textit{prompts} van ser refinats per incloure instruccions explícites que obliguen el model a fonamentar els diagnòstics en els protocols recuperats i evitar informació no verificada. Aquesta combinació de selecció de model i enginyeria de \textit{prompts} va eliminar completament les al·lucinacions diagnòstiques en l'avaluació final. Tot i això, aquest risc \textbf{no es pot eliminar completament} en entorns de producció amb casos clínics més complexos, i la supervisió humana continua sent l'única garantia contra aquest tipus d'errors.
+
+\paragraph{Errors de codificació ontològica.}
+Els models LLM tenen dificultats per generar codis SNOMED~CT i ICD-10 correctes, especialment en català on les ontologies no disposen de traduccions oficials. Durant el desenvolupament, es van detectar codis amb formats incorrectes (p.~ex., ``SNOMED: 12345'' sense verificació) o codis completament inexistents. Per abordar aquest problema, es va implementar una integració amb BioPortal que valida els codis en temps real, traducció automàtica català→anglès per cercar termes en les ontologies originals, i extracció de codis ATC directament dels protocols recuperats (més fiables que la generació directa pel LLM). Tot i aquestes mesures, els F1~scores de codificació ontològica (29,2\% SNOMED~CT, 37,5\% ICD-10) mostren que aquesta limitació no està completament resolta i continua sent un punt feble del sistema que requereix validació manual. Aquests errors tenen implicacions crítiques per a:
+\begin{itemize}
+    \item \textbf{Facturació:} Codis ICD-10 incorrectes poden afectar la facturació hospitalària i la gestió de recursos sanitaris.
+    \item \textbf{Estadístiques de salut pública:} Codis incorrectes distorsionen les estadístiques epidemiològiques nacionals i internacionals.
+    \item \textbf{Interoperabilitat:} Codis incorrectes dificulten l'intercanvi d'informació entre sistemes d'informació hospitalaris (HIS), laboratoris i farmàcies.
+\end{itemize}
+
+\paragraph{Detecció d'especialitats mèdiques.}
+Per a l'informe de derivació, la detecció correcta de l'especialitat destí és crítica per garantir que el pacient sigui derivat al professional adequat. Mistral~7B presentava baixa confiança (0,3) en aquesta tasca, generant especialitats incorrectes o massa genèriques (p.~ex., ``medicina interna'' quan caldria ``cardiologia''). El canvi a Llama~3.2 va millorar significativament la detecció d'especialitats, i es va complementar amb Named Entity Recognition (NER) mèdic per extreure especialitats dels protocols recuperats com a validació addicional. Aquesta solució híbrida (LLM + NER) va incrementar la precisió de detecció d'especialitats fins a nivells acceptables per a un sistema assistit.
+
+\paragraph{Riscos no resolts que requereixen supervisió humana.}
+Tres categories de riscos no han estat abordades tècnicament i justifiquen el model de responsabilitat assistit (no autònom) adoptat:
+
+\begin{enumerate}
+    \item \textbf{Errors de medicació:} El sistema no valida automàticament contraindicacions, dosis incorrectes o interaccions farmacològiques perilloses. Un error en la medicació podria tenir conseqüències greus per a la seguretat del pacient.
+    
+    \item \textbf{Omissió d'informació crítica:} La mètrica de \textit{Completeness} detecta seccions mancants, però no el contingut dins de cada secció. El sistema podria ometre contraindicacions, al·lèrgies o recomanacions de seguiment essencials sense que les mètriques automàtiques ho detectin.
+    
+    \item \textbf{Biaix i equitat:} Els LLM poden reproduir biaixos presents en les dades d'entrenament, resultant en recomanacions diferents segons el gènere, edat o origen del pacient, infradiagnòstic de patologies en grups minoritzats, o llenguatge inapropiat o estigmatitzant. Aquest risc no ha estat avaluat en aquest projecte i requereix una avaluació de biaix sistemàtica en futurs treballs.
+\end{enumerate}
+
+\paragraph{Limitacions de validació.}
+L'avaluació del sistema s'ha realitzat amb \textit{gold standards} sintètics, no amb dades reals d'hospitals. Això limita la \textbf{validesa externa} dels resultats i la capacitat de detectar errors que només apareixen en casos clínics reals complexos. Un desplegament pilot en entorn real amb validació clínica per part de professionals sanitaris és imprescindible per verificar la seguretat i utilitat clínica del sistema abans de qualsevol desplegament en producció.
+
+%═══════════════════════════════════════════════════════════════════════════════
+% CAPÍTOL 6: CONCLUSIONS I TREBALLS FUTURS
+%═══════════════════════════════════════════════════════════════════════════════
+
 \chapter{Conclusions i treballs futurs}
 
 Aquest capítol sintetitza les conclusions principals del treball, analitza l'assoliment dels objectius plantejats, reflexiona sobre el seguiment de la planificació i la metodologia adoptada, i proposa línies de treball futur per superar les limitacions identificades i estendre les capacitats del sistema.
@@ -3077,6 +3210,28 @@ using clinical guidelines and large language models.
 \newblock \textit{AAAI 2024 Spring Symposium on Clinical
 Foundation Models}, 1--8.
 \newblock \url{https://openreview.net/forum?id=1kDJJPppRG}
+
+% ============================================================
+% NORMATIVA I REGULACIÓ (RGPD, AI ACT)
+% ============================================================
+
+\bibitem{eu2016gdpr}
+Parlament Europeu i Consell de la Unió Europea. (2016).
+\newblock Reglament (UE) 2016/679 del Parlament Europeu i del Consell, de 27 d'abril de 2016, relatiu a la protecció de les persones físiques pel que fa al tractament de dades personals i a la lliure circulació d'aquestes dades (Reglament General de Protecció de Dades, RGPD).
+\newblock \textit{Diari Oficial de la Unió Europea}, L 119, 1--88.
+\newblock \url{https://eur-lex.europa.eu/eli/reg/2016/679/oj}
+
+\bibitem{spain2018lopdgdd}
+Jefatura del Estado (Espanya). (2018).
+\newblock Llei Orgànica 3/2018, de 5 de desembre, de Protecció de Dades Personals i garantia dels drets digitals (LOPDGDD).
+\newblock \textit{Butlletí Oficial de l'Estat}, núm. 294, 119788--119857.
+\newblock \url{https://www.boe.es/eli/es/lo/2018/12/05/3}
+
+\bibitem{eu2024aiact}
+Parlament Europeu i Consell de la Unió Europea. (2024).
+\newblock Reglament (UE) 2024/1689 del Parlament Europeu i del Consell, de 13 de juny de 2024, pel qual s'estableixen normes harmonitzades en matèria d'intel·ligència artificial (Reglament d'Intel·ligència Artificial, AI Act).
+\newblock \textit{Diari Oficial de la Unió Europea}, L 2024/1689, 1--144.
+\newblock \url{https://eur-lex.europa.eu/eli/reg/2024/1689/oj}
 
 % ============================================================
 % GUIES CLÍNIQUES I PROTOCOLS (GOLD STANDARDS)
